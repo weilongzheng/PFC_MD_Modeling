@@ -172,9 +172,15 @@ class PFCMD():
         if not self.MDeffect: Gbase = 1.875
 
         if self.MDeffect and self.MDlearn:
-            self.wMD2PFC *= 0.
-            self.wMD2PFCMult *= 0.
+            self.wPFC2MD = np.random.normal(0,1/np.sqrt(self.Ntasks*self.Nneur),size=(self.Ntasks,self.Nneur))
+            self.wMD2PFC = np.random.normal(0,1/np.sqrt(self.Ntasks*self.Nneur),size=(self.Nneur,self.Ntasks))
+            self.wMD2PFCMult = np.random.normal(0,1/np.sqrt(self.Ntasks*self.Nneur),size=(self.Nneur,self.Ntasks))
+#            self.wMD2PFC *= 0.
+#            self.wMD2PFCMult *= 0.
+#            self.wPFC2MD *= 0.
             self.MDpreTrace = np.zeros(shape=(self.Nneur))
+            self.MDpostTrace = np.zeros(shape=(self.Ntasks))
+            self.MDpreTrace_threshold = 0
 
         # Choose G based on the type of activation function
         # unclipped activation requires lower G than clipped activation,
@@ -286,12 +292,17 @@ class PFCMD():
         MDinp = np.zeros(shape=self.Ntasks)
         routs = np.zeros(shape=(self.tsteps,self.Nneur))
         MDouts = np.zeros(shape=(self.tsteps,self.Ntasks))
+        MDoutTraces = np.zeros(shape=(self.tsteps,self.Ntasks))
         MDinps = np.zeros(shape=(self.tsteps,self.Ntasks))
+        MDpreTraces = np.zeros(shape=(self.tsteps,self.Nneur))
+        MDpostTraces = np.zeros(shape=(self.tsteps,self.Ntasks))
         outInp = np.zeros(shape=self.Nout)
         outs = np.zeros(shape=(self.tsteps,self.Nout))
         out = np.zeros(self.Nout)
         errors = np.zeros(shape=(self.tsteps,self.Nout))
         error_smooth = np.zeros(shape=self.Nout)
+        
+        a  = np.zeros(shape=(self.tsteps,self.Ntasks,self.Nneur))
         if self.reinforce:
             HebbTrace = np.zeros(shape=(self.Nout,self.Nneur))
             if self.dirConn:
@@ -347,15 +358,28 @@ class PFCMD():
                 xadd += np.dot(self.wMD2PFC,MDout)
 
                 if train and self.MDlearn:
+                    #import pdb;pdb.set_trace()
                     # MD presynaptic traces filtered over 10 trials
                     # Ideally one should weight them with MD syn weights,
                     #  but syn plasticity just uses pre!
                     self.MDpreTrace += 1./self.tsteps/10. * \
                                         ( -self.MDpreTrace + rout )
-                    wPFC2MDdelta = self.Hebb_learning_rate*np.outer(MDout-0.5,self.MDpreTrace-0.13)
+                    self.MDpostTrace += 1./self.tsteps/10. * \
+                                        ( -self.MDpostTrace + MDout )
+                    if self.MDpostTrace[0] > self.MDpostTrace[1]: MDoutTrace = np.array([1,0])
+                    else: MDoutTrace = np.array([0,1])
+                    MDoutTraces [i,:] = MDoutTrace
+                    MDpreTraces [i,:] = self.MDpreTrace
+                    MDpostTraces [i,:] = self.MDpostTrace
+                    self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:800]) # first 800 cells are cue selective
+                    wPFC2MDdelta = 0.5*self.Hebb_learning_rate*np.outer(MDoutTrace-0.5,self.MDpreTrace-self.MDpreTrace_threshold)
+                    #wPFC2MDdelta = self.Hebb_learning_rate*np.outer(MDout-0.5,self.MDpreTrace-0.13)
                     self.wPFC2MD = np.clip(self.wPFC2MD+wPFC2MDdelta,0.,1.)
-                    self.wMD2PFC = np.clip(self.wMD2PFC+wPFC2MDdelta.T,-10.,0.)
-                    self.wMD2PFCMult = np.clip(self.wMD2PFCMult+wPFC2MDdelta.T,0.,7./self.G)
+                    self.wMD2PFC = np.clip(self.wMD2PFC+0.1*(wPFC2MDdelta.T),-10.,0.)
+                    self.wMD2PFCMult = np.clip(self.wMD2PFCMult+0.1*(wPFC2MDdelta.T),0.,7./self.G)
+#                    self.wMD2PFC *= 0
+#                    self.wMD2PFCMult *= 0
+                    a[i,:,:] = self.wPFC2MD
             else:
                 xadd = np.dot(self.Jrec,rout)
 
@@ -478,8 +502,24 @@ class PFCMD():
             self.wOut *= self.wOutMask
         
         self.meanAct[inpi,:,:] += routs
-
-        return cues, routs, outs, MDouts, errors, MDinps
+        
+#        import pdb;pdb.set_trace()
+#        
+#        plt.figure()
+#        abc=np.mean(a[:,:,:200],axis=2)
+#        plt.plot(abc[:,0],linestyle='-',color='r',label='cue A to MD 1')
+#        abc=np.mean(a[:,:,:200],axis=2)
+#        plt.plot(abc[:,1],linestyle='--',color='r',label='cue A to MD 2')
+#        abc=np.mean(a[:,:,200:400],axis=2)
+#        plt.plot(abc[:,0],linestyle='-',color='b',label='cue B to MD 1')
+#        abc=np.mean(a[:,:,200:400],axis=2)
+#        plt.plot(abc[:,1],linestyle='--',color='b',label='cue B to MD 2')
+#        
+#        plt.xlabel('Time steps')
+#        plt.ylabel('Mean Weights')
+#        plt.legend()
+        
+        return cues, routs, outs, MDouts, errors, MDinps, MDoutTraces, MDpreTraces, MDpostTraces
 
     def get_cues_order(self,cues):
         cues_order = np.random.permutation(cues)
@@ -605,16 +645,17 @@ class PFCMD():
         MDouts_all = np.zeros(shape=(Ntest,self.tsteps,self.Ntasks))
         MDinps_all = np.zeros(shape=(Ntest,self.tsteps,self.Ntasks))
         outs_all = np.zeros(shape=(Ntest,self.tsteps,self.Nout))
+        MDoutTraces_all = np.zeros(shape=(Ntest,self.tsteps,self.Ntasks))
         
         MSEs = np.zeros(Ntest)
         for testi in range(Ntest):
-
+            print('Simulating test cycle',testi)
             cueList = self.get_cue_list()
             cues_order = self.get_cues_order(cueList)
             for taski,cuei in cues_order:
                 cue, target = \
                     self.get_cue_target(taski,cuei)
-                cues, routs, outs, MDouts, errors, MDinps = \
+                cues, routs, outs, MDouts, errors, MDinps, MDoutTraces, preTraces, postTraces = \
                     self.sim_cue(taski,cuei,cue,target,MDeffect=MDeffect,
                     train=True)
 
@@ -627,6 +668,7 @@ class PFCMD():
                 MDouts_all[testi,:,:] = MDouts
                 MDinps_all[testi,:,:] = MDinps
                 outs_all[testi,:,:] = outs
+                MDoutTraces_all[testi,:,:] = MDoutTraces
 
         self.meanAct /= Ntest
 
@@ -634,14 +676,14 @@ class PFCMD():
 #            self.fileDict['MSEs'] = MSEs
 #            self.fileDict['wOuts'] = wOuts
             
-            pickle_out = open('dataPFCMD/test_MD'+\
+            pickle_out = open('dataPFCMD/test__HebbPostTrace_MD'+\
                                     str(self.MDeffect)+\
                                     '_Learn'+str(self.MDlearn)+\
                                     '_R'+str(self.RNGSEED)+\
                                     '_TimesTau'+str(self.tau_times)+\
                                     '.pickle','wb')
             pickle.dump({'MSEs':MSEs, 'cues_all':cues_all,'routs_all':routs_all,\
-                         'MDouts_all':MDouts_all,'MDinps_all':MDinps_all,'outs_all':outs_all},pickle_out)
+                         'MDouts_all':MDouts_all,'MDinps_all':MDinps_all,'outs_all':outs_all,'MDoutTraces_all':MDoutTraces_all},pickle_out)
             pickle_out.close()
             
     def do_test(self,Ntest,MDeffect,MDCueOff,MDDelayOff,
@@ -707,22 +749,23 @@ class PFCMD():
             Ntrain = Ntrain*self.Ntasks + Nextra
         else:
             Ntrain *= self.Ntasks
-        wOuts = np.zeros(shape=(Ntrain,self.Nout,self.Nneur))
+        wOuts = np.zeros(shape=(Ntrain*2,self.Nout,self.Nneur))
         
-        cues_all = np.zeros(shape=(Ntrain,self.tsteps,self.Ncues))
-        routs_all = np.zeros(shape=(Ntrain,self.tsteps,self.Nneur))
-        MDouts_all = np.zeros(shape=(Ntrain,self.tsteps,self.Ntasks))
-        MDinps_all = np.zeros(shape=(Ntrain,self.tsteps,self.Ntasks))
-        outs_all = np.zeros(shape=(Ntrain,self.tsteps,self.Nout))
-        
-        
+        cues_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Ncues))
+        routs_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Nneur))
+        MDouts_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Ntasks))
+        MDinps_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Ntasks))
+        outs_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Nout))
+        MDoutTraces_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Ntasks))
+        MDpreTraces_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Nneur))
+        MDpostTraces_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Ntasks))
         
         if self.MDlearn:
-            wPFC2MDs = np.zeros(shape=(Ntrain,2,self.Nneur))
-            wMD2PFCs = np.zeros(shape=(Ntrain,self.Nneur,2))
-            wMD2PFCMults = np.zeros(shape=(Ntrain,self.Nneur,2))
-            MDpreTraces = np.zeros(shape=(Ntrain,self.Nneur))
-        
+            wPFC2MDs = np.zeros(shape=(Ntrain*2,2,self.Nneur))
+            wMD2PFCs = np.zeros(shape=(Ntrain*2,self.Nneur,2))
+            wMD2PFCMults = np.zeros(shape=(Ntrain*2,self.Nneur,2))
+            MDpreTraces = np.zeros(shape=(Ntrain*2,self.Nneur))
+            MDpostTraces = np.zeros(shape=(Ntrain*2,2))
         # Reset the trained weights,
         #  earlier for iterating over MDeffect = False and then True
         if self.outExternal:
@@ -758,44 +801,57 @@ class PFCMD():
             else:
                 cueList = self.get_cue_list()
             cues_order = self.get_cues_order(cueList)
+            num_trial = cues_order.shape[0]
+            i = 0
             for taski,cuei in cues_order:
+                
                 cue, target = \
                     self.get_cue_target(taski,cuei)
-                cues, routs, outs, MDouts, errors, MDinps = \
+                cues, routs, outs, MDouts, errors, MDinps, MDoutTraces, preTraces, postTraces = \
                     self.sim_cue(taski,cuei,cue,target,MDeffect=MDeffect,
                     train=True)
+                #import pdb;pdb.set_trace()
 
                 MSEs[traini] += np.mean(errors*errors)
                 
-                wOuts[traini,:,:] = self.wOut
+                wOuts[traini*2+i,:,:] = self.wOut
                 
-                cues_all[traini,:,:] = cues
-                routs_all[traini,:,:] = routs
-                MDouts_all[traini,:,:] = MDouts
-                MDinps_all[traini,:,:] = MDinps
-                outs_all[traini,:,:] = outs
+                cues_all[traini*num_trial+i,:,:] = cues
+                routs_all[traini*num_trial+i,:,:] = routs
+                MDouts_all[traini*num_trial+i,:,:] = MDouts
+                MDinps_all[traini*num_trial+i,:,:] = MDinps
+                outs_all[traini*num_trial+i,:,:] = outs
+                MDoutTraces_all[traini*num_trial+i,:,:] = MDoutTraces
+                MDpreTraces_all[traini*num_trial+i,:,:] = preTraces
+                MDpostTraces_all[traini*num_trial+i,:,:] = postTraces 
                 
                 if self.plotFigs and self.outExternal:
                     if self.MDlearn:
-                        wPFC2MDs[traini,:,:] = self.wPFC2MD
-                        wMD2PFCs[traini,:,:] = self.wMD2PFC
-                        wMD2PFCMults[traini,:,:] = self.wMD2PFCMult
-                        MDpreTraces[traini,:] = self.MDpreTrace
+                        wPFC2MDs[traini*num_trial+i,:,:] = self.wPFC2MD
+                        wMD2PFCs[traini*num_trial+i,:,:] = self.wMD2PFC
+                        wMD2PFCMults[traini*num_trial+i,:,:] = self.wMD2PFCMult
+                        MDpreTraces[traini*num_trial+i,:] = self.MDpreTrace
+                        MDpostTraces[traini*num_trial+i,:] = self.MDpostTrace
+                i = i+1
         self.meanAct /= Ntrain
 
-#        if self.saveData:
-##            self.fileDict['MSEs'] = MSEs
-##            self.fileDict['wOuts'] = wOuts
-#            
-#            pickle_out = open('dataPFCMD/activity_noise_MD'+\
-#                                    str(self.MDeffect)+\
-#                                    '_Learn'+str(self.MDlearn)+\
-#                                    '_R'+str(self.RNGSEED)+\
-#                                    '_TimesTau'+str(self.tau_times)+\
-#                                    '.pickle','wb')
-#            pickle.dump({'MSEs':MSEs, 'cues_all':cues_all,'routs_all':routs_all,\
-#                         'MDouts_all':MDouts_all,'MDinps_all':MDinps_all,'outs_all':outs_all},pickle_out)
-#            pickle_out.close()
+        if self.saveData:
+#            self.fileDict['MSEs'] = MSEs
+#            self.fileDict['wOuts'] = wOuts
+            
+            pickle_out = open('dataPFCMD/activity_HebbPostTrace_MD'+\
+                                    str(self.MDeffect)+\
+                                    '_Learn'+str(self.MDlearn)+\
+                                    '_R'+str(self.RNGSEED)+\
+                                    '_TimesTau'+str(self.tau_times)+\
+                                    '.pickle','wb')
+            pickle.dump({'MSEs':MSEs, 'cues_all':cues_all,'routs_all':routs_all,'wOuts':wOuts,\
+                         'MDouts_all':MDouts_all,'MDinps_all':MDinps_all,'outs_all':outs_all,'MDoutTraces_all':MDoutTraces_all,'MDpreTraces_all':MDpreTraces_all[:10,:,:],'MDpostTraces_all':MDpostTraces_all[:10,:,:],\
+                         'wPFC2MDs':wPFC2MDs,'wMD2PFCs':wMD2PFCs,'wMD2PFCMults':wMD2PFCMults,'MDpreTraces':MDpreTraces,'MDpostTraces':MDpostTraces},pickle_out,protocol = 4)
+            # no MD
+#            pickle.dump({'MSEs':MSEs, 'cues_all':cues_all,'routs_all':routs_all,'wOuts':wOuts,\
+#                         'outs_all':outs_all},pickle_out,protocol = 4)
+            pickle_out.close()
 
 
         if self.plotFigs:
@@ -813,13 +869,13 @@ class PFCMD():
                             figsize=(pltu.columnwidth,pltu.columnwidth),
                             facecolor='w')
             ax3 = self.fig3.add_subplot(2,1,1)
-            ax3.plot(wOuts[:,0,:5],'-,r')
-            ax3.plot(wOuts[:,1,:5],'-,b')
+            ax3.plot(wOuts[0::2,0,:5],'-,r')
+            ax3.plot(wOuts[0::2,1,:5],'-,b')
             pltu.beautify_plot(ax3,x0min=False,y0min=False)
             pltu.axes_labels(ax3,'cycle num','wAto0(r) wAto1(b)')
             ax4 = self.fig3.add_subplot(2,1,2)
-            ax4.plot(wOuts[:,0,self.Nsub:self.Nsub+5],'-,r')
-            ax4.plot(wOuts[:,1,self.Nsub:self.Nsub+5],'-,b')
+            ax4.plot(wOuts[0::2,0,self.Nsub:self.Nsub+5],'-,r')
+            ax4.plot(wOuts[0::2,1,self.Nsub:self.Nsub+5],'-,b')
             pltu.beautify_plot(ax4,x0min=False,y0min=False)
             pltu.axes_labels(ax4,'cycle num','wBto0(r) wBto1(b)')
             self.fig3.tight_layout()
@@ -830,13 +886,13 @@ class PFCMD():
                                 figsize=(pltu.columnwidth,pltu.columnwidth),
                                 facecolor='w')
                 ax3 = self.fig3.add_subplot(2,1,1)
-                ax3.plot(wPFC2MDs[:,0,:5],'-,r')
-                ax3.plot(wPFC2MDs[:,0,self.Nsub*2:self.Nsub*2+5],'-,b')
+                ax3.plot(wPFC2MDs[0::2,0,:5],'-,r')
+                ax3.plot(wPFC2MDs[0::2,0,self.Nsub*2:self.Nsub*2+5],'-,b')
                 pltu.beautify_plot(ax3,x0min=False,y0min=False)
                 pltu.axes_labels(ax3,'cycle num','wAtoMD0(r) wCtoMD0(b)')
                 ax4 = self.fig3.add_subplot(2,1,2)
-                ax4.plot(wPFC2MDs[:,1,:5],'-,r')
-                ax4.plot(wPFC2MDs[:,1,self.Nsub*2:self.Nsub*2+5],'-,b')
+                ax4.plot(wPFC2MDs[0::2,1,:5],'-,r')
+                ax4.plot(wPFC2MDs[0::2,1,self.Nsub*2:self.Nsub*2+5],'-,b')
                 pltu.beautify_plot(ax4,x0min=False,y0min=False)
                 pltu.axes_labels(ax4,'cycle num','wAtoMD1(r) wCtoMD1(b)')
                 self.fig3.tight_layout()
@@ -846,13 +902,13 @@ class PFCMD():
                                 figsize=(pltu.columnwidth,pltu.columnwidth),
                                 facecolor='w')
                 ax3 = self.fig3.add_subplot(2,1,1)
-                ax3.plot(wMD2PFCs[:,:5,0],'-,r')
-                ax3.plot(wMD2PFCs[:,self.Nsub*2:self.Nsub*2+5,0],'-,b')
+                ax3.plot(wMD2PFCs[0::2,:5,0],'-,r')
+                ax3.plot(wMD2PFCs[0::2,self.Nsub*2:self.Nsub*2+5,0],'-,b')
                 pltu.beautify_plot(ax3,x0min=False,y0min=False)
                 pltu.axes_labels(ax3,'cycle num','wMD0toA(r) wMD0toC(b)')
                 ax4 = self.fig3.add_subplot(2,1,2)
-                ax4.plot(wMD2PFCMults[:,:5,0],'-,r')
-                ax4.plot(wMD2PFCMults[:,self.Nsub*2:self.Nsub*2+5,0],'-,b')
+                ax4.plot(wMD2PFCMults[0::2,:5,0],'-,r')
+                ax4.plot(wMD2PFCMults[0::2,self.Nsub*2:self.Nsub*2+5,0],'-,b')
                 pltu.beautify_plot(ax4,x0min=False,y0min=False)
                 pltu.axes_labels(ax4,'cycle num','MwMD0toA(r) MwMD0toC(b)')
                 self.fig3.tight_layout()
@@ -862,8 +918,8 @@ class PFCMD():
                                 figsize=(pltu.columnwidth,pltu.columnwidth),
                                 facecolor='w')
                 ax3 = self.fig3.add_subplot(1,1,1)
-                ax3.plot(MDpreTraces[:,:5],'-,r')
-                ax3.plot(MDpreTraces[:,self.Nsub*2:self.Nsub*2+5],'-,b')
+                ax3.plot(MDpreTraces[0::2,:5],'-,r')
+                ax3.plot(MDpreTraces[0::2,self.Nsub*2:self.Nsub*2+5],'-,b')
                 pltu.beautify_plot(ax3,x0min=False,y0min=False)
                 pltu.axes_labels(ax3,'cycle num','cueApre(r) cueCpre(b)')
                 self.fig3.tight_layout()
@@ -1036,7 +1092,7 @@ if __name__ == "__main__":
                     noiseSD,tauError,plotFigs=plotFigs,saveData=saveData)
     if not reLoadWeights:
         pfcmd.train(learning_cycles_per_task)
-        pfcmd.test_new(learning_cycles_per_task)
+#        pfcmd.test_new(500)
         #pfcmd.train(learning_cycles_per_task)
 #        if saveData:
 #            pfcmd.save()
@@ -1061,3 +1117,104 @@ if __name__ == "__main__":
         pfcmd.fileDict.close()
     
     plt.show()
+
+#plt.figure()
+#plt.subplot(2,1,1)
+#plt.plot(wPFC2MDs[4399,0,:],color='orange')
+#plt.title('Weights PFC to MD 1')
+#plt.subplot(2,1,2)
+#plt.plot(wPFC2MDs[4399,1,:],color='blue')
+#plt.title('Weights PFC to MD 2')
+#plt.xlabel('Neuron #')
+#    
+#plt.plot(MDouts_all[0,:,0],label='MD1')
+#plt.plot(MDouts_all[0,:,1],label='MD2')
+#plt.legend()
+#plt.xlabel('Time steps')
+#plt.ylabel('Activity')
+#plt.title('MD outputs')
+#
+#plt.plot(MDpreTraces[0,:])
+#plt.xlabel('Neuron #')
+#plt.ylabel('Activity')
+#plt.title('MD pre Traces')
+    
+#cues_all=data['cues_all']
+#a=cues_all[:,0,:]
+#cue1=np.where(a[:,0]==1)
+#cue2=np.where(a[:,1]==1)
+#
+#
+#routs_all=data['routs_all']
+#routs_mean = np.mean(routs_all,axis=1)
+#c=np.mean(routs_mean[cue1,:],axis=1)
+#plt.plot(c.T)
+#plt.xlabel('Neuron #')
+#plt.ylabel('Mean Activity')
+#
+    # plot delta W 
+#import pandas as pd
+#wOuts = data['wOuts']
+#a=np.diff(wOuts,axis=0)
+#a = abs(a)
+#deltaW = np.mean(np.mean(a[0:2000,:,0:400],axis=0),axis=0)
+#context = np.ones((400,))
+#group = np.ones((400,))
+#b = np.mean(np.mean(a[0:2000,:,400:800],axis=0),axis=0)
+#deltaW = np.append(deltaW,b)
+#context = np.append(context,np.ones((400,)))
+#group = np.append(group,0*np.ones((400,)))
+#b = np.mean(np.mean(a[2000:4000,:,400:800],axis=0),axis=0)
+#deltaW = np.append(deltaW,b)
+#context = np.append(context,2*np.ones((400,)))
+#group = np.append(group,np.ones((400,)))
+#b = np.mean(np.mean(a[2000:4000,:,0:400],axis=0),axis=0)
+#deltaW = np.append(deltaW,b)
+#context = np.append(context,2*np.ones((400,)))
+#group = np.append(group,0*np.ones((400,)))
+#d = {'deltaW':deltaW,'Current-Context Neurons':group,'context':context}
+#df = pd.DataFrame(data=d)
+#ax = sns.boxplot(x='context',y='deltaW',hue='Current-Context Neurons',data=df)
+#matplotlib.pyplot.ylim(0,0.000045)
+#plt.tight_layout()
+#
+#c=np.mean(routs_mean[cue2,:],axis=1)
+#plt.plot(c.T,color='r')
+#plt.xlabel('Neuron #')
+#plt.ylabel('Mean Activity')
+
+#
+#plt.bar([1,2],MDpostTraces[0,:])
+#plt.xlabel('MD #')
+#plt.ylabel('Activity')
+#plt.title('MD post Traces')
+    
+#sns.heatmap(MDpreTraces_all[0,:,:].T,cmap='hot_r')
+#plt.xlabel('Time steps')
+#plt.ylabel('Neuron #')
+#plt.title('MD pre Traces')
+    
+#plt.figure()
+#abc=np.mean(a[:,:,:200],axis=2)
+#plt.plot(abc[:,0],label='cue A to MD 1')
+#abc=np.mean(a[:,:,200:400],axis=2)
+#plt.plot(abc[:,0],label='cue B to MD 1')
+#abc=np.mean(a[:,:,400:600],axis=2)
+#plt.plot(abc[:,0],label='cue C to MD 1')
+#abc=np.mean(a[:,:,600:800],axis=2)
+#plt.plot(abc[:,0],label='cue D to MD 1')
+#plt.xlabel('Time steps')
+#plt.ylabel('Mean Weights')
+#plt.legend()
+#plt.figure()
+#abc=np.mean(a[:,:,:200],axis=2)
+#plt.plot(abc[:,1],label='cue A to MD 2')
+#abc=np.mean(a[:,:,200:400],axis=2)
+#plt.plot(abc[:,1],label='cue B to MD 2')
+#abc=np.mean(a[:,:,400:600],axis=2)
+#plt.plot(abc[:,1],label='cue C to MD 2')
+#abc=np.mean(a[:,:,600:800],axis=2)
+#plt.plot(abc[:,1],label='cue D to MD 2')
+#plt.xlabel('Time steps')
+#plt.ylabel('Mean Weights')
+#plt.legend()

@@ -33,7 +33,7 @@ class PFCMD():
         self.saveData = saveData
         
         self.tau_times = 4
-        self.Num_MD = 16
+        self.Num_MD = 10
         self.learning_rate = learning_rate  # too high a learning rate makes the output weights
                                             #  change too much within a trial / training cycle,
                                             #  then the output interference depends
@@ -123,6 +123,9 @@ class PFCMD():
         if not self.MDeffect: Gbase = 1.875
 
         if self.MDeffect and self.MDlearn:
+            self.wPFC2MD = np.random.normal(size=(self.Num_MD,self.Nneur))
+            self.wMD2PFC = np.random.normal(size=(self.Nneur,self.Num_MD))
+            self.wMD2PFCMult = np.random.normal(size=(self.Nneur,self.Num_MD))
             self.wMD2PFC *= 0.
             self.wMD2PFCMult *= 0.
             self.MDpreTrace = np.zeros(shape=(self.Nneur))
@@ -253,6 +256,7 @@ class PFCMD():
         for i in range(self.tsteps):
             rout = self.activation(xinp)
             routs[i,:] = rout
+            #import pdb;pdb.set_trace()
             if self.outExternal:
                 outAdd = np.dot(self.wOut,rout)
 
@@ -987,7 +991,7 @@ if __name__ == "__main__":
                     noiseSD,tauError,plotFigs=plotFigs,saveData=saveData)
     if not reLoadWeights:
         pfcmd.train(learning_cycles_per_task)
-        pfcmd.test_new(learning_cycles_per_task)
+        pfcmd.test_new(500)
         #pfcmd.train(learning_cycles_per_task)
 #        if saveData:
 #            pfcmd.save()
