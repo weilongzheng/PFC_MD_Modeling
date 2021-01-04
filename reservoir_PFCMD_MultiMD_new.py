@@ -338,10 +338,10 @@ class PFCMD():
                 if train and self.MDlearn:
                     # Softmax
                     #import pdb;pdb.set_trace()
-                    MDout = softmax(MDinp)
+                    MDout = softmax(MDinp) #update should increase
                     #MDout = np.exp(MDinp)/sum(np.exp(MDinp))
                     # minmax scale
-                    #MDout = minmax_scale(MDinp)
+                    # MDout = minmax_scale(MDinp) # /5, mean
                     #MDout = (np.tanh(MDinp-self.MDthreshold) + 1) / 2.
                     # winner take all on the MD
                     #  hardcoded for self.Ntasks = 2
@@ -353,10 +353,10 @@ class PFCMD():
 
                 if self.useMult:
                     self.MD2PFCMult = np.dot(self.wMD2PFCMult,MDout)
-                    xadd = (1.+self.MD2PFCMult) * np.dot(self.Jrec,rout)
+                    xadd = (1.+self.MD2PFCMult) * np.dot(self.Jrec,rout) # minmax 5
                 else:
                     xadd = np.dot(self.Jrec,rout)
-                xadd += np.dot(self.wMD2PFC,MDout)
+                xadd += np.dot(self.wMD2PFC,MDout) # minmax 5
 
                 if train and self.MDlearn:
                     #import pdb;pdb.set_trace()
@@ -374,7 +374,7 @@ class PFCMD():
                     MDpreTraces [i,:] = self.MDpreTrace
                     MDpostTraces [i,:] = self.MDpostTrace
                     self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:800]) # first 800 cells are cue selective
-                    MDoutTrace_threshold = np.mean(MDoutTrace) #median
+                    MDoutTrace_threshold = np.median(MDoutTrace) #median
                     wPFC2MDdelta = 0.5*self.Hebb_learning_rate*np.outer(MDoutTrace-MDoutTrace_threshold,self.MDpreTrace-self.MDpreTrace_threshold)
                     #wPFC2MDdelta = self.Hebb_learning_rate*np.outer(MDout-0.5,self.MDpreTrace-0.13)
                     self.wPFC2MD = np.clip(self.wPFC2MD+wPFC2MDdelta,0.,1.)
@@ -1095,7 +1095,7 @@ if __name__ == "__main__":
                     noiseSD,tauError,plotFigs=plotFigs,saveData=saveData)
     if not reLoadWeights:
         pfcmd.train(learning_cycles_per_task)
-#        pfcmd.test_new(500)
+        pfcmd.test_new(500)
         #pfcmd.train(learning_cycles_per_task)
 #        if saveData:
 #            pfcmd.save()
@@ -1129,6 +1129,11 @@ if __name__ == "__main__":
 #plt.plot(wPFC2MDs[4399,1,:],color='blue')
 #plt.title('Weights PFC to MD 2')
 #plt.xlabel('Neuron #')
+#plt.figure()
+#for i in range(0,10):
+#    plt.subplot(10,1,i+1)
+#    plt.plot(wPFC2MDs[4399,i,:])
+    
 #    
 #plt.plot(MDouts_all[0,:,0],label='MD1')
 #plt.plot(MDouts_all[0,:,1],label='MD2')
