@@ -19,7 +19,7 @@ class PFCMD():
         np.random.seed([self.RNGSEED])
 
         self.Nsub = 200                     # number of neurons per cue
-        self.Ntasks = 2                     # number of contexts = number of MD cells.
+        self.Ntasks = 3                     # number of contexts = number of MD cells.
         self.xorTask = False                # use xor Task or simple 1:1 map task
         #self.xorTask = True                 # use xor Task or simple 1:1 map task
         self.Ncues = self.Ntasks*2          # number of input cues
@@ -36,7 +36,7 @@ class PFCMD():
         
         self.tau_times = 4 #4
         self.Hebb_learning_rate = 1e-4 #1e-4
-        self.Num_MD = 10
+        self.Num_MD = 9
         self.learning_rate = learning_rate  # too high a learning rate makes the output weights
                                             #  change too much within a trial / training cycle,
                                             #  then the output interference depends
@@ -347,7 +347,11 @@ class PFCMD():
 #                    MDout = (np.tanh(MDinp-MDthreshold) + 1) / 2.
                     # Thresholding
                     MDout = np.zeros(self.Num_MD)
-                    MDthreshold  = np.mean(MDinp)
+                    MDinp_sorted = np.sort(MDinp)
+                    num_active = np.round(self.Num_MD/self.Ntasks)
+                    #MDthreshold  = np.mean(MDinp_sorted[-4:])
+                    MDthreshold  = np.mean(MDinp_sorted[-int(num_active)*2:])
+                    #MDthreshold  = np.mean(MDinp)
                     index_pos = np.where(MDinp>=MDthreshold)
                     index_neg = np.where(MDinp<MDthreshold)
                     MDout[index_pos] = 1
@@ -362,24 +366,28 @@ class PFCMD():
                 
                 if self.useMult:
                     self.MD2PFCMult = np.dot(self.wMD2PFCMult,MDout)
-                    xadd = (1.+self.MD2PFCMult/5) * np.dot(self.Jrec,rout) # minmax 5
+                    xadd = (1.+self.MD2PFCMult/np.round(self.Num_MD/2)) * np.dot(self.Jrec,rout) # minmax 5
                 else:
                     xadd = np.dot(self.Jrec,rout)
-                xadd += np.dot(self.wMD2PFC/5,MDout) # minmax 5
+                xadd += np.dot(self.wMD2PFC/np.round(self.Num_MD/2),MDout) # minmax 5
 
                 if train and self.MDlearn:
-                    #import pdb;pdb.set_trace()
+                    
                     # MD presynaptic traces filtered over 10 trials
                     # Ideally one should weight them with MD syn weights,
                     #  but syn plasticity just uses pre!
-                    self.MDpreTrace += 1./self.tsteps/10. * \
+                    self.MDpreTrace += 1./self.tsteps/5. * \
                                         ( -self.MDpreTrace + rout )
-                    self.MDpostTrace += 1./self.tsteps/10. * \
+                    self.MDpostTrace += 1./self.tsteps/5. * \
                                         ( -self.MDpostTrace + MDout )
                     #MDoutTrace =  self.MDpostTrace
                     
                     MDoutTrace = np.zeros(self.Num_MD)
-                    MDthreshold  = np.mean(self.MDpostTrace)
+                    MDpostTrace_sorted = np.sort(self.MDpostTrace)
+                    num_active = np.round(self.Num_MD/self.Ntasks)
+                    #MDthreshold  = np.mean(MDpostTrace_sorted[-4:])
+                    MDthreshold  = np.mean(MDpostTrace_sorted[-int(num_active)*2:])
+                    #MDthreshold  = np.mean(self.MDpostTrace)
                     index_pos = np.where(self.MDpostTrace>=MDthreshold)
                     index_neg = np.where(self.MDpostTrace<MDthreshold)
                     MDoutTrace[index_pos] = 1
@@ -390,10 +398,16 @@ class PFCMD():
                     MDoutTraces [i,:] = MDoutTrace
                     MDpreTraces [i,:] = self.MDpreTrace
                     MDpostTraces [i,:] = self.MDpostTrace
-                    self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:800]) # first 800 cells are cue selective
+                    self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:self.Nsub*self.Ncues]) # first 800 cells are cue selective
                     #MDoutTrace_threshold = np.mean(MDoutTrace) #median
-                    MDoutTrace_threshold = 0.5
+                    MDoutTrace_threshold = 0.5 ##?
                     wPFC2MDdelta = 0.5*self.Hebb_learning_rate*np.outer(MDoutTrace-MDoutTrace_threshold,self.MDpreTrace-self.MDpreTrace_threshold)
+#                    import pdb;pdb.set_trace()
+#                    row_ind = np.array(np.where((MDoutTrace-MDoutTrace_threshold)<0),dtype=np.intp)
+#                    row_ind = np.reshape(row_ind,(np.product(row_ind.shape),))
+#                    column_ind = np.array(np.where((self.MDpreTrace-self.MDpreTrace_threshold)<0),dtype=np.intp)
+#                    column_ind = np.reshape(column_ind,(np.product(column_ind.shape),))
+#                    wPFC2MDdelta[np.ix_(row_ind,column_ind)] *= 0
                     #wPFC2MDdelta = self.Hebb_learning_rate*np.outer(MDout-0.5,self.MDpreTrace-0.13)
                     self.wPFC2MD = np.clip(self.wPFC2MD+wPFC2MDdelta,0.,1.)
                     self.wMD2PFC = np.clip(self.wMD2PFC+0.1*(wPFC2MDdelta.T),-10.,0.)
@@ -697,7 +711,7 @@ class PFCMD():
 #            self.fileDict['MSEs'] = MSEs
 #            self.fileDict['wOuts'] = wOuts
             
-            pickle_out = open('dataPFCMD/test_HebbPostTrace_numMD'+str(self.Num_MD)+'_MD'+\
+            pickle_out = open('dataPFCMD/test_HebbPostTrace_numMD'+str(self.Num_MD)+'_numTask'+str(self.Ntasks)+'_MD'+\
                                     str(self.MDeffect)+\
                                     '_Learn'+str(self.MDlearn)+\
                                     '_R'+str(self.RNGSEED)+\
@@ -860,7 +874,7 @@ class PFCMD():
 #            self.fileDict['MSEs'] = MSEs
 #            self.fileDict['wOuts'] = wOuts
             
-            pickle_out = open('dataPFCMD/activity_HebbPostTrace_numMD'+str(self.Num_MD)+'_MD'+\
+            pickle_out = open('dataPFCMD/0activity_HebbPostTrace_numMD'+str(self.Num_MD)+'_numTask'+str(self.Ntasks)+'_MD'+\
                                     str(self.MDeffect)+\
                                     '_Learn'+str(self.MDlearn)+\
                                     '_R'+str(self.RNGSEED)+\
@@ -1101,7 +1115,7 @@ if __name__ == "__main__":
     PFC_G = 6.
     PFC_G_off = 1.5
     learning_rate = 5e-6
-    learning_cycles_per_task = 1000#1000
+    learning_cycles_per_task = 500#1000
     Ntest = 20
     Nblock = 70
     noiseSD = 1e-3
