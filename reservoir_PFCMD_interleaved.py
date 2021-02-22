@@ -22,11 +22,10 @@ class PFCMD():
         self.Ntasks = 2                     # number of contexts = number of MD cells.
         self.xorTask = False                # use xor Task or simple 1:1 map task
         #self.xorTask = True                 # use xor Task or simple 1:1 map task
-
+        self.Ncues = self.Ntasks*2          # number of input cues
+        self.Nneur = self.Nsub*(self.Ncues+1)# number of neurons
         if self.xorTask: self.inpsPerTask = 4# number of cue combinations per task
         else: self.inpsPerTask = 2
-        self.Ncues = self.Ntasks*self.inpsPerTask          # number of input cues
-        self.Nneur = self.Nsub*(self.Ncues+1)# number of neurons
         self.Nout = 2                       # number of outputs
         self.tau = 0.02
         self.dt = 0.001
@@ -45,7 +44,7 @@ class PFCMD():
                                             # typical values is 1e-5, can vary from 1e-4 to 1e-6
         self.tauError = tauError            # smooth the error a bit, so that weights don't fluctuate
 
-        self.MDeffect = True#True                # whether to have MD present or not
+        self.MDeffect = True                # whether to have MD present or not
         self.MDEffectType = 'submult'       # MD subtracts from across tasks and multiplies within task
         #self.MDEffectType = 'subadd'        # MD subtracts from across tasks and adds within task
         #self.MDEffectType = 'divadd'        # MD divides from across tasks and adds within task
@@ -56,7 +55,7 @@ class PFCMD():
                                             #  (i.e. weights to and fro (outFB) are not MD modulated)
                                             # False: last self.Nout neurons of PFC are output neurons
         self.outFB = False                  # if outExternal, then whether feedback from output to reservoir
-        self.noisePresent = False#False           # add noise to all reservoir units
+        self.noisePresent = False           # add noise to all reservoir units
 
         self.positiveRates = True           # whether to clip rates to be only positive, G must also change
         
@@ -69,7 +68,7 @@ class PFCMD():
                                             #  zero would be a pure reservoir, 1 would be full MDeffect
                                             # -1 for zero recurrent weights
         self.wInSpread = False              # Spread wIn also into other cue neurons to see if MD disjoints representations
-        self.blockTrain = True              # first half of training is context1, second half is context2
+        self.blockTrain = False              # first half of training is context1, second half is context2
         
         self.reinforce = False              # use reinforcement learning (node perturbation) a la Miconi 2017
                                             #  instead of error-driven learning
@@ -712,12 +711,11 @@ class PFCMD():
 #            self.fileDict['MSEs'] = MSEs
 #            self.fileDict['wOuts'] = wOuts
             
-            pickle_out = open('dataPFCMD/test_HebbPostTrace_numMD'+str(self.Num_MD)+'_numTask'+str(self.Ntasks)+'_MD'+\
+            pickle_out = open('dataPFCMD/test_random_HebbPostTrace_numMD'+str(self.Num_MD)+'_numTask'+str(self.Ntasks)+'_MD'+\
                                     str(self.MDeffect)+\
                                     '_Learn'+str(self.MDlearn)+\
                                     '_R'+str(self.RNGSEED)+\
                                     '_TimesTau'+str(self.tau_times)+\
-                                    '_Noise'+\
                                     '.pickle','wb')
             pickle.dump({'MSEs':MSEs, 'cues_all':cues_all,'routs_all':routs_all,\
                          'MDouts_all':MDouts_all,'MDinps_all':MDinps_all,'outs_all':outs_all,'MDoutTraces_all':MDoutTraces_all},pickle_out)
@@ -786,23 +784,23 @@ class PFCMD():
             Ntrain = Ntrain*self.Ntasks + Nextra
         else:
             Ntrain *= self.Ntasks
-        wOuts = np.zeros(shape=(Ntrain*2,self.Nout,self.Nneur))
+        wOuts = np.zeros(shape=(Ntrain*4,self.Nout,self.Nneur))
         
-        cues_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Ncues))
-        routs_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Nneur))
-        MDouts_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Num_MD))
-        MDinps_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Num_MD))
-        outs_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Nout))
-        MDoutTraces_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Num_MD))
-        MDpreTraces_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Nneur))
-        MDpostTraces_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Num_MD))
+        cues_all = np.zeros(shape=(Ntrain*4,self.tsteps,self.Ncues))
+        routs_all = np.zeros(shape=(Ntrain*4,self.tsteps,self.Nneur))
+        MDouts_all = np.zeros(shape=(Ntrain*4,self.tsteps,self.Num_MD))
+        MDinps_all = np.zeros(shape=(Ntrain*4,self.tsteps,self.Num_MD))
+        outs_all = np.zeros(shape=(Ntrain*4,self.tsteps,self.Nout))
+        MDoutTraces_all = np.zeros(shape=(Ntrain*4,self.tsteps,self.Num_MD))
+        MDpreTraces_all = np.zeros(shape=(Ntrain*4,self.tsteps,self.Nneur))
+        MDpostTraces_all = np.zeros(shape=(Ntrain*4,self.tsteps,self.Num_MD))
         
         if self.MDlearn:
-            wPFC2MDs = np.zeros(shape=(Ntrain*2,self.Num_MD,self.Nneur))
-            wMD2PFCs = np.zeros(shape=(Ntrain*2,self.Nneur,self.Num_MD))
-            wMD2PFCMults = np.zeros(shape=(Ntrain*2,self.Nneur,self.Num_MD))
-            MDpreTraces = np.zeros(shape=(Ntrain*2,self.Nneur))
-            MDpostTraces = np.zeros(shape=(Ntrain*2,self.Num_MD))
+            wPFC2MDs = np.zeros(shape=(Ntrain*4,self.Num_MD,self.Nneur))
+            wMD2PFCs = np.zeros(shape=(Ntrain*4,self.Nneur,self.Num_MD))
+            wMD2PFCMults = np.zeros(shape=(Ntrain*4,self.Nneur,self.Num_MD))
+            MDpreTraces = np.zeros(shape=(Ntrain*4,self.Nneur))
+            MDpostTraces = np.zeros(shape=(Ntrain*4,self.Num_MD))
         # Reset the trained weights,
         #  earlier for iterating over MDeffect = False and then True
         if self.outExternal:
@@ -841,13 +839,13 @@ class PFCMD():
             num_trial = cues_order.shape[0]
             i = 0
             for taski,cuei in cues_order:
-                #import pdb;pdb.set_trace()
+                
                 cue, target = \
                     self.get_cue_target(taski,cuei)
                 cues, routs, outs, MDouts, errors, MDinps, MDoutTraces, preTraces, postTraces = \
                     self.sim_cue(taski,cuei,cue,target,MDeffect=MDeffect,
                     train=True)
-                #
+                #import pdb;pdb.set_trace()
 
                 MSEs[traini] += np.mean(errors*errors)
                 
@@ -873,10 +871,10 @@ class PFCMD():
         self.meanAct /= Ntrain
 
 #        if self.saveData:
-#            self.fileDict['MSEs'] = MSEs
-#            self.fileDict['wOuts'] = wOuts
-            
-#            pickle_out = open('dataPFCMD/activity_HebbPostTrace_numMD'+str(self.Num_MD)+'_numTask'+str(self.Ntasks)+'_MD'+\
+##            self.fileDict['MSEs'] = MSEs
+##            self.fileDict['wOuts'] = wOuts
+#            
+#            pickle_out = open('dataPFCMD/0activity_HebbPostTrace_numMD'+str(self.Num_MD)+'_numTask'+str(self.Ntasks)+'_MD'+\
 #                                    str(self.MDeffect)+\
 #                                    '_Learn'+str(self.MDlearn)+\
 #                                    '_R'+str(self.RNGSEED)+\
@@ -1117,10 +1115,10 @@ if __name__ == "__main__":
     PFC_G = 6.
     PFC_G_off = 1.5
     learning_rate = 5e-6
-    learning_cycles_per_task = 500#1000
+    learning_cycles_per_task = 100#1000
     Ntest = 20
     Nblock = 70
-    noiseSD = 1e-1#1e-3
+    noiseSD = 1e-3
     tauError = 0.001
     reLoadWeights = False
     saveData = not reLoadWeights
@@ -1129,7 +1127,7 @@ if __name__ == "__main__":
                     noiseSD,tauError,plotFigs=plotFigs,saveData=saveData)
     if not reLoadWeights:
         pfcmd.train(learning_cycles_per_task)
-        #pfcmd.test_new(500)
+        pfcmd.test_new(500)
         #pfcmd.train(learning_cycles_per_task)
 #        if saveData:
 #            pfcmd.save()
