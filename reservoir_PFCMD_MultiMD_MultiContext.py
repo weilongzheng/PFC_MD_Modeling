@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# (c) Jan 2020 Wei-Long Zheng, MIT.
+# (c) Jan 2021 Wei-Long Zheng, MIT.
 
 """Some reservoir tweaks are inspired by Nicola and Clopath, arxiv, 2016 and Miconi 2016."""
 
@@ -37,7 +37,7 @@ class PFCMD():
         
         self.tau_times = 4 #4
         self.Hebb_learning_rate = 1e-4 #1e-4
-        self.Num_MD = 12
+        self.Num_MD = 6
         self.learning_rate = learning_rate  # too high a learning rate makes the output weights
                                             #  change too much within a trial / training cycle,
                                             #  then the output interference depends
@@ -192,7 +192,7 @@ class PFCMD():
         # Perhaps I shouldn't have self connections / autapses?!
         # Perhaps I should have sparse connectivity?
         self.Jrec = np.random.normal(size=(self.Nneur, self.Nneur))\
-                        *self.G/np.sqrt(self.Nsub*2)
+                        *self.G/np.sqrt(self.Nsub*2)*2
         if self.MDstrength < 0.: self.Jrec *= 0.
         if self.multiAttractorReservoir:
             for i in range(self.Ncues):
@@ -793,6 +793,7 @@ class PFCMD():
         MDouts_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Num_MD))
         MDinps_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Num_MD))
         outs_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Nout))
+        target_all = np.zeros(shape=(Ntrain*2,self.Nout))
         MDoutTraces_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Num_MD))
         MDpreTraces_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Nneur))
         MDpostTraces_all = np.zeros(shape=(Ntrain*2,self.tsteps,self.Num_MD))
@@ -853,6 +854,7 @@ class PFCMD():
                 
                 wOuts[traini*2+i,:,:] = self.wOut
                 
+                target_all[traini*num_trial+i,:] = target
                 cues_all[traini*num_trial+i,:,:] = cues
                 routs_all[traini*num_trial+i,:,:] = routs
                 MDouts_all[traini*num_trial+i,:,:] = MDouts
@@ -872,23 +874,23 @@ class PFCMD():
                 i = i+1
         self.meanAct /= Ntrain
 
-#        if self.saveData:
+        if self.saveData:
 #            self.fileDict['MSEs'] = MSEs
 #            self.fileDict['wOuts'] = wOuts
             
-#            pickle_out = open('dataPFCMD/activity_HebbPostTrace_numMD'+str(self.Num_MD)+'_numTask'+str(self.Ntasks)+'_MD'+\
-#                                    str(self.MDeffect)+\
-#                                    '_Learn'+str(self.MDlearn)+\
-#                                    '_R'+str(self.RNGSEED)+\
-#                                    '_TimesTau'+str(self.tau_times)+\
-#                                    '.pickle','wb')
-#            pickle.dump({'MSEs':MSEs, 'cues_all':cues_all,'routs_all':routs_all,'wOuts':wOuts,\
-#                         'MDouts_all':MDouts_all,'MDinps_all':MDinps_all,'outs_all':outs_all,'MDoutTraces_all':MDoutTraces_all,'MDpreTraces_all':MDpreTraces_all[:10,:,:],'MDpostTraces_all':MDpostTraces_all[:10,:,:],\
-#                         'wPFC2MDs':wPFC2MDs,'wMD2PFCs':wMD2PFCs,'wMD2PFCMults':wMD2PFCMults,'MDpreTraces':MDpreTraces,'MDpostTraces':MDpostTraces},pickle_out,protocol = 4)
-#            # no MD
-##            pickle.dump({'MSEs':MSEs, 'cues_all':cues_all,'routs_all':routs_all,'wOuts':wOuts,\
-##                         'outs_all':outs_all},pickle_out,protocol = 4)
-#            pickle_out.close()
+            pickle_out = open('dataPFCMD/activity_HebbPostTrace_numMD'+str(self.Num_MD)+'_numTask'+str(self.Ntasks)+'_MD'+\
+                                    str(self.MDeffect)+\
+                                    '_Learn'+str(self.MDlearn)+\
+                                    '_R'+str(self.RNGSEED)+\
+                                    '_TimesTau'+str(self.tau_times)+\
+                                    '_test.pickle','wb')
+            pickle.dump({'MSEs':MSEs, 'cues_all':cues_all,'routs_all':routs_all,'wOuts':wOuts,'target_all':target_all,\
+                         'MDouts_all':MDouts_all,'MDinps_all':MDinps_all,'outs_all':outs_all,'MDoutTraces_all':MDoutTraces_all,'MDpreTraces_all':MDpreTraces_all[:10,:,:],'MDpostTraces_all':MDpostTraces_all[:10,:,:],\
+                         'wPFC2MDs':wPFC2MDs,'wMD2PFCs':wMD2PFCs,'wMD2PFCMults':wMD2PFCMults,'MDpreTraces':MDpreTraces,'MDpostTraces':MDpostTraces},pickle_out,protocol = 4)
+            # no MD
+#            pickle.dump({'MSEs':MSEs, 'cues_all':cues_all,'routs_all':routs_all,'wOuts':wOuts,'target_all':target_all,\
+#                         'outs_all':outs_all},pickle_out,protocol = 4)
+            pickle_out.close()
 
 
         if self.plotFigs:
