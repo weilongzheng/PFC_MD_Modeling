@@ -124,30 +124,16 @@ class PFCMD():
         #  keeping it also for the 1:1 task just for consistency
 
 
-
-    def load(self, filename):
-        d = shelve.open(filename)  # open
-        if self.outExternal:
-            self.wOut = d['wOut']
-        else:
-            self.Jrec[-self.Nout:, :] = d['JrecOut']
-        if self.dirConn:
-            self.wDir = d['wDir']
-        d.close()
-        return None
-
-    def save(self):
-        if self.outExternal:
-            self.fileDict['wOut'] = self.wOut
-        else:
-            self.fileDict['JrecOut'] = self.Jrec[-self.Nout:, :]
-        if self.dirConn:
-            self.fileDict['wDir'] = self.wDir
-
-
 class PFC():
-    def __init__(self, n_neuron, positiveRates=True):
+    def __init__(self, n_neuron, n_neuron_per_cue, positiveRates=True):
         self.Nneur = n_neuron
+        self.Nsub = n_neuron_per_cue
+        self.useMult = True
+        self.noisePresent = False
+        self.noiseSD = 1e-1#1e-3
+        self.tau = 0.02
+        self.dt = 0.001
+                    
         self.positiveRates = positiveRates
         if self.positiveRates:
             # only +ve rates
@@ -163,6 +149,7 @@ class PFC():
 
     def init_activity(self):
         self.xinp = np.random.uniform(0, 0.1, size=(self.Nneur))
+        self.activity = self.activation(self.xinp)
 
     def init_weights(self):
         self.Jrec = np.random.normal(size=(self.Nneur, self.Nneur)) \
@@ -191,18 +178,12 @@ class PFC():
             output: array (n_output,)
         """
 
-        if self.useMult:
-            self.MD2PFCMult = np.dot(self.wMD2PFCMult, input_x)
-            xadd = (1. + self.MD2PFCMult / np.round(
-                self.Num_MD / 2)) * np.dot(self.Jrec, self.activity)  # minmax 5
-        else:
-            xadd = np.dot(self.Jrec, self.activity)
-        xadd += np.dot(self.wMD2PFC / np.round(self.Num_MD / 2),
-                       MDout)  # minmax 5
-
-        output = self.activation(xadd + input)
-        self.activity = output
-
+        if input_x == None:
+            input_x = np.zeros_like(input)
+            
+        xadd = np.dot(self.Jrec, self.activity)
+        xadd += input_x+input # MD inputs
+        
         self.xinp += self.dt / self.tau * (-self.xinp + xadd)
 
         if self.noisePresent:
@@ -210,6 +191,7 @@ class PFC():
                     * np.sqrt(self.dt) / self.tau
 
         rout = self.activation(self.xinp)
+        self.activity = rout
         return rout
 
     def update_weights(self, input, activity, output):
@@ -219,38 +201,47 @@ class PFC():
 
 
 class MD():
-    def __init__(self):
-        self.wPFC2MD = np.zeros(shape=(self.Num_MD, self.Nneur))
+    def __init__(self, Nneur, Num_MD, num_active=1, positiveRates = True):
+        self.Nneur = Nneur
+        self.Num_MD = Num_MD
+        self.positiveRates = positiveRates
+        self.num_active = num_active # num_active: num MD active per context
 
+        self.tau = 0.02
+        self.tau_times = 4
+        self.dt = 0.001
+        self.tsteps = 200
+        self.Hebb_learning_rate = 1e-4
         # working!
         Gbase = 0.75  # determines also the cross-task recurrence
-        if self.MDstrength is None:
-            MDval = 1.
-        elif self.MDstrength < 0.:
-            MDval = 0.
-        else:
-            MDval = self.MDstrength
-        # subtract across tasks (task with higher MD suppresses cross-tasks)
-        self.wMD2PFC = np.ones(shape=(self.Nneur, self.Num_MD)) * (
-            -10.) * MDval
-        self.useMult = True
-        # multiply recurrence within task, no addition across tasks
-        ## choose below option for cross-recurrence
-        ##  if you want "MD inactivated" (low recurrence) state
-        ##  as the state before MD learning
-        # self.wMD2PFCMult = np.zeros(shape=(self.Nneur,self.Ntasks))
-        # choose below option for cross-recurrence
-        #  if you want "reservoir" (high recurrence) state
-        #  as the state before MD learning (makes learning more difficult)
-        self.wMD2PFCMult = np.ones(shape=(self.Nneur, self.Num_MD)) \
-                           * PFC_G_off / Gbase * (1 - MDval)
-        # threshold for sharp sigmoid (0.1 width) transition of MDinp
-        self.MDthreshold = 0.4
-
-        # With MDeffect = True and MDstrength = 0, i.e. MD inactivated
-        #  PFC recurrence is (1+PFC_G_off)*Gbase = (1+1.5)*0.75 = 1.875
-        # So with MDeffect = False, ensure the same PFC recurrence for the pure reservoir
-        if not self.MDeffect: Gbase = 1.875
+#        self.MDstrength = 1
+#        if self.MDstrength is None:
+#            MDval = 1.
+#        elif self.MDstrength < 0.:
+#            MDval = 0.
+#        else:
+#            MDval = self.MDstrength
+#        # subtract across tasks (task with higher MD suppresses cross-tasks)
+#        self.wMD2PFC = np.ones(shape=(self.Nneur, self.Num_MD)) * (
+#            -10.) * MDval
+#        self.useMult = True
+#        # multiply recurrence within task, no addition across tasks
+#        ## choose below option for cross-recurrence
+#        ##  if you want "MD inactivated" (low recurrence) state
+#        ##  as the state before MD learning
+#        # self.wMD2PFCMult = np.zeros(shape=(self.Nneur,self.Ntasks))
+#        # choose below option for cross-recurrence
+#        #  if you want "reservoir" (high recurrence) state
+#        #  as the state before MD learning (makes learning more difficult)
+#        self.wMD2PFCMult = np.ones(shape=(self.Nneur, self.Num_MD)) \
+#                           * PFC_G_off / Gbase * (1 - MDval)
+#        # threshold for sharp sigmoid (0.1 width) transition of MDinp
+#        self.MDthreshold = 0.4
+#
+#        # With MDeffect = True and MDstrength = 0, i.e. MD inactivated
+#        #  PFC recurrence is (1+PFC_G_off)*Gbase = (1+1.5)*0.75 = 1.875
+#        # So with MDeffect = False, ensure the same PFC recurrence for the pure reservoir
+#        # if not self.MDeffect: Gbase = 1.875
 
         self.wPFC2MD = np.random.normal(0, 1 / np.sqrt(
             self.Num_MD * self.Nneur), size=(self.Num_MD, self.Nneur))
@@ -258,9 +249,7 @@ class MD():
             self.Num_MD * self.Nneur), size=(self.Nneur, self.Num_MD))
         self.wMD2PFCMult = np.random.normal(0, 1 / np.sqrt(
             self.Num_MD * self.Nneur), size=(self.Nneur, self.Num_MD))
-        #            self.wMD2PFC *= 0.
-        #            self.wMD2PFCMult *= 0.
-        #            self.wPFC2MD *= 0.
+
         self.MDpreTrace = np.zeros(shape=(self.Nneur))
         self.MDpostTrace = np.zeros(shape=(self.Num_MD))
         self.MDpreTrace_threshold = 0
@@ -276,17 +265,22 @@ class MD():
             self.G = Gbase
             self.MDthreshold = 0.4
             self.tauMD = self.tau * 10 * self.tau_times
-
-
-    def __call__(self, input, *args, **kwargs):
+        self.init_activity()
+        
+    def init_activity(self):
+        self.MDinp = np.zeros(shape=self.Num_MD)
+        
+        
+    def __call__(self, input , *args, **kwargs):
         """Run the network one step
 
         For now, consider this network receiving input from PFC,
         input stand for activity of PFC neurons
-        output stand for output current to PFC neurons
+        output stand for output current to MD neurons
 
         Args:
             input: array (n_input,)
+            
 
         Returns:
             output: array (n_output,)
@@ -294,14 +288,17 @@ class MD():
         # MD decays 10x slower than PFC neurons,
         #  so as to somewhat integrate PFC input
         if self.positiveRates:
-            MDinp += self.dt / self.tauMD * \
-                     (-MDinp + np.dot(self.wPFC2MD, rout))
+            self.MDinp += self.dt / self.tauMD * \
+                     (-self.MDinp + np.dot(self.wPFC2MD, input))
         else:  # shift PFC rates, so that mean is non-zero to turn MD on
-            MDinp += self.dt / self.tauMD * \
-                     (-MDinp + np.dot(self.wPFC2MD, (rout + 1. / 2)))
-        return output
+            self.MDinp += self.dt / self.tauMD * \
+                     (-self.MDinp + np.dot(self.wPFC2MD, (input + 1. / 2)))
+                     
+        #num_active = np.round(self.Num_MD / self.Ntasks)
+        MDout = self.winner_take_all(self.MDinp)
+        return MDout
 
-    def update_trace(self):
+    def update_trace(self, rout, MDout):
         # MD presynaptic traces filtered over 10 trials
         # Ideally one should weight them with MD syn weights,
         #  but syn plasticity just uses pre!
@@ -311,31 +308,32 @@ class MD():
                             (-self.MDpostTrace + MDout)
         # MDoutTrace =  self.MDpostTrace
 
-        MDoutTrace = np.zeros(self.Num_MD)
-        MDpostTrace_sorted = np.sort(self.MDpostTrace)
-        num_active = np.round(self.Num_MD / self.Ntasks)
-        # MDthreshold  = np.mean(MDpostTrace_sorted[-4:])
-        MDthreshold = np.mean(
-            MDpostTrace_sorted[-int(num_active) * 2:])
-        # MDthreshold  = np.mean(self.MDpostTrace)
-        index_pos = np.where(self.MDpostTrace >= MDthreshold)
-        index_neg = np.where(self.MDpostTrace < MDthreshold)
-        MDoutTrace[index_pos] = 1
-        MDoutTrace[index_neg] = 0
+        MDoutTrace = self.winner_take_all(self.MDpostTrace)
+#        MDoutTrace = np.zeros(self.Num_MD)
+#        MDpostTrace_sorted = np.sort(self.MDpostTrace)
+#        num_active = np.round(self.Num_MD / self.Ntasks)
+#        # MDthreshold  = np.mean(MDpostTrace_sorted[-4:])
+#        MDthreshold = np.mean(
+#            MDpostTrace_sorted[-int(num_active) * 2:])
+#        # MDthreshold  = np.mean(self.MDpostTrace)
+#        index_pos = np.where(self.MDpostTrace >= MDthreshold)
+#        index_neg = np.where(self.MDpostTrace < MDthreshold)
+#        MDoutTrace[index_pos] = 1
+#        MDoutTrace[index_neg] = 0
+        return MDoutTrace
 
-    def update_weights(self, input, activity, output):
+    def update_weights(self, rout, MDout):
         """Update weights with plasticity rules.
 
 
         """
-        self.update_trace()
+        MDoutTrace = self.update_trace(rout, MDout)
         #                    if self.MDpostTrace[0] > self.MDpostTrace[1]: MDoutTrace = np.array([1,0])
         #                    else: MDoutTrace = np.array([0,1])
-
-        self.MDpreTrace_threshold = np.mean(self.MDpreTrace[
-                                            :self.Nsub * self.Ncues])  # first 800 cells are cue selective
+        self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
+        #self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:self.Nsub * self.Ncues])  # first 800 cells are cue selective
         # MDoutTrace_threshold = np.mean(MDoutTrace) #median
-        MDoutTrace_threshold = 0.5  ##?
+        MDoutTrace_threshold = 0.5  
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(
             MDoutTrace - MDoutTrace_threshold,
             self.MDpreTrace - self.MDpreTrace_threshold)
@@ -348,21 +346,21 @@ class MD():
             self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,
             7. / self.G)
 
-    def winner_take_all(self):
-        """TBF"""
+    def winner_take_all(self, MDinp):
+
         # Thresholding
         MDout = np.zeros(self.Num_MD)
         MDinp_sorted = np.sort(MDinp)
-        num_active = np.round(self.Num_MD / self.Ntasks)
-        # MDthreshold  = np.mean(MDinp_sorted[-4:])
-        MDthreshold = np.mean(MDinp_sorted[-int(num_active) * 2:])
+        # num_active = np.round(self.Num_MD / self.Ntasks)
+
+        MDthreshold = np.mean(MDinp_sorted[-int(self.num_active) * 2:])
         # MDthreshold  = np.mean(MDinp)
         index_pos = np.where(MDinp >= MDthreshold)
         index_neg = np.where(MDinp < MDthreshold)
         MDout[index_pos] = 1
         MDout[index_neg] = 0
         # winner take all on the MD
-
+        return MDout
 
 class OutputLayer():
     def __init__(self):
@@ -419,32 +417,44 @@ class SensoryInputLayer():
 
 
 class FullNetwork():
-    def __init__(self):
-        self.pfc = PFC()
-        self.md = MD()
+    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, MDeffect=True):
+        self.pfc = PFC(Num_PFC, n_neuron_per_cue)
         self.sensory2pfc = SensoryInputLayer()
         self.pfc2out = OutputLayer()
-
-        self.md_output = np.zeros()
+        
+        self.MDeffect = MDeffect
+        if self.MDeffect:
+            self.md = MD(Num_MD, num_active)
+            self.md_output = np.zeros()
 
     def __call__(self, input, target, *args, **kwargs):
         """
         Args:
              input: (n_time, n_input)
              target: (n_time, n_output)
+             
         """
         self._check_shape(input, target)
         n_time = input.shape[0]
 
         self.pfc.init_activity()  # Reinit PFC activity
+        self.md.init_activity()  # Reinit MD activity
 
         for i in range(n_time):
             input_t = input[i]
             target_t = target[i]
 
             input2pfc = self.sensory2pfc(input_t)
-            pfc_output = self.pfc(input2pfc, self.md_output)
-            self.md_output = self.md(pfc_output)
+            if self.MDeffect:
+                self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
+                md2pfc = (self.md.MD2PFCMult / np.round(
+                        self.Num_MD / 2)) * np.dot(self.pfc.Jrec, self.pfc.activity)  # minmax 5
+                md2pfc += np.dot(self.md.wMD2PFC / np.round(self.Num_MD / 2),
+                       self.md_output) 
+                pfc_output = self.pfc(input2pfc, md2pfc)
+                self.md_output = self.md(pfc_output)
+            else:
+                pfc_output = self.pfc(input2pfc)
             output_t = self.pfc2out(pfc_output, target_t)
 
     def _check_shape(self, input, target):
@@ -470,19 +480,14 @@ if __name__ == "__main__":
     plotFigs = True  # not saveData
     pfcmd = PFCMD(PFC_G, PFC_G_off, learning_rate,
                   noiseSD, tauError, plotFigs=plotFigs, saveData=saveData)
-    if not reLoadWeights:
-        pfcmd.train(learning_cycles_per_task)
-        # pfcmd.test_new(500)
+    pfcmd.train(learning_cycles_per_task)
+    # pfcmd.test_new(500)
         # pfcmd.train(learning_cycles_per_task)
     #        if saveData:
     #            pfcmd.save()
     #        # save weights right after training,
     #        #  since test() keeps training on during MD off etc.
     #        pfcmd.test(Ntest)
-    else:
-        pfcmd.load(filename)
-        # all 4cues in a block
-        pfcmd.test(Ntest)
 
         # pfcmd.taskSwitch2(Nblock)
 
@@ -493,10 +498,7 @@ if __name__ == "__main__":
         # also has 2 cues in a block, instead of 4 as in test()
         # pfcmd.taskSwitch3(Nblock,MDoff=False)
 
-    if pfcmd.saveData:
-        pfcmd.fileDict.close()
 
-    plt.show()
 
 # plt.figure()
 # plt.subplot(2,1,1)
