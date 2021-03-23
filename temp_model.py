@@ -178,7 +178,7 @@ class PFC():
             output: array (n_output,)
         """
 
-        if input_x == None:
+        if input_x is None:
             input_x = np.zeros_like(input)
             
         xadd = np.dot(self.Jrec, self.activity)
@@ -201,7 +201,8 @@ class PFC():
 
 
 class MD():
-    def __init__(self, Nneur, Num_MD, num_active=1, positiveRates = True):
+    def __init__(self, Nneur, Num_MD, num_active=1, positiveRates=True,
+                 dt=0.001):
         self.Nneur = Nneur
         self.Num_MD = Num_MD
         self.positiveRates = positiveRates
@@ -209,7 +210,7 @@ class MD():
 
         self.tau = 0.02
         self.tau_times = 4
-        self.dt = 0.001
+        self.dt = dt
         self.tsteps = 200
         self.Hebb_learning_rate = 1e-4
         # working!
@@ -249,11 +250,9 @@ class MD():
             self.Num_MD * self.Nneur), size=(self.Nneur, self.Num_MD))
         self.wMD2PFCMult = np.random.normal(0, 1 / np.sqrt(
             self.Num_MD * self.Nneur), size=(self.Nneur, self.Num_MD))
-
         self.MDpreTrace = np.zeros(shape=(self.Nneur))
         self.MDpostTrace = np.zeros(shape=(self.Num_MD))
         self.MDpreTrace_threshold = 0
-
 
         # Choose G based on the type of activation function
         # unclipped activation requires lower G than clipped activation,
@@ -270,8 +269,7 @@ class MD():
     def init_activity(self):
         self.MDinp = np.zeros(shape=self.Num_MD)
         
-        
-    def __call__(self, input , *args, **kwargs):
+    def __call__(self, input, *args, **kwargs):
         """Run the network one step
 
         For now, consider this network receiving input from PFC,
@@ -296,6 +294,9 @@ class MD():
                      
         #num_active = np.round(self.Num_MD / self.Ntasks)
         MDout = self.winner_take_all(self.MDinp)
+
+        self.update_weights(input, MDout)
+
         return MDout
 
     def update_trace(self, rout, MDout):
@@ -325,7 +326,9 @@ class MD():
     def update_weights(self, rout, MDout):
         """Update weights with plasticity rules.
 
-
+        Args:
+            rout: input to MD
+            MDout: activity of MD
         """
         MDoutTrace = self.update_trace(rout, MDout)
         #                    if self.MDpostTrace[0] > self.MDpostTrace[1]: MDoutTrace = np.array([1,0])
@@ -363,12 +366,19 @@ class MD():
         return MDout
 
 class OutputLayer():
-    def __init__(self):
+    def __init__(self, n_input, n_out, dt):
+        self.dt = dt
+        self.tau = 0.02
+        self.tauError = 0.001
+        self.Nout = n_out
+        self.Nneur = n_input
+        self.learning_rate = 5e-6
         self.wOut = np.random.uniform(-1, 1,
                                       size=(
                                       self.Nout, self.Nneur)) / self.Nneur
         self.state = np.zeros(shape=self.Nout)
         self.error_smooth = np.zeros(shape=self.Nout)
+        self.activation = lambda inp: np.clip(np.tanh(inp), 0, None)
 
     def __call__(self, input, target, *args, **kwargs):
         outAdd = np.dot(self.wOut, input)
@@ -387,7 +397,13 @@ class OutputLayer():
 
 
 class SensoryInputLayer():
-    def __init__(self):
+    def __init__(self, n_sub, n_cues, n_output):
+        # Hard-coded for now
+        self.Ncues = n_cues
+        self.Nsub = n_sub
+        self.Nneur = n_output
+        self.positiveRates = True
+
         self.wIn = np.zeros((self.Nneur, self.Ncues))
         self.cueFactor = 1.5
         if self.positiveRates:
@@ -417,15 +433,21 @@ class SensoryInputLayer():
 
 
 class FullNetwork():
-    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, MDeffect=True):
+    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active,
+                 MDeffect=True):
+        dt = 0.001
         self.pfc = PFC(Num_PFC, n_neuron_per_cue)
-        self.sensory2pfc = SensoryInputLayer()
-        self.pfc2out = OutputLayer()
+        self.sensory2pfc = SensoryInputLayer(
+            n_sub=n_neuron_per_cue,
+            n_cues=4,
+            n_output=Num_PFC)
+        self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
         
         self.MDeffect = MDeffect
         if self.MDeffect:
-            self.md = MD(Num_MD, num_active)
-            self.md_output = np.zeros()
+            self.md = MD(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active,
+                         dt=dt)
+            self.md_output = np.zeros(Num_MD)
 
     def __call__(self, input, target, *args, **kwargs):
         """
@@ -438,7 +460,10 @@ class FullNetwork():
         n_time = input.shape[0]
 
         self.pfc.init_activity()  # Reinit PFC activity
-        self.md.init_activity()  # Reinit MD activity
+        if self.MDeffect:
+            self.md.init_activity()  # Reinit MD activity
+
+        output = np.zeros((n_time, target.shape[-1]))
 
         for i in range(n_time):
             input_t = input[i]
@@ -447,15 +472,19 @@ class FullNetwork():
             input2pfc = self.sensory2pfc(input_t)
             if self.MDeffect:
                 self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
-                md2pfc = (self.md.MD2PFCMult / np.round(
-                        self.Num_MD / 2)) * np.dot(self.pfc.Jrec, self.pfc.activity)  # minmax 5
-                md2pfc += np.dot(self.md.wMD2PFC / np.round(self.Num_MD / 2),
+                rec_inp = np.dot(self.pfc.Jrec, self.pfc.activity)
+                md2pfc = (self.md.MD2PFCMult / np.round(self.md.Num_MD / 2))
+                md2pfc = md2pfc * rec_inp  # minmax 5
+                md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /
+                                                            2),
                        self.md_output) 
                 pfc_output = self.pfc(input2pfc, md2pfc)
                 self.md_output = self.md(pfc_output)
             else:
                 pfc_output = self.pfc(input2pfc)
-            output_t = self.pfc2out(pfc_output, target_t)
+            output[i] = self.pfc2out(pfc_output, target_t)
+
+        return output
 
     def _check_shape(self, input, target):
         assert len(input.shape) == 2
@@ -463,150 +492,154 @@ class FullNetwork():
         assert input.shape[0] == target.shape[0]
 
 
+import torch
+from torch import nn
+
+class PytorchPFC(nn.Module):
+    def __init__(self, n_neuron, n_neuron_per_cue, positiveRates=True):
+        super().__init__()
+        self.Nneur = n_neuron
+        self.Nsub = n_neuron_per_cue
+        self.useMult = True
+        self.noisePresent = False
+        self.noiseSD = 1e-1  # 1e-3
+        self.tau = 0.02
+        self.dt = 0.001
+
+        self.positiveRates = positiveRates
+        if self.positiveRates:
+            # only +ve rates
+            self.activation = lambda inp: torch.clip(torch.tanh(inp), 0, None)
+        else:
+            # both +ve/-ve rates as in Miconi
+            self.activation = lambda inp: torch.tanh(inp)
+
+        self.G = 0.75  # determines also the cross-task recurrence
+
+        self.init_activity()
+        self.init_weights()
+
+    def init_activity(self):
+        self.xinp = torch.rand(self.Nneur) * 0.1
+        self.activity = self.activation(self.xinp)
+
+    def init_weights(self):
+        self.Jrec = torch.normal(mean=0, std=self.G / np.sqrt(self.Nsub * 2)*2,
+                                 size=(self.Nneur, self.Nneur))
+        # make mean input to each row zero,
+        #  helps to avoid saturation (both sides) for positive-only rates.
+        #  see Nicola & Clopath 2016
+        # mean of rows i.e. across columns (axis 1),
+        #  then expand with np.newaxis
+        #   so that numpy's broadcast works on rows not columns
+        self.Jrec -= torch.mean(self.Jrec, dim=1).unsqueeze_(dim=1)
+
+    def forward(self, input, input_x=None):
+        """Run the network one step
+
+        For now, consider this network receiving input from PFC,
+        input stand for activity of PFC neurons
+        output stand for output current to PFC neurons
+
+        Args:
+            input: array (n_neuron,)
+            input_x: array (n_neuron,), modulatory input that multiplicatively
+                interact with the neurons
+
+        Returns:
+            output: array (n_output,)
+        """
+        if input_x is None:
+            input_x = torch.zeros(input.shape)
+
+        xadd = torch.matmul(self.Jrec, self.activity)
+        xadd += input_x + input  # MD inputs
+        self.xinp += self.dt / self.tau * (-self.xinp + xadd)
+        rout = self.activation(self.xinp)
+        self.activity = rout
+        return rout
+
+# model = PytorchPFC(n_neuron=10, n_neuron_per_cue=1)
+# input = torch.randn(10)
+# output = model(input)
+# print(output.shape)
 
 
-if __name__ == "__main__":
-    # PFC_G = 1.6                    # if not positiveRates
-    PFC_G = 6.
-    PFC_G_off = 1.5
-    learning_rate = 5e-6
-    learning_cycles_per_task = 500  # 1000
-    Ntest = 20
-    Nblock = 70
-    noiseSD = 1e-1  # 1e-3
-    tauError = 0.001
-    reLoadWeights = False
-    saveData = not reLoadWeights
-    plotFigs = True  # not saveData
-    pfcmd = PFCMD(PFC_G, PFC_G_off, learning_rate,
-                  noiseSD, tauError, plotFigs=plotFigs, saveData=saveData)
-    pfcmd.train(learning_cycles_per_task)
-    # pfcmd.test_new(500)
-        # pfcmd.train(learning_cycles_per_task)
-    #        if saveData:
-    #            pfcmd.save()
-    #        # save weights right after training,
-    #        #  since test() keeps training on during MD off etc.
-    #        pfcmd.test(Ntest)
+class TempNetwork():
+    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active,
+                 MDeffect=True):
+        dt = 0.001
+        self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue)
+        self.sensory2pfc = SensoryInputLayer(
+            n_sub=n_neuron_per_cue,
+            n_cues=4,
+            n_output=Num_PFC)
+        self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
 
-        # pfcmd.taskSwitch2(Nblock)
+        self.MDeffect = MDeffect
+        if self.MDeffect:
+            self.md = MD(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active,
+                         dt=dt)
+            self.md_output = np.zeros(Num_MD)
 
-        # task switch
-        # pfcmd.taskSwitch3(Nblock,MDoff=True)
+    def __call__(self, input, target, *args, **kwargs):
+        """
+        Args:
+             input: (n_time, n_input)
+             target: (n_time, n_output)
 
-        # control experiment: task switch without turning MD off
-        # also has 2 cues in a block, instead of 4 as in test()
-        # pfcmd.taskSwitch3(Nblock,MDoff=False)
+        """
+        self._check_shape(input, target)
+        n_time = input.shape[0]
 
+        self.pfc.init_activity()  # Reinit PFC activity
+        if self.MDeffect:
+            self.md.init_activity()  # Reinit MD activity
 
+        output = np.zeros((n_time, target.shape[-1]))
 
-# plt.figure()
-# plt.subplot(2,1,1)
-# plt.plot(wPFC2MDs[4399,0,:],color='orange')
-# plt.title('Weights PFC to MD 1')
-# plt.subplot(2,1,2)
-# plt.plot(wPFC2MDs[4399,1,:],color='blue')
-# plt.title('Weights PFC to MD 2')
-# plt.xlabel('Neuron #')
-# number = 10
-# cmap = plt.get_cmap('rainbow') #gnuplot
-# colors = [cmap(i) for i in np.linspace(0,1,number)]
-# plt.figure()
-# for i,color in enumerate(colors, start=1):
-#    plt.subplot(10,1,i)
-#    plt.plot(wPFC2MDs[4399,i-1,:],color=color)
+        for i in range(n_time):
+            input_t = input[i]
+            target_t = target[i]
 
-#
-# plt.plot(MDouts_all[0,:,0],label='MD1')
-# plt.plot(MDouts_all[0,:,1],label='MD2')
-# plt.legend()
-# plt.xlabel('Time steps')
-# plt.ylabel('Activity')
-# plt.title('MD outputs')
-#
-# plt.plot(MDpreTraces[0,:])
-# plt.xlabel('Neuron #')
-# plt.ylabel('Activity')
-# plt.title('MD pre Traces')
-
-# cues_all=data['cues_all']
-# a=cues_all[:,0,:]
-# cue1=np.where(a[:,0]==1)
-# cue2=np.where(a[:,1]==1)
-#
-#
-# routs_all=data['routs_all']
-# routs_mean = np.mean(routs_all,axis=1)
-# c=np.mean(routs_mean[cue1,:],axis=1)
-# plt.plot(c.T)
-# plt.xlabel('Neuron #')
-# plt.ylabel('Mean Activity')
-#
-# c=np.mean(routs_mean[cue2,:],axis=1)
-# plt.plot(c.T,color='r')
-# plt.xlabel('Neuron #')
-# plt.ylabel('Mean Activity')
-
-# plot delta W
-# import pandas as pd
-# import seaborn as sns
-# wOuts = data['wOuts']
-# a=np.diff(wOuts,axis=0)
-# a = abs(a)
-# deltaW = np.mean(np.mean(a[0:2000,:,0:400],axis=0),axis=0)
-# context = np.ones((400,))
-# group = np.ones((400,))
-# b = np.mean(np.mean(a[0:2000,:,400:800],axis=0),axis=0)
-# deltaW = np.append(deltaW,b)
-# context = np.append(context,np.ones((400,)))
-# group = np.append(group,0*np.ones((400,)))
-# b = np.mean(np.mean(a[2000:4000,:,400:800],axis=0),axis=0)
-# deltaW = np.append(deltaW,b)
-# context = np.append(context,2*np.ones((400,)))
-# group = np.append(group,np.ones((400,)))
-# b = np.mean(np.mean(a[2000:4000,:,0:400],axis=0),axis=0)
-# deltaW = np.append(deltaW,b)
-# context = np.append(context,2*np.ones((400,)))
-# group = np.append(group,0*np.ones((400,)))
-# d = {'deltaW':deltaW,'Current-Context Neurons':group,'context':context}
-# df = pd.DataFrame(data=d)
-# ax = sns.boxplot(x='context',y='deltaW',hue='Current-Context Neurons',data=df)
-##matplotlib.pyplot.ylim(0,0.000045)
-# plt.tight_layout()
+            input2pfc = self.sensory2pfc(input_t)
+            if self.MDeffect:
+                self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult,
+                                            self.md_output)
+                rec_inp = np.dot(self.pfc.Jrec.numpy(),
+                                 self.pfc.activity.numpy())
 
 
-#
-# plt.bar([1,2],MDpostTraces[0,:])
-# plt.xlabel('MD #')
-# plt.ylabel('Activity')
-# plt.title('MD post Traces')
+                md2pfc = (self.md.MD2PFCMult / np.round(self.md.Num_MD / 2))
+                md2pfc = md2pfc * rec_inp  # minmax 5
+                md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /
+                                                            2),
+                                 self.md_output)
 
-# sns.heatmap(MDpreTraces_all[0,:,:].T,cmap='hot_r')
-# plt.xlabel('Time steps')
-# plt.ylabel('Neuron #')
-# plt.title('MD pre Traces')
+                pfc_output = self.pfc(torch.from_numpy(input2pfc),
+                                      torch.from_numpy(md2pfc)).numpy()
 
-# plt.figure()
-# abc=np.mean(a[:,:,:200],axis=2)
-# plt.plot(abc[:,0],label='cue A to MD 1')
-# abc=np.mean(a[:,:,200:400],axis=2)
-# plt.plot(abc[:,0],label='cue B to MD 1')
-# abc=np.mean(a[:,:,400:600],axis=2)
-# plt.plot(abc[:,0],label='cue C to MD 1')
-# abc=np.mean(a[:,:,600:800],axis=2)
-# plt.plot(abc[:,0],label='cue D to MD 1')
-# plt.xlabel('Time steps')
-# plt.ylabel('Mean Weights')
-# plt.legend()
-# plt.figure()
-# abc=np.mean(a[:,:,:200],axis=2)
-# plt.plot(abc[:,1],label='cue A to MD 2')
-# abc=np.mean(a[:,:,200:400],axis=2)
-# plt.plot(abc[:,1],label='cue B to MD 2')
-# abc=np.mean(a[:,:,400:600],axis=2)
-# plt.plot(abc[:,1],label='cue C to MD 2')
-# abc=np.mean(a[:,:,600:800],axis=2)
-# plt.plot(abc[:,1],label='cue D to MD 2')
-# plt.xlabel('Time steps')
-# plt.ylabel('Mean Weights')
-# plt.legend()
+                self.md_output = self.md(pfc_output)
+            else:
+                pfc_output = self.pfc(input2pfc)
+            output[i] = self.pfc2out(pfc_output, target_t)
+
+        return output
+
+    def _check_shape(self, input, target):
+        assert len(input.shape) == 2
+        assert len(target.shape) == 2
+        assert input.shape[0] == target.shape[0]
+
+
+n_time = 200
+n_neuron = 1000
+n_neuron_per_cue = 200
+Num_MD = 20
+num_active = 10 # num MD active per context
+n_output = 2
+pfc_md = TempNetwork(n_neuron,n_neuron_per_cue,Num_MD,num_active)
+input = np.random.randn(n_time, 4)
+target = np.random.randn(n_time, n_output)
+output = pfc_md(input, target)
+print(output.shape)

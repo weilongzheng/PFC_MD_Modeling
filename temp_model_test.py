@@ -32,17 +32,18 @@ class TestModel(unittest.TestCase):
             output = md(input_t)
         assert output.shape == (Num_MD,)
         
-     def test_fullnetwork(self):
+    def test_fullnetwork(self):
         n_time = 200
         n_neuron = 1000
         n_neuron_per_cue = 200
         Num_MD = 20
         num_active = 10 # num MD active per context
+        n_output = 2
         pfc_md = FullNetwork(n_neuron,n_neuron_per_cue,Num_MD,num_active)
-        input = np.random.randn(n_time, n_neuron)
-        for input_t in input:
-            pfc_md(input_t)
-        
+        input = np.random.randn(n_time, 4)
+        target = np.random.randn(n_time, n_output)
+        output = pfc_md(input, target)
+        assert output.shape == (n_time * 2, n_output)
 
 
 if __name__ == '__main__':
