@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# (c) Jan 2021 Wei-Long Zheng, MIT.
 
 """Some reservoir tweaks are inspired by Nicola and Clopath, arxiv, 2016 and Miconi 2016."""
 
@@ -111,19 +110,6 @@ class PFCMD():
         self.meanAct = np.zeros(shape=(self.Ntasks * self.inpsPerTask, \
                                        self.tsteps, self.Nneur))
 
-    def sim_cue(self, taski, cuei, cue, target, MDeffect=True,
-                MDCueOff=False, MDDelayOff=False,
-                train=True, routsTarget=None):
-        '''
-        self.reinforce trains output weights
-         using REINFORCE / node perturbation a la Miconi 2017.'''
-
-        # random initialization of input to units
-        # very important to have some random input
-        #  just for the xor task for (0,0) cue!
-        #  keeping it also for the 1:1 task just for consistency
-
-
 class PFC():
     def __init__(self, n_neuron, n_neuron_per_cue, positiveRates=True):
         self.Nneur = n_neuron
@@ -153,7 +139,7 @@ class PFC():
 
     def init_weights(self):
         self.Jrec = np.random.normal(size=(self.Nneur, self.Nneur)) \
-                    * self.G / np.sqrt(self.Nsub * 2) * 2
+                    * self.G / np.sqrt(self.Nsub * 2)
         # make mean input to each row zero,
         #  helps to avoid saturation (both sides) for positive-only rates.
         #  see Nicola & Clopath 2016
@@ -337,17 +323,12 @@ class MD():
         #self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:self.Nsub * self.Ncues])  # first 800 cells are cue selective
         # MDoutTrace_threshold = np.mean(MDoutTrace) #median
         MDoutTrace_threshold = 0.5  
-        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(
-            MDoutTrace - MDoutTrace_threshold,
-            self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
 
         # Update and clip the weights
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(
-            self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
-        self.wMD2PFCMult = np.clip(
-            self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,
-            7. / self.G)
+        self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
+        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
 
     def winner_take_all(self, MDinp):
 
@@ -442,12 +423,16 @@ class FullNetwork():
             n_cues=4,
             n_output=Num_PFC)
         self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
+        self.pfc_output_t = np.zeros()
         
         self.MDeffect = MDeffect
         if self.MDeffect:
             self.md = MD(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active,
                          dt=dt)
             self.md_output = np.zeros(Num_MD)
+            index = np.random.permutation(Num_MD)
+            self.md_output[index[:num_active]] = 1
+            #import pdb;pdb.set_trace()
 
     def __call__(self, input, target, *args, **kwargs):
         """
@@ -460,10 +445,12 @@ class FullNetwork():
         n_time = input.shape[0]
 
         self.pfc.init_activity()  # Reinit PFC activity
+        pfc_output = self.pfc.activity
         if self.MDeffect:
             self.md.init_activity()  # Reinit MD activity
 
         output = np.zeros((n_time, target.shape[-1]))
+        self.pfc_output_t = np.zeros(n_time,self.pfc.Nneur)
 
         for i in range(n_time):
             input_t = input[i]
@@ -471,18 +458,38 @@ class FullNetwork():
 
             input2pfc = self.sensory2pfc(input_t)
             if self.MDeffect:
+                self.md_output = self.md(pfc_output)
+
                 self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
                 rec_inp = np.dot(self.pfc.Jrec, self.pfc.activity)
-                md2pfc = (self.md.MD2PFCMult / np.round(self.md.Num_MD / 2))
-                md2pfc = md2pfc * rec_inp  # minmax 5
-                md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /
-                                                            2),
-                       self.md_output) 
+                md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / 2))
+                md2pfc = md2pfc_weights * rec_inp  
+                md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /2), self.md_output) 
                 pfc_output = self.pfc(input2pfc, md2pfc)
-                self.md_output = self.md(pfc_output)
+                self.pfc_output_t[i,:] = pfc_output
             else:
                 pfc_output = self.pfc(input2pfc)
+                self.pfc_output_t[i,:] = pfc_output
             output[i] = self.pfc2out(pfc_output, target_t)
+            
+#        for i in range(n_time):
+#            input_t = input[i]
+#            target_t = target[i]
+#
+#            input2pfc = self.sensory2pfc(input_t)
+#            if self.MDeffect:
+#                self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
+#                rec_inp = np.dot(self.pfc.Jrec, self.pfc.activity)
+#                md2pfc = (self.md.MD2PFCMult / np.round(self.md.Num_MD / 2))
+#                md2pfc = md2pfc * rec_inp  # minmax 5
+#                md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /2), self.md_output) 
+#                pfc_output = self.pfc(input2pfc, md2pfc)
+#                self.md_output = self.md(pfc_output)
+#                if i==50:
+#                    self.pfc_output_t = pfc_output
+#            else:
+#                pfc_output = self.pfc(input2pfc)
+#            output[i] = self.pfc2out(pfc_output, target_t)
 
         return output
 
@@ -631,15 +638,15 @@ class TempNetwork():
         assert len(target.shape) == 2
         assert input.shape[0] == target.shape[0]
 
-
-n_time = 200
-n_neuron = 1000
-n_neuron_per_cue = 200
-Num_MD = 20
-num_active = 10 # num MD active per context
-n_output = 2
-pfc_md = TempNetwork(n_neuron,n_neuron_per_cue,Num_MD,num_active)
-input = np.random.randn(n_time, 4)
-target = np.random.randn(n_time, n_output)
-output = pfc_md(input, target)
-print(output.shape)
+#
+#n_time = 200
+#n_neuron = 1000
+#n_neuron_per_cue = 200
+#Num_MD = 20
+#num_active = 10 # num MD active per context
+#n_output = 2
+#pfc_md = TempNetwork(n_neuron,n_neuron_per_cue,Num_MD,num_active)
+#input = np.random.randn(n_time, 4)
+#target = np.random.randn(n_time, n_output)
+#output = pfc_md(input, target)
+#print(output.shape)

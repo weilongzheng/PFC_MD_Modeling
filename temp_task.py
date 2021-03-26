@@ -3,20 +3,20 @@ import numpy as np
 
 
 class RihkyeTask():
-    def __init__(self, Ntrain, Ntasks, blockTrain):
-        self.Ntasks = Ntasks
+    def __init__(self, Ntrain, Nextra, Ncontexts, inpsPerConext, blockTrain):
+        self.Ncontexts = Ncontexts
         self.blockTrain = blockTrain
-        self.inpsPerTask = 2
+        self.inpsPerConext = inpsPerConext
         self.tsteps = 200
         self.cuesteps = 100
-        self.Ncues = self.Ntasks * self.inpsPerTask
+        self.Ncues = self.Ncontexts * self.inpsPerConext
 
         if self.blockTrain:
-            self.Nextra = 200            # add cycles to show if block1
+            self.Nextra = Nextra            # add cycles to show if block1
             # learning is remembered
-            Ntrain = Ntrain*self.Ntasks + self.Nextra
+            Ntrain = Ntrain*self.Ncontexts + self.Nextra
         else:
-            Ntrain *= self.Ntasks
+            Ntrain *= self.Ncontexts
 
         self.Ntrain = Ntrain
 
@@ -33,7 +33,7 @@ class RihkyeTask():
         # if blockTrain,
         #  first half of trials is context1, second half is context2
         if self.blockTrain:
-            n_switch = (self.Ntrain - self.Nextra) // self.Ntasks
+            n_switch = (self.Ntrain - self.Nextra) // self.Ncontexts
             taski = self.traini // (n_switch)
             # last block is just the first context again
             if self.traini >= self.Ntrain - self.Nextra:
@@ -44,8 +44,8 @@ class RihkyeTask():
         cues_order = self.get_cues_order(cueList)
         num_trial = cues_order.shape[0]
 
-        inputs = np.zeros((self.tsteps * 2, 4))
-        targets = np.zeros((self.tsteps * 2, 2))
+        inputs = np.zeros((self.tsteps * num_trial, self.Ncues))
+        targets = np.zeros((self.tsteps * num_trial, 2))
         t_start = 0
         for taski, cuei in cues_order:
             cue, target = \
@@ -79,10 +79,10 @@ class RihkyeTask():
     def get_cue_list(self,taski=None):
         if taski is not None:
             # (taski,cuei) combinations for one given taski
-            cueList = np.dstack(( np.repeat(taski,self.inpsPerTask),
-                                    np.arange(self.inpsPerTask) ))
+            cueList = np.dstack(( np.repeat(taski,self.inpsPerConext),
+                                    np.arange(self.inpsPerConext) ))
         else:
             # every possible (taski,cuei) combination
-            cueList = np.dstack(( np.repeat(np.arange(self.Ntasks),self.inpsPerTask),
-                                    np.tile(np.arange(self.inpsPerTask),self.Ntasks) ))
+            cueList = np.dstack(( np.repeat(np.arange(self.Ncontexts),self.inpsPerConext),
+                                    np.tile(np.arange(self.inpsPerConext),self.Ncontexts) ))
         return cueList[0]
