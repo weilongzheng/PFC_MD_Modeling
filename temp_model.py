@@ -423,7 +423,7 @@ class FullNetwork():
             n_cues=4,
             n_output=Num_PFC)
         self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
-        self.pfc_output_t = np.zeros()
+        self.pfc_output_t = np.array([])
         
         self.MDeffect = MDeffect
         if self.MDeffect:
@@ -432,6 +432,7 @@ class FullNetwork():
             self.md_output = np.zeros(Num_MD)
             index = np.random.permutation(Num_MD)
             self.md_output[index[:num_active]] = 1
+            self.md_output_t = np.array([])
             #import pdb;pdb.set_trace()
 
     def __call__(self, input, target, *args, **kwargs):
@@ -443,6 +444,7 @@ class FullNetwork():
         """
         self._check_shape(input, target)
         n_time = input.shape[0]
+        tsteps = 200
 
         self.pfc.init_activity()  # Reinit PFC activity
         pfc_output = self.pfc.activity
@@ -450,11 +452,19 @@ class FullNetwork():
             self.md.init_activity()  # Reinit MD activity
 
         output = np.zeros((n_time, target.shape[-1]))
-        self.pfc_output_t = np.zeros(n_time,self.pfc.Nneur)
+        self.pfc_output_t *= 0
+        if self.MDeffect:
+            self.md_output_t *= 0
 
         for i in range(n_time):
             input_t = input[i]
             target_t = target[i]
+            
+            if i % tsteps == 0: # Reinit activity for every trial
+                self.pfc.init_activity()  # Reinit PFC activity
+                pfc_output = self.pfc.activity
+                if self.MDeffect:
+                    self.md.init_activity()  # Reinit MD activity
 
             input2pfc = self.sensory2pfc(input_t)
             if self.MDeffect:
@@ -466,10 +476,22 @@ class FullNetwork():
                 md2pfc = md2pfc_weights * rec_inp  
                 md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /2), self.md_output) 
                 pfc_output = self.pfc(input2pfc, md2pfc)
-                self.pfc_output_t[i,:] = pfc_output
+#                pfc_output = pfc_output.reshape((1,pfc_output.shape[0]))
+#                md_output = self.md_output
+#                md_output = md_output.reshape((1,md_output.shape[0]))
+                if i==0:
+                    self.pfc_output_t = pfc_output.reshape((1,pfc_output.shape[0]))
+                    self.md_output_t = self.md_output.reshape((1,self.md_output.shape[0]))
+                else:
+                    #import pdb;pdb.set_trace() 
+                    self.pfc_output_t = np.concatenate((self.pfc_output_t, pfc_output.reshape((1,pfc_output.shape[0]))),axis=0)
+                    self.md_output_t = np.concatenate((self.md_output_t, self.md_output.reshape((1,self.md_output.shape[0]))),axis=0)
             else:
                 pfc_output = self.pfc(input2pfc)
-                self.pfc_output_t[i,:] = pfc_output
+                if i==0:
+                    self.pfc_output_t = pfc_output.reshape((1,pfc_output.shape[0]))
+                else:
+                    self.pfc_output_t = np.concatenate((self.pfc_output_t, pfc_output.reshape((1,pfc_output.shape[0]))),axis=0)
             output[i] = self.pfc2out(pfc_output, target_t)
             
 #        for i in range(n_time):

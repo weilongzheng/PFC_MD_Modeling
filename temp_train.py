@@ -33,7 +33,7 @@ MDpreTraces = np.zeros(shape=(num_cycle_train,n_neuron))
 MDouts_all = np.zeros(shape=(num_cycle_train,Num_MD))
 
 for i in range(num_cycle_train):
-    print('training'+dtr(i))
+    print('training'+str(i))
     input, target = dataset()
     output = model(input, target)
     mse = np.mean((output - target)**2)*Ncontexts # one cycle has Ncontexts
@@ -55,26 +55,30 @@ with open(filename / file_training, 'wb') as f:
 ## Testing
 Ntest = 500
 Nextra = 0
+tsteps = 200
 test_set = RihkyeTask(Ntrain=Ntest, Nextra = Nextra, Ncontexts=Ncontexts, inpsPerConext = inpsPerConext, blockTrain=False)
 
 log = defaultdict(list)
 
-num_cycle_test = Ntest*Ncontexts+Nextra
+num_cycle_test = Ntest+Nextra
 mses = list()
-MDpreTraces = np.zeros(shape=(num_cycle_test,n_neuron))
-MDouts_all = np.zeros(shape=(num_cycle_test,Num_MD))
-PFCouts_all = np.zeros(shape=(num_cycle_test,200,n_neuron))
+cues_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps, inpsPerConext*Ncontexts))
+MDouts_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps,Num_MD))
+PFCouts_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps,n_neuron))
 for i in range(num_cycle_test):
     print('testing'+str(i))
-    input, target = dataset()
+    input, target = test_set()
     output = model(input, target)
-    PFCouts_all[i,:,:] = model.pfc_output_t
-    mse = np.mean((output - target)**2)*4 # one cycle has 4 cues
-    log['mse'].append(mse)
-
-    MDouts_all[i,:] = model.md_output
-    MDpreTraces[i,:] = model.md.MDpreTrace
     
+    tstart = 0
+    for itrial in range(inpsPerConext*Ncontexts): 
+        PFCouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.pfc_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+        MDouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+        cues_all[i*inpsPerConext*Ncontexts+tstart,:,:] = input[tstart*tsteps:(tstart+1)*tsteps,:]
+        tstart += 1
+    #import pdb;pdb.set_trace()    
+    mse = np.mean((output - target)**2)*inpsPerConext*Ncontexts # one cycle has 4 cues
+    log['mse'].append(mse)
 
 log['wPFC2MD'] = model.md.wPFC2MD
 log['wMD2PFC'] = model.md.wMD2PFC
@@ -82,7 +86,7 @@ log['wMD2PFCMult'] = model.md.wMD2PFCMult
     
 filename = Path('files') #/ 'tmp'
 os.makedirs(filename, exist_ok=True)
-file_training = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
+file_training = 'test_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
 with open(filename / file_training, 'wb') as f:
-    pickle.dump(log, f)
+    pickle.dump({'log':log,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all,'cues_all':cues_all}, f, protocol = 4)
 
