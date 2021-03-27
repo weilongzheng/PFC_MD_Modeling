@@ -37,13 +37,17 @@ for i in range(num_cycle_train):
     input, target = dataset()
     output = model(input, target)
     mse = np.mean((output - target)**2)*Ncontexts # one cycle has Ncontexts
+#    mse = np.mean((output[:200] - target[:200])**2)
+#    mse += np.mean((output[200:] - target[200:])**2)
     log['mse'].append(mse)
-    MDouts_all[i,:] = model.md_output
-    MDpreTraces[i,:] = model.md.MDpreTrace
+    if  MDeffect == True:
+        MDouts_all[i,:] = model.md_output
+        MDpreTraces[i,:] = model.md.MDpreTrace
     
-log['wPFC2MD'] = model.md.wPFC2MD
-log['wMD2PFC'] = model.md.wMD2PFC
-log['wMD2PFCMult'] = model.md.wMD2PFCMult
+if  MDeffect == True:  
+    log['wPFC2MD'] = model.md.wPFC2MD
+    log['wMD2PFC'] = model.md.wMD2PFC
+    log['wMD2PFCMult'] = model.md.wMD2PFCMult
 
 filename = Path('files') #/ 'tmp'
 os.makedirs(filename, exist_ok=True)

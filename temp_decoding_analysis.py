@@ -35,7 +35,7 @@ if __name__ == '__main__':
     acc_context_md_all = np.zeros([len(Tau_times),round(tsteps/2)])
     
     for i,itau in enumerate(Tau_times):
-        pickle_in = open('files/train_numMD10_numContext2_MDTrue_R5.pkl','rb')
+        pickle_in = open('files/test_numMD10_numContext2_MDTrue_R5.pkl','rb')
         data = pickle.load(pickle_in)
         
         cues_all = data['cues_all']
