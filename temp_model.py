@@ -179,6 +179,7 @@ class PFC():
         self.activity = rout
         return rout
 
+    # TODO: is this a bug?
     def update_weights(self, input, activity, output):
         self.trace = self.trace + activity
         w_input = self.w_input + input * self.trace
@@ -258,8 +259,8 @@ class MD():
         """Run the network one step
 
         For now, consider this network receiving input from PFC,
-        input stand for activity of PFC neurons
-        output stand for output current to MD neurons
+        input stands for activity of PFC neurons
+        output stands for output current to MD neurons
 
         Args:
             input: array (n_input,)
@@ -330,6 +331,8 @@ class MD():
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
 
     def winner_take_all(self, MDinp):
+        '''Winner take all on the MD
+        '''
 
         # Thresholding
         MDout = np.zeros(self.Num_MD)
@@ -342,7 +345,6 @@ class MD():
         index_neg = np.where(MDinp < MDthreshold)
         MDout[index_pos] = 1
         MDout[index_neg] = 0
-        # winner take all on the MD
         return MDout
 
 class OutputLayer():
@@ -378,7 +380,7 @@ class OutputLayer():
 
 class SensoryInputLayer():
     def __init__(self, n_sub, n_cues, n_output):
-        # Hard-coded for now
+        # TODO: Hard-coded for now
         self.Ncues = n_cues
         self.Nsub = n_sub
         self.Nneur = n_output
@@ -430,7 +432,7 @@ class FullNetwork():
                          dt=dt)
             self.md_output = np.zeros(Num_MD)
             index = np.random.permutation(Num_MD)
-            self.md_output[index[:num_active]] = 1
+            self.md_output[index[:num_active]] = 1 # randomly set part of md_output to 1
             self.md_output_t = np.array([])
             #import pdb;pdb.set_trace()
 
