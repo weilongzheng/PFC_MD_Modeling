@@ -15,7 +15,7 @@ except ImportError:
 class PFCMD():
     def __init__(self, PFC_G, PFC_G_off, learning_rate,
                  noiseSD, tauError, plotFigs=True, saveData=False):
-        self.RNGSEED = 5  # 5
+        self.RNGSEED = 5  # random seed: 5
         np.random.seed([self.RNGSEED])
 
         self.Nsub = 200  # number of neurons per cue
@@ -40,11 +40,10 @@ class PFCMD():
         self.tau_times = 4  # 4
         self.Hebb_learning_rate = 1e-4  # 1e-4
         self.Num_MD = 6
-        self.learning_rate = learning_rate  # too high a learning rate makes the output weights
-        #  change too much within a trial / training cycle,
-        #  then the output interference depends
-        #  on the order of cues within a cycle
-        # typical values is 1e-5, can vary from 1e-4 to 1e-6
+        self.learning_rate = learning_rate  # if the learning rate is too large, 
+        # output weights can change too much within a trial / training cycle,  
+        # then the output interference depends on the order of cues within a cycle
+        # typical value is 1e-5, and can vary from 1e-4 to 1e-6
         self.tauError = tauError  # smooth the error a bit, so that weights don't fluctuate
 
         self.MDeffect = True  # True                # whether to have MD present or not
@@ -53,9 +52,9 @@ class PFCMD():
         # self.MDEffectType = 'divadd'        # MD divides from across tasks and adds within task
         # self.MDEffectType = 'divmult'       # MD divides from across tasks and multiplies within task
 
-        self.dirConn = False  # direct connections from cue to output, also learned
+        self.dirConn = False  # direct connections from cue to output, also learnable
         self.outExternal = True  # True: output neurons are external to the PFC
-        #  (i.e. weights to and fro (outFB) are not MD modulated)
+        #  (i.e. weights to and from (outFB) are not MD modulated)
         # False: last self.Nout neurons of PFC are output neurons
         self.outFB = False  # if outExternal, then whether feedback from output to reservoir
         self.noisePresent = False  # False           # add noise to all reservoir units
@@ -63,7 +62,7 @@ class PFCMD():
         self.positiveRates = True  # whether to clip rates to be only positive, G must also change
 
         self.MDlearn = True  # False                # whether MD should learn
-        #  possibly to make task representations disjoint (not just orthogonal)
+        # TODO: possibly to make task representations disjoint (not just orthogonal)
 
         # self.MDstrength = None              # if None, use wPFC2MD, if not None as below, just use context directly
         # self.MDstrength = 0.                # a parameter that controls how much the MD disjoints task representations.
@@ -143,17 +142,17 @@ class PFC():
         # make mean input to each row zero,
         #  helps to avoid saturation (both sides) for positive-only rates.
         #  see Nicola & Clopath 2016
+        self.Jrec -= np.mean(self.Jrec, axis=1)[:, np.newaxis]
         # mean of rows i.e. across columns (axis 1),
         #  then expand with np.newaxis
         #   so that numpy's broadcast works on rows not columns
-        self.Jrec -= np.mean(self.Jrec, axis=1)[:, np.newaxis]
 
     def __call__(self, input, input_x=None, *args, **kwargs):
         """Run the network one step
 
         For now, consider this network receiving input from PFC,
-        input stand for activity of PFC neurons
-        output stand for output current to PFC neurons
+        input stands for activity of PFC neurons
+        output stands for output current to PFC neurons
 
         Args:
             input: array (n_neuron,)
@@ -168,7 +167,7 @@ class PFC():
             input_x = np.zeros_like(input)
             
         xadd = np.dot(self.Jrec, self.activity)
-        xadd += input_x+input # MD inputs
+        xadd += input_x + input # MD inputs
         
         self.xinp += self.dt / self.tau * (-self.xinp + xadd)
 
