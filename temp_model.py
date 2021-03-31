@@ -110,12 +110,12 @@ class PFCMD():
                                        self.tsteps, self.Nneur))
 
 class PFC():
-    def __init__(self, n_neuron, n_neuron_per_cue, positiveRates=True):
+    def __init__(self, n_neuron, n_neuron_per_cue, positiveRates=True, MDeffect=True):
         self.Nneur = n_neuron
         self.Nsub = n_neuron_per_cue
         self.useMult = True
         self.noisePresent = False
-        self.noiseSD = 1e-1#1e-3
+        self.noiseSD = 1e-3#1e-3
         self.tau = 0.02
         self.dt = 0.001
                     
@@ -128,6 +128,10 @@ class PFC():
             self.activation = lambda inp: np.tanh(inp)
 
         self.G = 0.75  # determines also the cross-task recurrence
+        # With MDeffect = True and MDstrength = 0, i.e. MD inactivated
+        #  PFC recurrence is (1+PFC_G_off)*Gbase = (1+1.5)*0.75 = 1.875
+        # So with MDeffect = False, ensure the same PFC recurrence for the pure reservoir
+        if not MDeffect: self.G = 1.875
 
         self.init_activity()
         self.init_weights()
@@ -418,7 +422,7 @@ class FullNetwork():
     def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active,
                  MDeffect=True):
         dt = 0.001
-        self.pfc = PFC(Num_PFC, n_neuron_per_cue)
+        self.pfc = PFC(Num_PFC, n_neuron_per_cue, MDeffect=MDeffect)
         self.sensory2pfc = SensoryInputLayer(
             n_sub=n_neuron_per_cue,
             n_cues=4,
@@ -461,13 +465,14 @@ class FullNetwork():
             input_t = input[i]
             target_t = target[i]
             
-            if i % tsteps == 0: # Reinit activity for every trial
+            if i % tsteps == 0: # Reinit activity for each trial
                 self.pfc.init_activity()  # Reinit PFC activity
                 pfc_output = self.pfc.activity
                 if self.MDeffect:
                     self.md.init_activity()  # Reinit MD activity
 
             input2pfc = self.sensory2pfc(input_t)
+            #import pdb;pdb.set_trace() 
             if self.MDeffect:
                 self.md_output = self.md(pfc_output)
 
@@ -484,7 +489,7 @@ class FullNetwork():
                     self.pfc_output_t = pfc_output.reshape((1,pfc_output.shape[0]))
                     self.md_output_t = self.md_output.reshape((1,self.md_output.shape[0]))
                 else:
-                    #import pdb;pdb.set_trace() 
+                    
                     self.pfc_output_t = np.concatenate((self.pfc_output_t, pfc_output.reshape((1,pfc_output.shape[0]))),axis=0)
                     self.md_output_t = np.concatenate((self.md_output_t, self.md_output.reshape((1,self.md_output.shape[0]))),axis=0)
             else:
