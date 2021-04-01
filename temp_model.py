@@ -183,7 +183,6 @@ class PFC():
         self.activity = rout
         return rout
 
-    # TODO: is this a bug?
     def update_weights(self, input, activity, output):
         self.trace = self.trace + activity
         w_input = self.w_input + input * self.trace
