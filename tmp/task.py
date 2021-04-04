@@ -10,7 +10,7 @@ class RihkyeTask():
             rule: list of int, rule corresponding to one cue in one cueing context
             blocklen: list of int, trainlen of each block
             block_cueingcontext: list of int, cueing context trained in each block
-            tsteps: int, length of a trial, equals to cuesteps + delaystep
+            tsteps: int, length of a trial, equals to cuesteps + delaysteps
             cuesteps: int, length of showing cues
             batch_size: int
         '''
