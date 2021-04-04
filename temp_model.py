@@ -730,7 +730,7 @@ class LSTM_MD(nn.Module):
             target_t = target[t, ...].unsqueeze(dim=0)
             
             # Reinit MD activity for each trial
-            if t % tsteps == 0: 
+            if t % self.tsteps == 0: 
                 self.md.init_activity()  # Reinit MD activity
  
             # TODO: integrate MD layer into LSTM_MD
