@@ -677,3 +677,72 @@ class TempNetwork():
 #target = np.random.randn(n_time, n_output)
 #output = pfc_md(input, target)
 #print(output.shape)
+
+
+class LSTM_MD(nn.Module):
+    """LSTM with a MD layer
+    Parameters:
+    input_size: int, LSTM input size
+    hidden_size: int, LSTM hidden size
+    output_size: int, output layer size
+    num_layers: int, number of LSTM layers
+    Num_MD: int, number of neurons in MD layer
+    num_active: int, number of active neurons in MD layer (refer to top K winner-take-all)
+    tsteps: int, length of a trial, equals to cuesteps + delaysteps
+    """
+
+    def __init__(self, input_size, hidden_size, output_size, num_layers, Num_MD, num_active, tsteps):
+        super().__init__()
+
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.output_size = output_size
+        self.num_layers = num_layers
+        self.tsteps = tsteps
+        
+        dt = 0.001 # Hard-coded for now
+
+        # LSTM layer
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers)
+
+        # MD layer
+        self.md = MD(Nneur=hidden_size, Num_MD=Num_MD, num_active=num_active, dt=dt)
+        #  initialize md_output
+        self.md_output = np.zeros(Num_MD)
+        index = np.random.permutation(Num_MD)
+        self.md_output[index[:num_active]] = 1 # randomly set part of md_output to 1
+        self.md_output_t = np.array([])
+
+        # Output layer
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, input, target):
+
+        n_time = input.shape[0]
+        batch_size = input.shape[1]
+
+        LSTM_output = torch.zeros((n_time, batch_size, self.hidden_size))
+        LSTM_hidden_t = torch.zeros((self.num_layers, batch_size, self.hidden_size))
+        LSTM_cell_t = torch.zeros((self.num_layers, batch_size, self.hidden_size))
+
+        for t in range(n_time):
+            input_t = input[t, ...].unsqueeze(dim=0)
+            target_t = target[t, ...].unsqueeze(dim=0)
+            
+            # Reinit MD activity for each trial
+            if t % tsteps == 0: 
+                self.md.init_activity()  # Reinit MD activity
+ 
+            # TODO: integrate MD layer into LSTM_MD
+            #self.md_output = self.md(LSTM_hidden_t)
+            #self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
+            #rec_inp = np.dot(self.pfc.Jrec, self.pfc.activity)
+            #md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / 2))
+            #md2pfc = md2pfc_weights * rec_inp  
+            #md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /2), self.md_output)
+            
+            LSTM_output[t, :, :], (LSTM_hidden_t, LSTM_cell_t) = self.lstm(input_t, (LSTM_hidden_t, LSTM_cell_t))
+
+        model_out = self.fc(LSTM_output)
+
+        return model_out
