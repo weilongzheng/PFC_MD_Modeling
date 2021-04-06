@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 import matplotlib.pyplot as plt
 
-from temp_task import RihkyeTask
+from temp_task import RikhyeTask
 from temp_model import FullNetwork
 
 RNGSEED = 5
@@ -15,7 +15,7 @@ Ntrain = 500             # number of training cycles for each context
 Nextra = 200            # add cycles to show if block1
 Ncontexts = 2
 inpsPerConext = 2
-dataset = RihkyeTask(Ntrain=Ntrain, Nextra = Nextra, Ncontexts=Ncontexts, inpsPerConext = inpsPerConext, blockTrain=True)
+dataset = RikhyeTask(Ntrain=Ntrain, Nextra = Nextra, Ncontexts=Ncontexts, inpsPerConext = inpsPerConext, blockTrain=True)
 
 n_neuron = 1000
 n_neuron_per_cue = 200
