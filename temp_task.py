@@ -90,7 +90,7 @@ class RikhyeTask():
 # Zhongxuan version
 class RikhyeTaskBatch():
     def __init__(self, num_cueingcontext, num_cue, num_rule, rule, blocklen, block_cueingcontext, tsteps, cuesteps, batch_size):
-        '''Generate Rihkye task dataset
+        '''Generate Rikhye task dataset
         Parameters:
             num_cueingcontext: int, number of cueing contexts
             num_cue: int, number of cues in each cueing contexts
