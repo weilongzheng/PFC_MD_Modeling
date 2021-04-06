@@ -409,7 +409,8 @@ class SensoryInputLayer():
         output = np.dot(self.wIn, input)
 
         if self._use_torch:
-            output = torch.from_numpy(output).astype(torch.float)
+            #output = torch.from_numpy(output, dtype=torch.float).astype(torch.float)
+            output = torch.from_numpy(output).type(torch.float)
 
         return output
 
@@ -604,18 +605,112 @@ class PytorchPFC(nn.Module):
 #print(output.shape)
 
 
-class TempNetwork():
-    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active,
-                 MDeffect=True):
+# class TempNetwork():
+#     def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active,
+#                  MDeffect=True):
+#         dt = 0.001
+#         self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, MDeffect=MDeffect)
+#         self.sensory2pfc = SensoryInputLayer(
+#             n_sub=n_neuron_per_cue,
+#             n_cues=4,
+#             n_output=Num_PFC)
+#         self.sensory2pfc.torch(use_torch=True)
+#         self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
+#         self.pfc_output_t = np.array([])
+
+#         self.MDeffect = MDeffect
+#         if self.MDeffect:
+#             self.md = MD(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active,
+#                          dt=dt)
+#             self.md_output = np.zeros(Num_MD)
+#             index = np.random.permutation(Num_MD)
+#             self.md_output[index[:num_active]] = 1 # randomly set part of md_output to 1
+#             self.md_output_t = np.array([])
+
+#     def __call__(self, input, target, *args, **kwargs):
+#         """
+#         Args:
+#              input: (n_time, n_input)
+#              target: (n_time, n_output)
+
+#         """
+#         self._check_shape(input, target)
+#         n_time = input.shape[0]
+#         tsteps = 200
+
+#         self.pfc.init_activity()  # Reinit PFC activity
+#         pfc_output = self.pfc.activity.numpy()
+#         if self.MDeffect:
+#             self.md.init_activity()  # Reinit MD activity
+
+#         output = np.zeros((n_time, target.shape[-1]))
+#         self.pfc_output_t *= 0
+#         if self.MDeffect:
+#             self.md_output_t *= 0
+
+#         for i in range(n_time):
+#             input_t = input[i]
+#             target_t = target[i]
+            
+#             if i % tsteps == 0: # Reinit activity for each trial
+#                 self.pfc.init_activity()  # Reinit PFC activity
+#                 pfc_output = self.pfc.activity.numpy()
+#                 if self.MDeffect:
+#                     self.md.init_activity()  # Reinit MD activity
+
+#             input2pfc = self.sensory2pfc(input_t)
+#             #import pdb;pdb.set_trace() 
+#             if self.MDeffect:
+#                 self.md_output = self.md(pfc_output)
+
+#                 self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
+#                 rec_inp = np.dot(self.pfc.Jrec, self.pfc.activity)
+#                 md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / 2))
+#                 md2pfc = md2pfc_weights * rec_inp  
+#                 md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /2), self.md_output) 
+#                 pfc_output = self.pfc(torch.from_numpy(input2pfc),
+#                                       torch.from_numpy(md2pfc)).numpy()
+
+#                 if i==0:
+#                     self.pfc_output_t = pfc_output.reshape((1,pfc_output.shape[0]))
+#                     self.md_output_t = self.md_output.reshape((1,self.md_output.shape[0]))
+#                 else:
+                    
+#                     self.pfc_output_t = np.concatenate((self.pfc_output_t, pfc_output.reshape((1,pfc_output.shape[0]))),axis=0)
+#                     self.md_output_t = np.concatenate((self.md_output_t, self.md_output.reshape((1,self.md_output.shape[0]))),axis=0)
+#             else:
+#                 pfc_output = self.pfc(torch.from_numpy(input2pfc)).numpy()
+#                 if i==0:
+#                     self.pfc_output_t = pfc_output.reshape((1,pfc_output.shape[0]))
+#                 else:
+#                     self.pfc_output_t = np.concatenate((self.pfc_output_t, pfc_output.reshape((1,pfc_output.shape[0]))),axis=0)
+#             output[i] = self.pfc2out(pfc_output, target_t)
+
+#         return output
+
+#     def _check_shape(self, input, target):
+#         assert len(input.shape) == 2
+#         assert len(target.shape) == 2
+#         assert input.shape[0] == target.shape[0]
+
+
+class TempNetwork(nn.Module):
+    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, MDeffect=True):
+        super().__init__()
+
         dt = 0.001
-        self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, MDeffect=MDeffect)
+
         self.sensory2pfc = SensoryInputLayer(
             n_sub=n_neuron_per_cue,
             n_cues=4,
             n_output=Num_PFC)
         self.sensory2pfc.torch(use_torch=True)
-        self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
-        self.pfc_output_t = np.array([])
+
+        self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, MDeffect=MDeffect)
+
+        #self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
+        self.pfc2out = nn.Linear(Num_PFC, num_output)
+        #self.pfc_output_t = np.array([])
 
         self.MDeffect = MDeffect
         if self.MDeffect:
@@ -625,15 +720,18 @@ class TempNetwork():
             index = np.random.permutation(Num_MD)
             self.md_output[index[:num_active]] = 1 # randomly set part of md_output to 1
             self.md_output_t = np.array([])
+        
 
-    def __call__(self, input, target, *args, **kwargs):
+        self.num_output = num_output
+
+    def forward(self, input, target, *args, **kwargs):
         """
         Args:
              input: (n_time, n_input)
              target: (n_time, n_output)
 
         """
-        self._check_shape(input, target)
+        #self._check_shape(input, target)
         n_time = input.shape[0]
         tsteps = 200
 
@@ -642,8 +740,9 @@ class TempNetwork():
         if self.MDeffect:
             self.md.init_activity()  # Reinit MD activity
 
-        output = np.zeros((n_time, target.shape[-1]))
-        self.pfc_output_t *= 0
+        #output = torch.zeros((n_time, target.shape[-1]))
+        #self.pfc_output_t *= 0
+        self.pfc_outputs = torch.zeros((n_time, self.pfc.Nneur))
         if self.MDeffect:
             self.md_output_t *= 0
 
@@ -664,31 +763,29 @@ class TempNetwork():
 
                 self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
                 rec_inp = np.dot(self.pfc.Jrec, self.pfc.activity)
-                md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / 2))
+                md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.num_output))
                 md2pfc = md2pfc_weights * rec_inp  
-                md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /2), self.md_output) 
-                pfc_output = self.pfc(torch.from_numpy(input2pfc),
-                                      torch.from_numpy(md2pfc)).numpy()
+                md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.num_output), self.md_output) 
+                #pfc_output = self.pfc(torch.from_numpy(input2pfc), torch.from_numpy(md2pfc)).numpy()
+                pfc_output = self.pfc(input2pfc, torch.from_numpy(md2pfc)).numpy()
+                pfc_output_t = pfc_output.reshape((1, pfc_output.shape[0]))
+                self.pfc_outputs[i, :] = torch.from_numpy(pfc_output_t)
 
                 if i==0:
-                    self.pfc_output_t = pfc_output.reshape((1,pfc_output.shape[0]))
                     self.md_output_t = self.md_output.reshape((1,self.md_output.shape[0]))
                 else:
-                    
-                    self.pfc_output_t = np.concatenate((self.pfc_output_t, pfc_output.reshape((1,pfc_output.shape[0]))),axis=0)
                     self.md_output_t = np.concatenate((self.md_output_t, self.md_output.reshape((1,self.md_output.shape[0]))),axis=0)
             else:
-                pfc_output = self.pfc(torch.from_numpy(input2pfc)).numpy()
-                if i==0:
-                    self.pfc_output_t = pfc_output.reshape((1,pfc_output.shape[0]))
-                else:
-                    self.pfc_output_t = np.concatenate((self.pfc_output_t, pfc_output.reshape((1,pfc_output.shape[0]))),axis=0)
-            output[i] = self.pfc2out(pfc_output, target_t)
+                pfc_output = self.pfc(input2pfc).numpy()
+                pfc_output_t = pfc_output.reshape((1, pfc_output.shape[0]))
+                self.pfc_outputs[i, :] = torch.from_numpy(pfc_output_t)
+            
+            outputs = self.pfc2out(self.pfc_outputs)
 
-        return output
+        return outputs
 
     def _check_shape(self, input, target):
-        assert len(input.shape) == 2
+        assert len(input.shape) == self.num_output
         assert len(target.shape) == 2
         assert input.shape[0] == target.shape[0]
 

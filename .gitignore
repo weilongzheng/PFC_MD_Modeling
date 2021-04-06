@@ -8,7 +8,7 @@ sbatch/
 slurm*
 temp.py
 tmp/models/
-tmp/ipynb_checkpoints
+tmp/.ipynb_checkpoints
 
 
 # Byte-compiled / optimized / DLL files
