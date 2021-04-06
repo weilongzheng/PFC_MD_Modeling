@@ -643,7 +643,6 @@ class TempNetwork():
                 rec_inp = np.dot(self.pfc.Jrec.numpy(),
                                  self.pfc.activity.numpy())
 
-
                 md2pfc = (self.md.MD2PFCMult / np.round(self.md.Num_MD / 2))
                 md2pfc = md2pfc * rec_inp  # minmax 5
                 md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /
