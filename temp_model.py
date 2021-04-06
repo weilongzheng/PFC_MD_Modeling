@@ -613,6 +613,7 @@ class TempNetwork():
             n_sub=n_neuron_per_cue,
             n_cues=4,
             n_output=Num_PFC)
+        self.sensory2pfc.torch(use_torch=True)
         self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
         self.pfc_output_t = np.array([])
 
