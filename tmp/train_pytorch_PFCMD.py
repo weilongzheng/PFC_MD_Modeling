@@ -20,8 +20,8 @@ import matplotlib.pyplot as plt
 RNGSEED = 5 # set random seed
 np.random.seed([RNGSEED])
 
-Ntrain = 100            # number of training cycles for each context
-Nextra = 100            # add cycles to show if block1
+Ntrain = 10            # number of training cycles for each context
+Nextra = 10            # add cycles to show if block1
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
@@ -46,11 +46,13 @@ for name, param in model.named_parameters():
     training_params.append(param)
 
 training_params.append(model.pfc.Jrec)
-Jrec_init = model.pfc.Jrec.detach().numpy()
+Jrec_init = torch.zeros((n_neuron,n_neuron))
+Jrec_init = model.pfc.Jrec[:]#.detach().numpy()
 print('pfc.Jrec')
 print('\n')
+print(Jrec_init)
 optimizer = torch.optim.Adam(training_params, lr=1e-3)
-#import pdb;pdb.set_trace()
+import pdb;pdb.set_trace()
 
 total_step = Ntrain*Ncontexts+Nextra
 print_step = 10
@@ -90,6 +92,7 @@ for i in range(total_step):
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # normalization
     optimizer.step()
+    print(model.pfc.Jrec)
     #import pdb;pdb.set_trace()
     # print statistics
     mse = loss.item()
@@ -160,7 +163,7 @@ for i,color in enumerate(colors, start=1):
     plt.subplot(number,1,i)
     plt.plot(wPFC2MD[i-1,:],color=color)
 plt.suptitle('wPFC2MD')
-plt.tight_layout()
+#plt.tight_layout()
 
 wMD2PFC = log['wMD2PFC']
 number = Num_MD
@@ -171,7 +174,7 @@ for i,color in enumerate(colors, start=1):
     plt.subplot(number,1,i)
     plt.plot(wMD2PFC[:,i-1],color=color)
 plt.suptitle('wMD2PFC')
-plt.tight_layout()
+#plt.tight_layout()
 
 ## plot pfc recurrent weights before and after training
 #fig, axes = plt.subplots(nrows=1, ncols=2)
