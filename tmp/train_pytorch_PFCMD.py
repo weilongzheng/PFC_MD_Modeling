@@ -174,20 +174,20 @@ plt.suptitle('wMD2PFC')
 plt.tight_layout()
 
 ## plot pfc recurrent weights before and after training
-fig, axes = plt.subplots(nrows=1, ncols=2)
-Jrec = model.pfc.Jrec.detach().numpy()
-Jrec_init = Jrec_init
-# find minimum of minima & maximum of maxima
-minmin = np.min([np.min(Jrec_init), np.min(Jrec)])
-maxmax = np.max([np.max(Jrec_init), np.max(Jrec)])
-num_show = 200
-im1 = axes[0].imshow(Jrec_init[:num_show,:num_show], vmin=minmin, vmax=maxmax,
-                     extent=(0,num_show,0,num_show), cmap='viridis')
-im2 = axes[1].imshow(Jrec[:num_show,:num_show], vmin=minmin, vmax=maxmax,
-                     extent=(0,num_show,0,num_show), cmap='viridis')
-
-# add space for colour bar
-fig.subplots_adjust(right=0.85)
-cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
-fig.colorbar(im2, cax=cbar_ax)
+#fig, axes = plt.subplots(nrows=1, ncols=2)
+#Jrec = model.pfc.Jrec.detach().numpy()
+#Jrec_init = Jrec_init
+## find minimum of minima & maximum of maxima
+#minmin = np.min([np.min(Jrec_init), np.min(Jrec)])
+#maxmax = np.max([np.max(Jrec_init), np.max(Jrec)])
+#num_show = 200
+#im1 = axes[0].imshow(Jrec_init[:num_show,:num_show], vmin=minmin, vmax=maxmax,
+#                     extent=(0,num_show,0,num_show), cmap='viridis')
+#im2 = axes[1].imshow(Jrec[:num_show,:num_show], vmin=minmin, vmax=maxmax,
+#                     extent=(0,num_show,0,num_show), cmap='viridis')
+#
+## add space for colour bar
+#fig.subplots_adjust(right=0.85)
+#cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
+#fig.colorbar(im2, cax=cbar_ax)
 
