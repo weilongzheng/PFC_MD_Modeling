@@ -62,7 +62,7 @@ with open(filename / file_training, 'wb') as f:
 Ntest = 500
 Nextra = 0
 tsteps = 200
-test_set = RihkyeTask(Ntrain=Ntest, Nextra = Nextra, Ncontexts=Ncontexts, inpsPerConext = inpsPerConext, blockTrain=False)
+test_set = RikhyeTask(Ntrain=Ntest, Nextra = Nextra, Ncontexts=Ncontexts, inpsPerConext = inpsPerConext, blockTrain=False)
 
 log = defaultdict(list)
 

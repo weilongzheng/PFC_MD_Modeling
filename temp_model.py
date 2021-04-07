@@ -569,6 +569,7 @@ class PytorchPFC(nn.Module):
         #  then expand with np.newaxis
         #   so that numpy's broadcast works on rows not columns
         self.Jrec -= torch.mean(self.Jrec, dim=1).unsqueeze_(dim=1)
+        self.Jrec.requires_grad = True
 
     def forward(self, input, input_x=None):
         """Run the network one step
@@ -694,7 +695,7 @@ class PytorchPFC(nn.Module):
 #         assert input.shape[0] == target.shape[0]
 
 
-class TempNetwork(nn.Module):
+class PytorchPFCMD(nn.Module):
     def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, MDeffect=True):
         super().__init__()
 
@@ -762,12 +763,12 @@ class TempNetwork(nn.Module):
                 self.md_output = self.md(pfc_output)
 
                 self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
-                rec_inp = np.dot(self.pfc.Jrec, self.pfc.activity)
+                rec_inp = np.dot(self.pfc.Jrec.detach().numpy(), self.pfc.activity.detach().numpy())
                 md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.num_output))
                 md2pfc = md2pfc_weights * rec_inp  
                 md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.num_output), self.md_output) 
                 #pfc_output = self.pfc(torch.from_numpy(input2pfc), torch.from_numpy(md2pfc)).numpy()
-                pfc_output = self.pfc(input2pfc, torch.from_numpy(md2pfc)).numpy()
+                pfc_output = self.pfc(input2pfc, torch.from_numpy(md2pfc)).detach().numpy()
                 pfc_output_t = pfc_output.reshape((1, pfc_output.shape[0]))
                 self.pfc_outputs[i, :] = torch.from_numpy(pfc_output_t)
 
@@ -781,7 +782,8 @@ class TempNetwork(nn.Module):
                 self.pfc_outputs[i, :] = torch.from_numpy(pfc_output_t)
             
             outputs = self.pfc2out(self.pfc_outputs)
-
+            outputs = nn.functional.tanh(outputs)
+            
         return outputs
 
     def _check_shape(self, input, target):
