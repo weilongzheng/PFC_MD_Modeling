@@ -20,8 +20,8 @@ import matplotlib.pyplot as plt
 RNGSEED = 5 # set random seed
 np.random.seed([RNGSEED])
 
-Ntrain = 10            # number of training cycles for each context
-Nextra = 10            # add cycles to show if block1
+Ntrain = 200            # number of training cycles for each context
+Nextra = 200            # add cycles to show if block1
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
@@ -34,6 +34,7 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
+PFClearn = True
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
 MDeffect=MDeffect)
@@ -45,14 +46,15 @@ for name, param in model.named_parameters():
     print(name)
     training_params.append(param)
 
-training_params.append(model.pfc.Jrec)
-Jrec_init = torch.zeros((n_neuron,n_neuron))
-Jrec_init = model.pfc.Jrec[:]#.detach().numpy()
-print('pfc.Jrec')
-print('\n')
+if PFClearn==True:
+    print('pfc.Jrec')
+    print('\n')
+    training_params.append(model.pfc.Jrec)
+    
+Jrec_init = model.pfc.Jrec.clone()#.numpy()
 print(Jrec_init)
 optimizer = torch.optim.Adam(training_params, lr=1e-3)
-import pdb;pdb.set_trace()
+#import pdb;pdb.set_trace()
 
 total_step = Ntrain*Ncontexts+Nextra
 print_step = 10
@@ -92,7 +94,7 @@ for i in range(total_step):
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # normalization
     optimizer.step()
-    print(model.pfc.Jrec)
+    
     #import pdb;pdb.set_trace()
     # print statistics
     mse = loss.item()
@@ -116,7 +118,7 @@ for i in range(total_step):
         (running_train_time) * (total_step - i - 1) / print_step),
         end='\n\n')
         running_train_time = 0
-
+        print(model.pfc.Jrec)
         if savemodel:
             # save model every print_step
             fname = os.path.join('models', model_name + '.pt')
@@ -138,7 +140,7 @@ if  MDeffect == True:
 
 filename = Path('files')
 os.makedirs(filename, exist_ok=True)
-file_training = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
+file_training = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
 with open(filename / file_training, 'wb') as f:
     pickle.dump(log, f)
     
@@ -163,7 +165,6 @@ for i,color in enumerate(colors, start=1):
     plt.subplot(number,1,i)
     plt.plot(wPFC2MD[i-1,:],color=color)
 plt.suptitle('wPFC2MD')
-#plt.tight_layout()
 
 wMD2PFC = log['wMD2PFC']
 number = Num_MD
@@ -174,7 +175,6 @@ for i,color in enumerate(colors, start=1):
     plt.subplot(number,1,i)
     plt.plot(wMD2PFC[:,i-1],color=color)
 plt.suptitle('wMD2PFC')
-#plt.tight_layout()
 
 ## plot pfc recurrent weights before and after training
 #fig, axes = plt.subplots(nrows=1, ncols=2)
