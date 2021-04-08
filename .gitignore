@@ -11,6 +11,8 @@ temp.py
 tmp/models/
 tmp/.ipynb_checkpoints
 
+*.bat
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
