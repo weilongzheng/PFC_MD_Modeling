@@ -781,8 +781,8 @@ class PytorchPFCMD(nn.Module):
                 pfc_output_t = pfc_output.reshape((1, pfc_output.shape[0]))
                 self.pfc_outputs[i, :] = torch.from_numpy(pfc_output_t)
             
-            outputs = self.pfc2out(self.pfc_outputs)
-            outputs = nn.functional.tanh(outputs)
+        outputs = self.pfc2out(self.pfc_outputs)
+        outputs = nn.functional.tanh(outputs)
             
         return outputs
 

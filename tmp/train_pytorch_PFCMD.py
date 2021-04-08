@@ -128,6 +128,8 @@ for i in range(total_step):
                 f.write('num_layers = ' + str(num_layers) + '\n')
 
 print('Finished Training')
+
+
 if  MDeffect == True:  
     log['wPFC2MD'] = model.md.wPFC2MD
     log['wMD2PFC'] = model.md.wMD2PFC
