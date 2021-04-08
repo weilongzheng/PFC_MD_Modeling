@@ -6,6 +6,7 @@ figures/
 sbatch/
 .DS_Store
 slurm*
+
 temp.py
 tmp/models/
 tmp/.ipynb_checkpoints
