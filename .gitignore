@@ -7,9 +7,11 @@ sbatch/
 .DS_Store
 slurm*
 
-temp.py
 tmp/models/
 tmp/.ipynb_checkpoints
+
+auto_gitpull.py
+auto_gitpush.py
 
 *.bat
 
