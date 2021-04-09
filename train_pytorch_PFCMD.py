@@ -67,9 +67,11 @@ model_name = 'model-' + str(int(time.time()))
 savemodel = False
 log = defaultdict(list)
 MDpreTraces = np.zeros(shape=(total_step,n_neuron))
-MDouts_all = np.zeros(shape=(total_step,Num_MD))
-PFCouts_all = np.zeros(shape=(total_step,n_neuron))
-
+#MDouts_all = np.zeros(shape=(total_step,Num_MD))
+#PFCouts_all = np.zeros(shape=(total_step,n_neuron))
+tsteps = 200
+MDouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,Num_MD))
+PFCouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
 for i in range(total_step):
 
     train_time_start = time.time()
@@ -84,12 +86,17 @@ for i in range(total_step):
 
     # forward + backward + optimize
     outputs = model(inputs, labels)
-    PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
-    if  MDeffect == True:
-        MDouts_all[i,:] = model.md_output
-        MDpreTraces[i,:] = model.md.MDpreTrace
-    
-    
+    #PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
+#    if  MDeffect == True:
+#        MDouts_all[i,:] = model.md_output
+#        MDpreTraces[i,:] = model.md.MDpreTrace
+    tstart = 0
+    for itrial in range(inpsPerConext): 
+        PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
+        if  MDeffect == True:
+            MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+        tstart += 1
+
     loss = criterion(outputs, labels)
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # normalization
