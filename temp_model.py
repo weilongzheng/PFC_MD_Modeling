@@ -814,7 +814,7 @@ class PytorchPFCMD(nn.Module):
 
 
 class LSTM_MD(nn.Module):
-    """LSTM with a MD layer
+    """LSTM with a MD layer (this models works only when batch_size = 1)
     Parameters:
     input_size: int, LSTM input size
     hidden_size: int, LSTM hidden size
@@ -825,7 +825,7 @@ class LSTM_MD(nn.Module):
     tsteps: int, length of a trial, equals to cuesteps + delaysteps
     """
 
-    def __init__(self, input_size, hidden_size, output_size, num_layers, Num_MD, num_active, tsteps):
+    def __init__(self, input_size, hidden_size, output_size, num_layers, Num_MD, num_active, tsteps, MDeffect=True):
         super().__init__()
 
         self.input_size = input_size
@@ -840,12 +840,14 @@ class LSTM_MD(nn.Module):
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers)
 
         # MD layer
-        self.md = MD(Nneur=hidden_size, Num_MD=Num_MD, num_active=num_active, dt=dt)
-        #  initialize md_output
-        self.md_output = np.zeros(Num_MD)
-        index = np.random.permutation(Num_MD)
-        self.md_output[index[:num_active]] = 1 # randomly set part of md_output to 1
-        self.md_output_t = np.array([])
+        self.MDeffect = MDeffect
+        if self.MDeffect:
+            self.md = MD(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active, dt=dt)
+            #  initialize md_output
+            self.md_output = np.zeros(Num_MD)
+            index = np.random.permutation(Num_MD)
+            self.md_output[index[:num_active]] = 1 # randomly set part of md_output to 1
+            self.md_output_t = np.array([])
 
         # Output layer
         self.fc = nn.Linear(hidden_size, output_size)
@@ -865,17 +867,29 @@ class LSTM_MD(nn.Module):
             
             # Reinit MD activity for each trial
             if t % self.tsteps == 0: 
-                self.md.init_activity()  # Reinit MD activity
+                if self.MDeffect:
+                    self.md.init_activity()  # Reinit MD activity
  
-            # TODO: integrate MD layer into LSTM_MD
-            #self.md_output = self.md(LSTM_hidden_t)
-            #self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
-            #rec_inp = np.dot(self.pfc.Jrec, self.pfc.activity)
-            #md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / 2))
-            #md2pfc = md2pfc_weights * rec_inp  
-            #md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /2), self.md_output)
-            
-            LSTM_output[t, :, :], (LSTM_hidden_t, LSTM_cell_t) = self.lstm(input_t, (LSTM_hidden_t, LSTM_cell_t))
+            if self.MDeffect:
+                self.md_output = self.md(LSTM_hidden_t.detach().numpy()[:, 0, :]) # batch size should be 1
+
+                self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
+                rec_inp = np.dot(self.pfc.Jrec.detach().numpy(), self.pfc.activity.detach().numpy())
+                md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.num_output))
+                md2pfc = md2pfc_weights * rec_inp  
+                md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.num_output), self.md_output) 
+                
+                LSTM_hidden_t = self.pfc(input2pfc,torch.from_numpy(md2pfc))
+                pfc_output_t = LSTM_hidden_t.view(1,LSTM_hidden_t.shape[0])
+                self.pfc_outputs[i, :] = pfc_output_t
+
+                if i==0:
+                    self.md_output_t = self.md_output.reshape((1,self.md_output.shape[0]))
+                else:
+                    self.md_output_t = np.concatenate((self.md_output_t, self.md_output.reshape((1,self.md_output.shape[0]))),axis=0)
+
+            else:
+                LSTM_output[t, :, :], (LSTM_hidden_t, LSTM_cell_t) = self.lstm(input_t, (LSTM_hidden_t, LSTM_cell_t))
 
         model_out = self.fc(LSTM_output)
 
