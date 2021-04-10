@@ -706,6 +706,8 @@ class PytorchPFCMD(nn.Module):
             n_cues=4,
             n_output=Num_PFC)
         self.sensory2pfc.torch(use_torch=True)
+        # try learnable input weights
+        # self.PytorchSensory2pfc = nn.Linear(4, Num_PFC)
 
         self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, MDeffect=MDeffect)
 
@@ -758,6 +760,8 @@ class PytorchPFCMD(nn.Module):
                     self.md.init_activity()  # Reinit MD activity
 
             input2pfc = self.sensory2pfc(input_t)
+            # try learnable input weights
+            # input2pfc = self.PytorchSensory2pfc(input_t)
             #import pdb;pdb.set_trace() 
             if self.MDeffect:
                 self.md_output = self.md(pfc_output.detach().numpy())
