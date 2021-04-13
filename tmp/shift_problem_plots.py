@@ -35,7 +35,7 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
-PFClearn = False
+PFClearn = True
 shift = 1 # shift step list
 
 
