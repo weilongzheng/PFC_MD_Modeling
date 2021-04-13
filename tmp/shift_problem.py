@@ -38,8 +38,8 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
-PFClearn = True
-shift_list = [1, 10, 100] # shift step list
+PFClearn = False
+shift_list = [0] # shift step list
 
 for shift in shift_list:
 
@@ -148,6 +148,7 @@ for shift in shift_list:
             #print(model.pfc.Jrec)
 
             # save model during training
+            log['Jrec'] = model.pfc.Jrec
             if  MDeffect == True:  
                 log['wPFC2MD'] = model.md.wPFC2MD
                 log['wMD2PFC'] = model.md.wMD2PFC

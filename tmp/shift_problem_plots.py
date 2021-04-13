@@ -35,8 +35,8 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
-PFClearn = True
-shift = 1 # shift step list
+PFClearn = False
+shift = 0 # shift step list
 
 
 # Get connection weights
@@ -48,6 +48,8 @@ with open(filename / file_training, 'rb') as f:
 
 wPFC2MD = log['wPFC2MD']
 wMD2PFC = log['wMD2PFC']
+Jrec = log['Jrec']
+Jrec = Jrec.detach().numpy()
 
 
 # Heatmap wPFC2MD
@@ -73,3 +75,26 @@ ax.set_ylabel('PFC neuron index')
 ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn)+' shift step-'+str(shift))
 cbar = ax.collections[0].colorbar
 cbar.set_label('connection weight')
+
+# Heatmap Jrec
+## the Jrec is too large. if use seaborn, the kernel would fail.
+# ax = plt.figure(figsize=(15, 15))
+# ax = sns.heatmap(Jrec, cmap='bwr')
+# ax.set_xticks([0, 999])
+# ax.set_xticklabels([1, 1000], rotation=0)
+# ax.set_yticks([0, 999])
+# ax.set_yticklabels([1, 1000], rotation=0)
+# ax.set_xlabel('PFC neuron index')
+# ax.set_ylabel('PFC neuron index')
+# ax.set_title('Jrec '+'PFC learnable-'+str(PFClearn)+' shift step-'+str(shift))
+# cbar = ax.collections[0].colorbar
+# cbar.set_label('connection weight')
+
+plt.figure(figsize=(15, 15))
+plt.matshow(Jrec, cmap='bwr')
+plt.xlabel('PFC neuron index')
+plt.ylabel('PFC neuron index')
+plt.xticks(ticks=[0, 999], labels=[1, 1000])
+plt.yticks(ticks=[0, 999], labels=[1, 1000])
+plt.title('Jrec '+'PFC learnable-'+str(PFClearn)+' shift step-'+str(shift))
+plt.show()
