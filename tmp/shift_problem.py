@@ -232,6 +232,3 @@ for shift in shift_list:
     #fig.subplots_adjust(right=0.85)
     #cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
     #fig.colorbar(im2, cax=cbar_ax)
-
-
-
