@@ -36,7 +36,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift = 0 # shift step list
+shift = 1 # shift step list
 
 
 # Get connection weights
@@ -48,8 +48,8 @@ with open(filename / file_training, 'rb') as f:
 
 wPFC2MD = log['wPFC2MD']
 wMD2PFC = log['wMD2PFC']
-Jrec = log['Jrec']
-Jrec = Jrec.detach().numpy()
+# Jrec = log['Jrec']
+# Jrec = Jrec.detach().numpy()
 
 
 # Heatmap wPFC2MD
