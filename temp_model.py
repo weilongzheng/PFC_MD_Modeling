@@ -417,6 +417,13 @@ class SensoryInputLayer():
     def torch(self, use_torch=True):
         self._use_torch = use_torch
 
+    
+    def shift(self, shift=1):
+        '''
+        shift Win to test shift problem in PFC_MD model
+        '''
+        self.wIn = np.roll(self.wIn, shift=shift, axis=0)
+
 
 class FullNetwork():
     def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active,
@@ -794,7 +801,7 @@ class PytorchPFCMD(nn.Module):
 #                self.pfc_outputs[i, :] = torch.from_numpy(pfc_output_t)
             
         outputs = self.pfc2out(self.pfc_outputs)
-        outputs = nn.functional.tanh(outputs)
+        outputs = torch.tanh(outputs)
             
         return outputs
 
@@ -829,7 +836,7 @@ class Elman_MD(nn.Module):
     tsteps: int, length of a trial, equals to cuesteps + delaysteps
     """
 
-    def __init__(self, input_size, hidden_size, output_size, num_layers=1, nonlinearity='tanh', Num_MD, num_active, tsteps, MDeffect=True):
+    def __init__(self, input_size, hidden_size, output_size, num_layers, nonlinearity, Num_MD, num_active, tsteps, MDeffect=True):
         super().__init__()
 
         self.input_size = input_size
