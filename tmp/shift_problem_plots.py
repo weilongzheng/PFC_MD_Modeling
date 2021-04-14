@@ -22,11 +22,12 @@ import seaborn as sns
 RNGSEED = 5 # set random seed
 np.random.seed([RNGSEED])
 
-Ntrain = 200            # number of training cycles for each context
-Nextra = 200            # add cycles to show if block1
+Ntrain = 300            # number of training cycles for each context; default 200
+Nextra = 300            # add cycles to show if block1; default 200
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
+
 
 # Model settings
 n_neuron = 1000
@@ -36,13 +37,17 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift = 1 # shift step list
+shift = 100 # shift step list
 
 
-# Get connection weights
+# Get data
 filename = Path('files')
 os.makedirs(filename, exist_ok=True)
-file_training = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
+# file_training = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+\
+#                 '_PFC'+str(PFClearn)+'_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
+file_training = 'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
+                '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
+                '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
 with open(filename / file_training, 'rb') as f:
     log = pickle.load(f)
 
@@ -51,6 +56,17 @@ wMD2PFC = log['wMD2PFC']
 # Jrec = log['Jrec']
 # Jrec = Jrec.detach().numpy()
 
+
+# Plot MSE curve
+plt.plot(log['mse'], label=f'With MD; shift step = {shift}')
+plt.xlabel('Cycles')
+plt.ylabel('MSE loss')
+plt.legend()
+#plt.xticks([0, 500, 1000, 1200])
+#plt.ylim([0.0, 1.0])
+#plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+plt.tight_layout()
+plt.show()
 
 # Heatmap wPFC2MD
 ax = plt.figure(figsize=(15, 10))
@@ -90,11 +106,11 @@ cbar.set_label('connection weight')
 # cbar = ax.collections[0].colorbar
 # cbar.set_label('connection weight')
 
-plt.figure(figsize=(15, 15))
-plt.matshow(Jrec, cmap='bwr')
-plt.xlabel('PFC neuron index')
-plt.ylabel('PFC neuron index')
-plt.xticks(ticks=[0, 999], labels=[1, 1000])
-plt.yticks(ticks=[0, 999], labels=[1, 1000])
-plt.title('Jrec '+'PFC learnable-'+str(PFClearn)+' shift step-'+str(shift))
-plt.show()
+# plt.figure(figsize=(15, 15))
+# plt.matshow(Jrec, cmap='bwr')
+# plt.xlabel('PFC neuron index')
+# plt.ylabel('PFC neuron index')
+# plt.xticks(ticks=[0, 999], labels=[1, 1000])
+# plt.yticks(ticks=[0, 999], labels=[1, 1000])
+# plt.title('Jrec '+'PFC learnable-'+str(PFClearn)+' shift step-'+str(shift))
+# plt.show()
