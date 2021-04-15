@@ -40,7 +40,7 @@ model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD
 MDeffect=MDeffect)
 
 # Training
-criterion = nn.MSELoss()
+criterion = nn.MSELoss() # cross entropy?
 training_params = list()
 for name, param in model.named_parameters():
     print(name)
@@ -99,7 +99,7 @@ for i in range(total_step):
 
     loss = criterion(outputs, labels)
     loss.backward()
-    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # normalization
+    torch.nn.utils.clip_grad_norm_(training_params, 1.0) # normalization Jrec 
     optimizer.step()
     
     #import pdb;pdb.set_trace()

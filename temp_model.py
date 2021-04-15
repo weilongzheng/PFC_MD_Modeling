@@ -399,7 +399,8 @@ class SensoryInputLayer():
             self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1), cuei] = \
                 np.random.uniform(lowcue, highcue, size=self.Nsub) \
                 * self.cueFactor
-
+        # ramdom init input weights
+        #self.wIn = np.random.uniform(0, 1, size=(self.Nneur, self.Ncues))
         self._use_torch = False
 
     def __call__(self, input):
@@ -768,7 +769,7 @@ class PytorchPFCMD(nn.Module):
 
             input2pfc = self.sensory2pfc(input_t)
             # try learnable input weights
-            # input2pfc = self.PytorchSensory2pfc(input_t)
+            #input2pfc = self.PytorchSensory2pfc(input_t)
             #import pdb;pdb.set_trace() 
             if self.MDeffect:
                 self.md_output = self.md(pfc_output.detach().numpy())
