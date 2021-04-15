@@ -861,9 +861,14 @@ class Elman(nn.Module):
         '''
         Reset RNN weights
         '''
-        nn.init.eye_(self.h2h.weight)
-        self.h2h.weight.data *= 0.5
+        #nn.init.eye_(self.h2h.weight)
+        #self.h2h.weight.data *= 0.5
 
+        #nn.init.normal_(self.h2h.weight, mean=0.0, std=1.0)
+
+        k = (1./self.hidden_size)**0.5
+        nn.init.uniform_(self.h2h.weight, a=-k, b=k) # same as pytorch built-in RNN module
+        
     def init_hidden(self, input):
         batch_size = input.shape[1]
         return torch.zeros(batch_size, self.hidden_size)
@@ -972,8 +977,9 @@ class Elman_MD(nn.Module):
                 md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.output_size))
                 md2pfc = md2pfc_weights * rec_inp                                                                # MD inputs - multiplicative term
                 md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.output_size), self.md_output)    # MD inputs - additive term
+                md2pfc = torch.from_numpy(md2pfc).view_as(RNN_hidden_t)
 
-                RNN_output[t, :, :], RNN_hidden_t = self.rnn(input_t, RNN_hidden_t, torch.from_numpy(md2pfc).view_as(RNN_hidden_t))
+                RNN_output[t, :, :], RNN_hidden_t = self.rnn(input_t, RNN_hidden_t, md2pfc)
 
                 if t==0:
                     self.md_output_t = self.md_output.reshape((1,self.md_output.shape[0]))
@@ -984,6 +990,7 @@ class Elman_MD(nn.Module):
                 RNN_output[t, :, :], RNN_hidden_t = self.rnn(input_t, RNN_hidden_t)
 
         model_out = self.fc(RNN_output)
+        model_out = torch.tanh(model_out)
 
         return model_out
 

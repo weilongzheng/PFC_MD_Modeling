@@ -1,5 +1,5 @@
 '''
-Pytorch built-in Elman RNN + MD layer
+Elman with MD layer
 '''
 
 import numpy as np
@@ -26,14 +26,14 @@ log = dict()
 #---------------- Rikhye dataset with batch dimension ----------------#
 RNGSEED = 5
 np.random.seed([RNGSEED])
+torch.manual_seed(RNGSEED) 
 os.environ['PYTHONHASHSEED'] = str(RNGSEED)
 
 num_cueingcontext = 2
 num_cue = 2
 num_rule = 2
 rule = [0, 1, 0, 1]
-#blocklen = [500, 500, 200]
-blocklen = [10, 10, 10]
+blocklen = [200, 200, 200]
 block_cueingcontext = [0, 1, 0]
 tsteps = 200
 cuesteps = 100
@@ -64,15 +64,15 @@ dataset = RikhyeTaskBatch(num_cueingcontext=num_cueingcontext, num_cue=num_cue, 
 
 #---------------- Elman_MD model ----------------#
 input_size = 4 # 4 cues
-hidden_size = 200 # number of PFC neurons
+hidden_size = 1000 # number of PFC neurons
 output_size = 2 # 2 rules
 num_layers = 1
 nonlinearity = 'tanh'
 Num_MD = 10
 num_active = 5
-MDeffect = True
-Sensoryinputlearn = False
-Elmanlearn = False
+MDeffect = False
+Sensoryinputlearn = True
+Elmanlearn = True
 
 
 # save model settings
@@ -94,7 +94,9 @@ log['model_config'] = model_config
 model = Elman_MD(input_size=input_size, hidden_size=hidden_size, output_size=output_size,\
                  num_layers=num_layers, nonlinearity=nonlinearity, Num_MD=Num_MD, num_active=num_active,\
                  tsteps=tsteps, MDeffect=MDeffect)
-print(model)
+model_name = 'Elman_MD'+'_MDeffect'+str(MDeffect)+'_Sensoryinputlearn'+str(Sensoryinputlearn)+\
+             '_Elmanlearn'+str(Elmanlearn)+'_R'+str(RNGSEED)
+print(model, end='\n\n')
 
 #---------------- Training ----------------#
 
@@ -136,7 +138,7 @@ for i in range(total_step):
     outputs = model(inputs, labels)
     loss = criterion(outputs, labels)
     loss.backward()
-    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # normalization
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip gradients
     optimizer.step()
 
     # print statistics
@@ -168,8 +170,6 @@ for i in range(total_step):
 
         directory = Path('files')
         os.makedirs(directory, exist_ok=True)
-        model_name = 'Elman_MD'+'_MDeffect'+str(MDeffect)+'_Sensoryinputlearn'+str(Sensoryinputlearn)+\
-                     '_Elmanlearn'+str(Elmanlearn)+'_R'+str(RNGSEED)
         with open(directory / (model_name + '.pkl'), 'wb') as f:
             pickle.dump(log, f)
         torch.save(model.state_dict(), directory / (model_name + '.pth'))

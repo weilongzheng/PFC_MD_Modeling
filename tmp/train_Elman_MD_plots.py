@@ -14,6 +14,8 @@ import seaborn as sns
 
 
 
+model_name = 'Elman_MD'+'_MDeffect'+str(MDeffect)+'_Sensoryinputlearn'+str(Sensoryinputlearn)+\
+                '_Elmanlearn'+str(Elmanlearn)+'_R'+str(RNGSEED)
 
 with open(directory / (model_name + '.pkl'), 'rb') as f:
     log = pickle.load(f)
