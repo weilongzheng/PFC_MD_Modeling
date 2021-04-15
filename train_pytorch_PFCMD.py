@@ -99,7 +99,9 @@ for i in range(total_step):
 
     loss = criterion(outputs, labels)
     loss.backward()
-    torch.nn.utils.clip_grad_norm_(training_params, 1.0) # normalization Jrec 
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # normalization  
+    if PFClearn==True:
+        torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-6) # normalization Jrec 
     optimizer.step()
     
     #import pdb;pdb.set_trace()
