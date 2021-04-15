@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 # Generate trainset
 RNGSEED = 5 # set random seed; default 5
 np.random.seed([RNGSEED])
+torch.manual_seed(RNGSEED)
 
 Ntrain = 200            # number of training cycles for each context; default 200
 Nextra = 200            # add cycles to show if block1; default 200

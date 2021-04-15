@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+import seaborn as sns
 import pickle
 from pathlib import Path
 import os
@@ -20,22 +21,42 @@ from temp_task import RikhyeTaskBatch
 from temp_model import Elman_MD
 
 
+log = dict()
 
 #---------------- Rikhye dataset with batch dimension ----------------#
 RNGSEED = 5
 np.random.seed([RNGSEED])
+os.environ['PYTHONHASHSEED'] = str(RNGSEED)
 
 num_cueingcontext = 2
 num_cue = 2
 num_rule = 2
 rule = [0, 1, 0, 1]
 #blocklen = [500, 500, 200]
-blocklen = [50, 50, 50]
+blocklen = [10, 10, 10]
 block_cueingcontext = [0, 1, 0]
 tsteps = 200
 cuesteps = 100
 batch_size = 1
 
+
+# save dataset settings
+dataset_config = dict()
+dataset_config['RNGSEED'] = RNGSEED
+dataset_config['num_cueingcontext'] = num_cueingcontext
+dataset_config['num_cue'] = num_cue
+dataset_config['num_rule'] = num_rule
+dataset_config['rule'] = rule
+dataset_config['blocklen'] = blocklen
+dataset_config['block_cueingcontext'] = block_cueingcontext
+dataset_config['tsteps'] = tsteps
+dataset_config['cuesteps'] = cuesteps
+dataset_config['batch_size'] = batch_size
+
+log['dataset_config'] = dataset_config
+
+
+# create a dataset
 dataset = RikhyeTaskBatch(num_cueingcontext=num_cueingcontext, num_cue=num_cue, num_rule=num_rule,\
                           rule=rule, blocklen=blocklen, block_cueingcontext=block_cueingcontext,\
                           tsteps=tsteps, cuesteps=cuesteps, batch_size=batch_size)
@@ -50,26 +71,53 @@ nonlinearity = 'tanh'
 Num_MD = 10
 num_active = 5
 MDeffect = True
-log = dict()
-log['mse'] = []
+Sensoryinputlearn = False
+Elmanlearn = False
 
+
+# save model settings
+model_config = dict()
+model_config['input_size'] = input_size
+model_config['hidden_size'] = hidden_size
+model_config['output_size'] = output_size
+model_config['num_layers'] = num_layers
+model_config['nonlinearity'] = nonlinearity
+model_config['Num_MD'] = Num_MD
+model_config['num_active'] = num_active
+model_config['MDeffect'] = MDeffect
+model_config['Sensoryinputlearn'] = Sensoryinputlearn
+model_config['Elmanlearn'] = Elmanlearn
+
+log['model_config'] = model_config
+
+# create a model
 model = Elman_MD(input_size=input_size, hidden_size=hidden_size, output_size=output_size,\
                  num_layers=num_layers, nonlinearity=nonlinearity, Num_MD=Num_MD, num_active=num_active,\
                  tsteps=tsteps, MDeffect=MDeffect)
-
 print(model)
-for param in model.named_parameters():
-    print(param[0], param[1].shape)
-print('\n', end='')
 
 #---------------- Training ----------------#
+
+# set training parameters
+training_params = list()
+print("Trainable parameters:")
+for name, param in model.named_parameters():
+    if Sensoryinputlearn == False and 'rnn.input2h' in name:
+        continue
+    if Elmanlearn == False and 'rnn.h2h' in name:
+        continue
+    print(name, param.shape)
+    training_params.append(param)
+print('\n', end='')
+optimizer = torch.optim.Adam(training_params, lr=1e-3)
+
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
 total_step = sum(blocklen)//batch_size
 print_step = 10
 running_loss = 0.0
 running_train_time = 0
+log['mse'] = []
 
 
 for i in range(total_step):
@@ -118,19 +166,20 @@ for i in range(total_step):
             log['wMD2PFC'] = model.md.wMD2PFC
             log['wMD2PFCMult'] = model.md.wMD2PFCMult
 
-        filename = Path('files')
-        os.makedirs(filename, exist_ok=True)
-        file_training = 'test_Elman_MD'+'_R'+str(RNGSEED)+'.pkl'
-        with open(filename / file_training, 'wb') as f:
+        directory = Path('files')
+        os.makedirs(directory, exist_ok=True)
+        model_name = 'Elman_MD'+'_MDeffect'+str(MDeffect)+'_Sensoryinputlearn'+str(Sensoryinputlearn)+\
+                     '_Elmanlearn'+str(Elmanlearn)+'_R'+str(RNGSEED)
+        with open(directory / (model_name + '.pkl'), 'wb') as f:
             pickle.dump(log, f)
-
+        torch.save(model.state_dict(), directory / (model_name + '.pth'))
 
 print('Finished Training')
 
 
 
 #---------------- Make some plots ----------------#
-with open(filename / file_training, 'rb') as f:
+with open(directory / (model_name + '.pkl'), 'rb') as f:
     log = pickle.load(f)
 
 # Plot MSE curve

@@ -840,11 +840,15 @@ class Elman(nn.Module):
     """
 
 
-    def __init__(self, input_size, hidden_size):
+    def __init__(self, input_size, hidden_size, nonlinearity='tanh'):
         super().__init__()
 
         self.input_size = input_size
         self.hidden_size = hidden_size
+        if nonlinearity == 'relu':
+            self.activation = torch.relu
+        else:
+            self.activation = torch.tanh
 
         # Sensory input -> RNN
         self.input2h = nn.Linear(input_size, hidden_size)
@@ -869,14 +873,13 @@ class Elman(nn.Module):
         Recurrence helper function
         '''
         pre_activation = self.input2h(input) + self.h2h(hidden)
-        print(mdinput.shape)
 
         if mdinput is None:
             mdinput = torch.zeros_like(pre_activation)
         else:
             pre_activation += mdinput
         
-        h_new = torch.relu(pre_activation)
+        h_new = self.activation(pre_activation)
         return h_new
 
     def forward(self, input, hidden=None, mdinput=None):
@@ -920,13 +923,13 @@ class Elman_MD(nn.Module):
         self.tsteps = tsteps
 
         # PFC layer / Elman RNN layer
-        self.rnn = Elman(input_size, hidden_size)
+        self.rnn = Elman(input_size, hidden_size, nonlinearity)
 
         # MD layer
         self.MDeffect = MDeffect
         dt = 0.001 # Hard-coded for now
         if self.MDeffect:
-            self.md = MD(Nneur=self.hidden_size, Num_MD=Num_MD, num_active=num_active, dt=dt)
+            self.md = MD(Nneur=hidden_size, Num_MD=Num_MD, num_active=num_active, dt=dt)
             #  initialize md_output
             self.md_output = np.zeros(Num_MD)
             index = np.random.permutation(Num_MD)
