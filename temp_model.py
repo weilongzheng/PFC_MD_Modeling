@@ -823,6 +823,78 @@ class PytorchPFCMD(nn.Module):
 #output = pfc_md(input, target)
 #print(output.shape)
 
+
+class Elman(nn.Module):
+    """Elman RNN that can take MD inputs.
+    Args:
+        input_size: Number of input neurons
+        hidden_size: Number of hidden neurons
+    Inputs:
+        input: (seq_len, batch, input_size), external input
+        hidden: (seq_len, batch, hidden_size), initial hidden activity; seq_len = 1
+        mdinput: (seq_len, batch, hidden_size), MD input; seq_len = 1
+
+    Acknowlegement:
+        based on Robert Yang's CTRNN class
+    """
+
+
+    def __init__(self, input_size, hidden_size):
+        super().__init__()
+
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+
+        # Sensory input -> RNN
+        self.input2h = nn.Linear(input_size, hidden_size)
+
+        # RNN -> RNN
+        self.h2h = nn.Linear(hidden_size, hidden_size)
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        '''
+        Reset RNN weights
+        '''
+        nn.init.eye_(self.h2h.weight)
+        self.h2h.weight.data *= 0.5
+
+    def init_hidden(self, input):
+        batch_size = input.shape[1]
+        return torch.zeros(batch_size, self.hidden_size)
+
+    def recurrence(self, input, hidden, mdinput):
+        '''
+        Recurrence helper function
+        '''
+        pre_activation = self.input2h(input) + self.h2h(hidden)
+        print(mdinput.shape)
+
+        if mdinput is None:
+            mdinput = torch.zeros_like(pre_activation)
+        else:
+            pre_activation += mdinput
+        
+        h_new = torch.relu(pre_activation)
+        return h_new
+
+    def forward(self, input, hidden=None, mdinput=None):
+        '''
+        Propogate input through the network
+        '''
+        if hidden is None:
+            hidden = self.init_hidden(input)
+
+        output = []
+        steps = range(input.size(0))
+        for i in steps:
+            hidden = self.recurrence(input[i], hidden, mdinput)
+            output.append(hidden)
+
+        output = torch.stack(output, dim=0)
+        return output, hidden
+
+
 class Elman_MD(nn.Module):
     """Elman RNN with a MD layer
     Parameters:
@@ -836,6 +908,7 @@ class Elman_MD(nn.Module):
     tsteps: int, length of a trial, equals to cuesteps + delaysteps
     """
 
+
     def __init__(self, input_size, hidden_size, output_size, num_layers, nonlinearity, Num_MD, num_active, tsteps, MDeffect=True):
         super().__init__()
 
@@ -845,15 +918,14 @@ class Elman_MD(nn.Module):
         self.num_layers = num_layers
         self.tsteps = tsteps
 
-        dt = 0.001 # Hard-coded for now
-
-        # Elman RNN layer
-        self.rnn = nn.RNN(input_size, hidden_size, num_layers, nonlinearity=nonlinearity)
+        # PFC layer / Elman RNN layer
+        self.rnn = Elman(input_size, hidden_size)
 
         # MD layer
         self.MDeffect = MDeffect
+        dt = 0.001 # Hard-coded for now
         if self.MDeffect:
-            self.md = MD(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active, dt=dt)
+            self.md = MD(Nneur=self.hidden_size, Num_MD=Num_MD, num_active=num_active, dt=dt)
             #  initialize md_output
             self.md_output = np.zeros(Num_MD)
             index = np.random.permutation(Num_MD)
@@ -863,7 +935,15 @@ class Elman_MD(nn.Module):
         # Output layer
         self.fc = nn.Linear(hidden_size, output_size)
 
+        # Track parameters
+        self.parm = dict()
+        for name, parameters in self.named_parameters():
+            self.parm[name] = parameters
+
     def forward(self, input, target):
+        '''
+        Propogate input through the network
+        '''
         n_time = input.shape[0]
         batch_size = input.shape[1]
 
@@ -884,16 +964,14 @@ class Elman_MD(nn.Module):
                 self.md_output = self.md(RNN_hidden_t.detach().numpy()[0, 0, :]) # batch size should be 1
 
                 self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
-                rec_inp = np.dot(self.rnn.weight_hh_l[k].detach().numpy(), RNN_hidden_t.detach().numpy())
-                md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.num_output))
-                md2pfc = md2pfc_weights * rec_inp  
-                md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.num_output), self.md_output) 
-                
-                RNN_hidden_t = self.pfc(input2pfc,torch.from_numpy(md2pfc))
-                pfc_output_t = RNN_hidden_t.view(1,RNN_hidden_t.shape[0])
-                self.pfc_outputs[i, :] = pfc_output_t
+                rec_inp = np.dot(self.parm['rnn.h2h.weight'].detach().numpy(), RNN_hidden_t.detach().numpy()[0, 0, :])  # PFC recurrent inputs # batch size should be 1
+                md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.output_size))
+                md2pfc = md2pfc_weights * rec_inp                                                                # MD inputs - multiplicative term
+                md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.output_size), self.md_output)    # MD inputs - additive term
 
-                if i==0:
+                RNN_output[t, :, :], RNN_hidden_t = self.rnn(input_t, RNN_hidden_t, torch.from_numpy(md2pfc).view_as(RNN_hidden_t))
+
+                if t==0:
                     self.md_output_t = self.md_output.reshape((1,self.md_output.shape[0]))
                 else:
                     self.md_output_t = np.concatenate((self.md_output_t, self.md_output.reshape((1,self.md_output.shape[0]))),axis=0)
@@ -902,6 +980,7 @@ class Elman_MD(nn.Module):
                 RNN_output[t, :, :], RNN_hidden_t = self.rnn(input_t, RNN_hidden_t)
 
         model_out = self.fc(RNN_output)
+
         return model_out
 
 

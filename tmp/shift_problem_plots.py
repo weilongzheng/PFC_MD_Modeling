@@ -22,8 +22,8 @@ import seaborn as sns
 RNGSEED = 5 # set random seed
 np.random.seed([RNGSEED])
 
-Ntrain = 300            # number of training cycles for each context; default 200
-Nextra = 300            # add cycles to show if block1; default 200
+Ntrain = 200            # number of training cycles for each context; default 200
+Nextra = 200            # add cycles to show if block1; default 200
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
@@ -37,7 +37,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift = 100 # shift step list
+shift = 10 # shift step list
 
 
 # Get data
