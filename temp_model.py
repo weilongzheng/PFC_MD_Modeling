@@ -399,8 +399,15 @@ class SensoryInputLayer():
             self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1), cuei] = \
                 np.random.uniform(lowcue, highcue, size=self.Nsub) \
                 * self.cueFactor
+                
         # ramdom init input weights
-        #self.wIn = np.random.uniform(0, 1, size=(self.Nneur, self.Ncues))
+        # self.wIn = np.random.uniform(0, 1, size=(self.Nneur, self.Ncues))
+        
+        # init input weights with Gaussian Distribution
+#        self.wIn = np.zeros((self.Nneur, self.Ncues))
+#        self.wIn = np.random.normal(0, 1, size=(self.Nneur, self.Ncues))
+#        self.wIn[self.wIn<0] = 0
+            
         self._use_torch = False
 
     def __call__(self, input):
