@@ -5,8 +5,8 @@ from collections import defaultdict
 import numpy as np
 import matplotlib.pyplot as plt
 
-from temp_task import RikhyeTask
-from temp_model import FullNetwork
+from task import RikhyeTask
+from model import FullNetwork
 
 RNGSEED = 5
 np.random.seed([RNGSEED])

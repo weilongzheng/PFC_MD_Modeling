@@ -17,8 +17,8 @@ root = os.getcwd()
 sys.path.append(root)
 sys.path.append('..')
 
-from temp_task import RikhyeTaskBatch
-from temp_model import Elman_MD
+from task import RikhyeTaskBatch
+from model import Elman_MD
 
 
 log = dict()
@@ -105,7 +105,7 @@ model_name = 'Elman_MD'+'_MDeffect'+str(MDeffect)+'_Sensoryinputlearn'+str(Senso
              '_Elmanlearn'+str(Elmanlearn)+'_R'+str(RNGSEED)
 if testmodel:
     model_name = 'test_' + model_name
-    directory = Path('test_files')
+    directory = Path('temp_files')
     os.makedirs(directory, exist_ok=True)
 else:
     directory = Path('files')

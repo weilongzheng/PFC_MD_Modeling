@@ -11,10 +11,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from temp_task import RikhyeTaskBatch
+from task import RikhyeTaskBatch
 import sys
 sys.path.append('..')
-from temp_model import MD, PytorchPFC
+from model import MD, PytorchPFC
 
 num_cueingcontext = 2
 num_cue = 2

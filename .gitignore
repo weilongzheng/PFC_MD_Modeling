@@ -1,6 +1,7 @@
 # Users added
 .idea/
 files/
+temp_files/
 datasets/
 figures/
 sbatch/

@@ -3,9 +3,9 @@
 import unittest
 import numpy as np
 
-from temp_model import PFC
-from temp_model import MD
-from temp_model import FullNetwork
+from model import PFC
+from model import MD
+from model import FullNetwork
 
 class TestModel(unittest.TestCase):
 

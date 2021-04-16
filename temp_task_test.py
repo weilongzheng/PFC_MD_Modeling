@@ -3,7 +3,7 @@
 import unittest
 import numpy as np
 
-from temp_task import RihkyeTask
+from task import RihkyeTask
 
 
 class TestTask(unittest.TestCase):

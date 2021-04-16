@@ -7,8 +7,8 @@ import pickle
 root = os.getcwd()
 sys.path.append(root)
 sys.path.append('..')
-from temp_task import RikhyeTask
-from temp_model import PytorchPFCMD
+from task import RikhyeTask
+from model import PytorchPFCMD
 import matplotlib.pyplot as plt
 import seaborn as sns
 
