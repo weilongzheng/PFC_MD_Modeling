@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 RNGSEED = 5 # set random seed
 np.random.seed([RNGSEED])
 
-Ntrain = 200            # number of training cycles for each context
+Ntrain = 100            # number of training cycles for each context
 Nextra = 200            # add cycles to show if block1
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -101,7 +101,7 @@ for i in range(total_step):
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # normalization  
     if PFClearn==True:
-        torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-6) # normalization Jrec 
+        torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-5) # normalization Jrec 1e-6
     optimizer.step()
     
     #import pdb;pdb.set_trace()
@@ -188,20 +188,20 @@ for i,color in enumerate(colors, start=1):
 plt.suptitle('wMD2PFC')
 
 ## plot pfc recurrent weights before and after training
-#fig, axes = plt.subplots(nrows=1, ncols=2)
-#Jrec = model.pfc.Jrec.detach().numpy()
-#Jrec_init = Jrec_init
-## find minimum of minima & maximum of maxima
-#minmin = np.min([np.min(Jrec_init), np.min(Jrec)])
-#maxmax = np.max([np.max(Jrec_init), np.max(Jrec)])
-#num_show = 200
-#im1 = axes[0].imshow(Jrec_init[:num_show,:num_show], vmin=minmin, vmax=maxmax,
-#                     extent=(0,num_show,0,num_show), cmap='viridis')
-#im2 = axes[1].imshow(Jrec[:num_show,:num_show], vmin=minmin, vmax=maxmax,
-#                     extent=(0,num_show,0,num_show), cmap='viridis')
-#
-## add space for colour bar
-#fig.subplots_adjust(right=0.85)
-#cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
-#fig.colorbar(im2, cax=cbar_ax)
+Jrec = model.pfc.Jrec.detach().numpy()
+Jrec_init = Jrec_init.detach().numpy()
+fig, axes = plt.subplots(nrows=1, ncols=2)
+# find minimum of minima & maximum of maxima
+minmin = np.min([np.percentile(Jrec_init,10), np.percentile(Jrec,10)])
+maxmax = np.max([np.percentile(Jrec_init,90), np.percentile(Jrec,90)])
+num_show = 200
+im1 = axes[0].imshow(Jrec_init[:num_show,:num_show], vmin=minmin, vmax=maxmax,
+                     extent=(0,num_show,0,num_show), cmap='viridis')
+im2 = axes[1].imshow(Jrec[:num_show,:num_show], vmin=minmin, vmax=maxmax,
+                     extent=(0,num_show,0,num_show), cmap='viridis')
+
+# add space for colour bar
+fig.subplots_adjust(right=0.85)
+cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
+fig.colorbar(im2, cax=cbar_ax)
 
