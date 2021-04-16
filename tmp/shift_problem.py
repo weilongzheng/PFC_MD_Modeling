@@ -40,7 +40,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift_list = [10] # shift step list
+shift_list = [1] # shift step list
 
 for shift in shift_list:
 
@@ -101,10 +101,11 @@ for shift in shift_list:
 
         # forward + backward + optimize
         outputs = model(inputs, labels)
-        #PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
-    #    if  MDeffect == True:
-    #        MDouts_all[i,:] = model.md_output
-    #        MDpreTraces[i,:] = model.md.MDpreTrace
+        # check PFC and MD outputs
+        # PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
+        # if  MDeffect == True:
+        #     MDouts_all[i,:] = model.md_output
+        #     MDpreTraces[i,:] = model.md.MDpreTrace
         tstart = 0
         for itrial in range(inpsPerConext): 
             PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
