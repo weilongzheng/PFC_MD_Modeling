@@ -161,8 +161,7 @@ class RikhyeTaskBatch():
         Return:
         (cueingcontext, cuei) combinations for one training step
         '''
-        cueList = np.dstack(( np.repeat(cueingcontext,self.num_cue), 
-                                np.arange(self.num_cue) ))
+        cueList = np.dstack((np.repeat(cueingcontext,self.num_cue), np.arange(self.num_cue)))
 
         return cueList[0]
 
