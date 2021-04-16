@@ -101,7 +101,7 @@ for i in range(total_step):
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # normalization  
     if PFClearn==True:
-        torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-5) # normalization Jrec 1e-6
+        torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-6) # normalization Jrec 1e-6
     optimizer.step()
     
     #import pdb;pdb.set_trace()
