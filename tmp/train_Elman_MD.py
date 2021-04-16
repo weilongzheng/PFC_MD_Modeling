@@ -63,6 +63,8 @@ dataset = RikhyeTaskBatch(num_cueingcontext=num_cueingcontext, num_cue=num_cue, 
 
 
 #---------------- Elman_MD model ----------------#
+testmodel = True # set False if train & save models
+
 input_size = 4 # 4 cues
 hidden_size = 1000 # number of PFC neurons
 output_size = 2 # 2 rules
@@ -71,6 +73,7 @@ nonlinearity = 'tanh'
 Num_MD = 10
 num_active = 5
 MDeffect = False
+print('MDeffect:', MDeffect, end='\n\n')
 Sensoryinputlearn = True
 Elmanlearn = True
 
@@ -94,9 +97,20 @@ log['model_config'] = model_config
 model = Elman_MD(input_size=input_size, hidden_size=hidden_size, output_size=output_size,\
                  num_layers=num_layers, nonlinearity=nonlinearity, Num_MD=Num_MD, num_active=num_active,\
                  tsteps=tsteps, MDeffect=MDeffect)
+
+print(model, end='\n\n')
+
+# create directory for saving models
 model_name = 'Elman_MD'+'_MDeffect'+str(MDeffect)+'_Sensoryinputlearn'+str(Sensoryinputlearn)+\
              '_Elmanlearn'+str(Elmanlearn)+'_R'+str(RNGSEED)
-print(model, end='\n\n')
+if testmodel:
+    model_name = 'test_' + model_name
+    directory = Path('test_files')
+    os.makedirs(directory, exist_ok=True)
+else:
+    directory = Path('files')
+    os.makedirs(directory, exist_ok=True)
+
 
 #---------------- Training ----------------#
 
@@ -119,6 +133,7 @@ total_step = sum(blocklen)//batch_size
 print_step = 10
 running_loss = 0.0
 running_train_time = 0
+
 log['mse'] = []
 
 
@@ -168,8 +183,6 @@ for i in range(total_step):
             log['wMD2PFC'] = model.md.wMD2PFC
             log['wMD2PFCMult'] = model.md.wMD2PFCMult
 
-        directory = Path('files')
-        os.makedirs(directory, exist_ok=True)
         with open(directory / (model_name + '.pkl'), 'wb') as f:
             pickle.dump(log, f)
         torch.save(model.state_dict(), directory / (model_name + '.pth'))
