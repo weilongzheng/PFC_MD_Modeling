@@ -776,7 +776,7 @@ class PytorchPFCMD(nn.Module):
 
             input2pfc = self.sensory2pfc(input_t)
             # try learnable input weights
-            #input2pfc = self.PytorchSensory2pfc(input_t)
+            # input2pfc = self.PytorchSensory2pfc(input_t)
             #import pdb;pdb.set_trace() 
             if self.MDeffect:
                 self.md_output = self.md(pfc_output.detach().numpy())
