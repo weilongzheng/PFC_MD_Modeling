@@ -31,8 +31,8 @@ def disjoint_penalty(model, reg=1e-4):
     #     if 'rnn.input2h.weight' in name or 'rnn.h2h.weight' in name:
     #         norm += reg * torch.abs(torch.matmul(param.t(), param)).sum()
     Winput2h = model.parm['rnn.input2h.weight']
-    Wrec = model.parm['rnn.h2h.weight']
-    for param in [Winput2h, Wrec]:
+    #Wrec = model.parm['rnn.h2h.weight']
+    for param in [Winput2h]:
         norm += reg * torch.abs(torch.matmul(param.t(), param)).sum()
     return norm
 
@@ -91,10 +91,10 @@ num_layers = 1
 nonlinearity = 'tanh'
 Num_MD = 10
 num_active = 5
-reg = 1e-5              # disjoint penalty regularization
-MDeffect = True
+reg = 1e-4              # disjoint penalty regularization; if Elmanlearn == True, reg = 1e-5; else, reg = 1e-4
+MDeffect = False
 Sensoryinputlearn = True
-Elmanlearn = True
+Elmanlearn = False
 
 
 # save model settings
@@ -184,6 +184,7 @@ for i in range(total_step):
     ####print(model.parm['rnn.h2h.weight'])
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip gradients
+    #torch.nn.utils.clip_grad_norm_(model.parameters(), 1e-4) # clip gradients
     optimizer.step()
 
     # save loss values
