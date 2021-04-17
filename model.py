@@ -957,8 +957,8 @@ class Elman_MD(nn.Module):
 
         # Track parameters
         self.parm = dict()
-        for name, parameters in self.named_parameters():
-            self.parm[name] = parameters
+        for name, param in self.named_parameters():
+            self.parm[name] = param
 
     def forward(self, input, target):
         '''
