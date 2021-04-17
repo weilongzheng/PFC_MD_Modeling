@@ -23,7 +23,21 @@ from model import Elman_MD
 
 log = dict()
 
+#---------------- Helper funtions ----------------#
+def disjoint_penalty(model, reg=1e-4):
+    '''
+    Keep weight matrices disjoint by adding ||matmul(W.T, W)||1 to loss
+    '''
+    norm = torch.tensor(0.)
+    for name, param in model.named_parameters():
+        if 'rnn.input2h.weight' in name or 'rnn.h2h.weight' in name:
+            norm += reg * torch.abs(torch.matmul(param.t(), param)).sum()
+    return norm
+
+
 #---------------- Rikhye dataset with batch dimension ----------------#
+
+# set random seed
 RNGSEED = 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED) 
@@ -134,7 +148,7 @@ print_step = 10
 running_loss = 0.0
 running_train_time = 0
 
-log['mse'] = []
+log['loss_val'] = []
 
 
 for i in range(total_step):
@@ -151,14 +165,20 @@ for i in range(total_step):
 
     # forward + backward + optimize
     outputs = model(inputs, labels)
-    loss = criterion(outputs, labels)
+    ####print('MSE', criterion(outputs, labels))
+    ####print('reg', disjoint_penalty(model, reg=1e-4))
+
+    loss = criterion(outputs, labels) + disjoint_penalty(model, reg=1e-4)
+    ####print(loss)
+    ####print(model.parm['rnn.input2h.weight'])
+    ####print(model.parm['rnn.h2h.weight'])
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip gradients
     optimizer.step()
 
     # print statistics
-    mse = loss.item()
-    log['mse'].append(mse)
+    loss_val = loss.item()
+    log['loss_val'].append(loss_val)
 
     running_train_time += time.time() - train_time_start
     running_loss += loss.item()
@@ -178,7 +198,9 @@ for i in range(total_step):
         running_train_time = 0
 
         # save model during training
-        if  MDeffect == True:  
+        log['Winput2h'] = model.parm['rnn.input2h.weight'].data.detach().numpy()
+        log['Wrec'] = model.parm['rnn.h2h.weight'].data.detach().numpy()
+        if MDeffect == True:  
             log['wPFC2MD'] = model.md.wPFC2MD
             log['wMD2PFC'] = model.md.wMD2PFC
             log['wMD2PFCMult'] = model.md.wMD2PFCMult
@@ -195,13 +217,42 @@ print('Finished Training')
 with open(directory / (model_name + '.pkl'), 'rb') as f:
     log = pickle.load(f)
 
+font = {'family':'Times New Roman','weight':'normal', 'size':24}
+
 # Plot MSE curve
-plt.plot(log['mse'], label='Elman MD')
-plt.xlabel('Cycles')
-plt.ylabel('MSE loss')
+plt.plot(log['loss_val'], label='Elman MD')
+plt.xlabel('Cycles', fontdict=font)
+plt.ylabel('Loss value', fontdict=font)
 plt.legend()
 #plt.xticks([0, 500, 1000, 1200])
 #plt.ylim([0.0, 1.0])
 #plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 #plt.tight_layout()
+plt.show()
+
+
+# Plot connection weights
+Winput2h = log['Winput2h']
+Wrec = log['Wrec']
+
+## Heatmap Winput2h
+ax = plt.figure(figsize=(15, 10))
+ax = sns.heatmap(Winput2h, cmap='bwr')
+ax.set_xticklabels([1, 2, 3, 4], rotation=0)
+ax.set_yticks([0, 999])
+ax.set_yticklabels([1, 1000], rotation=0)
+ax.set_xlabel('Cue index', fontdict=font)
+ax.set_ylabel('Elman neuron index', fontdict=font)
+ax.set_title('Weights: input to hiddenlayer', fontdict=font)
+cbar = ax.collections[0].colorbar
+cbar.set_label('connection weight', fontdict=font)
+
+## Heatmap Wrec
+plt.figure(figsize=(15, 15))
+plt.matshow(Wrec, cmap='bwr')
+plt.xlabel('Elman neuron index', fontdict=font)
+plt.ylabel('Elman neuron index', fontdict=font)
+plt.xticks(ticks=[0, 999], labels=[1, 1000])
+plt.yticks(ticks=[0, 999], labels=[1, 1000])
+plt.title('Weights: recurrent', fontdict=font)
 plt.show()
