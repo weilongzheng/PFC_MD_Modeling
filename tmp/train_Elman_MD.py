@@ -21,17 +21,19 @@ from task import RikhyeTaskBatch
 from model import Elman_MD
 
 
-log = dict()
-
 #---------------- Helper funtions ----------------#
 def disjoint_penalty(model, reg=1e-4):
     '''
     Keep weight matrices disjoint by adding ||matmul(W.T, W)||1 to loss
     '''
     norm = torch.tensor(0.)
-    for name, param in model.named_parameters():
-        if 'rnn.input2h.weight' in name or 'rnn.h2h.weight' in name:
-            norm += reg * torch.abs(torch.matmul(param.t(), param)).sum()
+    # for name, param in model.named_parameters():
+    #     if 'rnn.input2h.weight' in name or 'rnn.h2h.weight' in name:
+    #         norm += reg * torch.abs(torch.matmul(param.t(), param)).sum()
+    Winput2h = model.parm['rnn.input2h.weight']
+    Wrec = model.parm['rnn.h2h.weight']
+    for param in [Winput2h, Wrec]:
+        norm += reg * torch.abs(torch.matmul(param.t(), param)).sum()
     return norm
 
 
@@ -55,6 +57,9 @@ batch_size = 1
 
 
 # save dataset settings
+
+log = dict()
+
 dataset_config = dict()
 dataset_config['RNGSEED'] = RNGSEED
 dataset_config['num_cueingcontext'] = num_cueingcontext
@@ -79,15 +84,15 @@ dataset = RikhyeTaskBatch(num_cueingcontext=num_cueingcontext, num_cue=num_cue, 
 #---------------- Elman_MD model ----------------#
 testmodel = True # set False if train & save models
 
-input_size = 4 # 4 cues
-hidden_size = 1000 # number of PFC neurons
-output_size = 2 # 2 rules
+input_size = 4          # 4 cues
+hidden_size = 1000      # number of PFC neurons
+output_size = 2         # 2 rules
 num_layers = 1
 nonlinearity = 'tanh'
 Num_MD = 10
 num_active = 5
-MDeffect = False
-print('MDeffect:', MDeffect, end='\n\n')
+reg = 1e-5              # disjoint penalty regularization
+MDeffect = True
 Sensoryinputlearn = True
 Elmanlearn = True
 
@@ -101,17 +106,20 @@ model_config['num_layers'] = num_layers
 model_config['nonlinearity'] = nonlinearity
 model_config['Num_MD'] = Num_MD
 model_config['num_active'] = num_active
+model_config['reg'] = reg
 model_config['MDeffect'] = MDeffect
 model_config['Sensoryinputlearn'] = Sensoryinputlearn
 model_config['Elmanlearn'] = Elmanlearn
 
 log['model_config'] = model_config
 
-# create a model
+# create model
 model = Elman_MD(input_size=input_size, hidden_size=hidden_size, output_size=output_size,\
                  num_layers=num_layers, nonlinearity=nonlinearity, Num_MD=Num_MD, num_active=num_active,\
                  tsteps=tsteps, MDeffect=MDeffect)
 
+# print model
+print('MDeffect:', MDeffect, end='\n\n')
 print(model, end='\n\n')
 
 # create directory for saving models
@@ -146,9 +154,11 @@ criterion = nn.MSELoss()
 total_step = sum(blocklen)//batch_size
 print_step = 10
 running_loss = 0.0
+running_mseloss = 0.0
 running_train_time = 0
 
 log['loss_val'] = []
+log['mse'] = []
 
 
 for i in range(total_step):
@@ -166,9 +176,9 @@ for i in range(total_step):
     # forward + backward + optimize
     outputs = model(inputs, labels)
     ####print('MSE', criterion(outputs, labels))
-    ####print('reg', disjoint_penalty(model, reg=1e-4))
+    ####print('reg', disjoint_penalty(model, reg=reg))
 
-    loss = criterion(outputs, labels) + disjoint_penalty(model, reg=1e-4)
+    loss = criterion(outputs, labels) + disjoint_penalty(model, reg=reg)
     ####print(loss)
     ####print(model.parm['rnn.input2h.weight'])
     ####print(model.parm['rnn.h2h.weight'])
@@ -176,20 +186,25 @@ for i in range(total_step):
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip gradients
     optimizer.step()
 
-    # print statistics
+    # save loss values
+    mse = criterion(outputs, labels).item()
     loss_val = loss.item()
+    log['mse'].append(mse)
     log['loss_val'].append(loss_val)
 
+    # print statistics
     running_train_time += time.time() - train_time_start
-    running_loss += loss.item()
+    running_loss += loss_val
+    running_mseloss += mse
     if i % print_step == (print_step - 1):
 
         print('Total step: {:d}'.format(total_step))
         print('Training sample index: {:d}-{:d}'.format(i+1-print_step, i+1))
 
         # running loss
-        print('loss: {:0.5f}'.format(running_loss / print_step))
+        print('Total loss: {:0.5f};'.format(running_loss / print_step), 'MSE loss: {:0.5f}'.format(running_mseloss / print_step))
         running_loss = 0.0
+        running_mseloss = 0.0
 
         # training time
         print('Predicted left training time: {:0.0f} s'.format(
@@ -212,17 +227,28 @@ for i in range(total_step):
 print('Finished Training')
 
 
-
 #---------------- Make some plots ----------------#
+
 with open(directory / (model_name + '.pkl'), 'rb') as f:
     log = pickle.load(f)
 
 font = {'family':'Times New Roman','weight':'normal', 'size':24}
 
-# Plot MSE curve
+# Plot loss curve
 plt.plot(log['loss_val'], label='Elman MD')
 plt.xlabel('Cycles', fontdict=font)
 plt.ylabel('Loss value', fontdict=font)
+plt.legend()
+#plt.xticks([0, 500, 1000, 1200])
+#plt.ylim([0.0, 1.0])
+#plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+#plt.tight_layout()
+plt.show()
+
+# Plot MSE curve
+plt.plot(log['mse'], label='Elman MD')
+plt.xlabel('Cycles', fontdict=font)
+plt.ylabel('MSE Loss', fontdict=font)
 plt.legend()
 #plt.xticks([0, 500, 1000, 1200])
 #plt.ylim([0.0, 1.0])
@@ -246,13 +272,14 @@ ax.set_ylabel('Elman neuron index', fontdict=font)
 ax.set_title('Weights: input to hiddenlayer', fontdict=font)
 cbar = ax.collections[0].colorbar
 cbar.set_label('connection weight', fontdict=font)
+plt.show()
 
 ## Heatmap Wrec
-plt.figure(figsize=(15, 15))
-plt.matshow(Wrec, cmap='bwr')
+im = plt.matshow(Wrec, cmap='bwr')
 plt.xlabel('Elman neuron index', fontdict=font)
 plt.ylabel('Elman neuron index', fontdict=font)
 plt.xticks(ticks=[0, 999], labels=[1, 1000])
 plt.yticks(ticks=[0, 999], labels=[1, 1000])
 plt.title('Weights: recurrent', fontdict=font)
+plt.colorbar(im)
 plt.show()
