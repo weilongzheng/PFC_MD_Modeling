@@ -18,6 +18,8 @@ sys.path.append('..')
 from task import RikhyeTask
 from model import PytorchPFCMD
 import matplotlib.pyplot as plt
+import seaborn as sns
+import imageio
 
 
 # Generate trainset
@@ -25,7 +27,7 @@ RNGSEED = 5 # set random seed; default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 200            # number of training cycles for each context; default 200
+Ntrain = 500            # number of training cycles for each context; default 200
 Nextra = 200            # add cycles to show if block1; default 200
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -70,7 +72,8 @@ for shift in shift_list:
     #import pdb;pdb.set_trace()
 
     total_step = Ntrain*Ncontexts+Nextra
-    print_step = 10
+    print_step = 10 # print statistics every print_step
+    save_W_step = 20 # save wPFC2MD and wMD2PFC every save_W_step
     running_loss = 0.0
     running_train_time = 0
     mses = list()
@@ -130,6 +133,11 @@ for shift in shift_list:
         running_train_time += time.time() - train_time_start
         running_loss += loss.item()
 
+        #  save wPFC2MD and wMD2PFC
+        if i % save_W_step == (save_W_step - 1):
+            log['wPFC2MD_list'].append(model.md.wPFC2MD)
+            log['wMD2PFC_list'].append(model.md.wMD2PFC)
+
         if i % print_step == (print_step - 1):
 
             print('Total step: {:d}'.format(total_step))
@@ -158,7 +166,10 @@ for shift in shift_list:
 
             filename = Path('files')
             os.makedirs(filename, exist_ok=True)
-            file_training = 'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
+            # file_training = 'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
+            #                 '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
+            #                 '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
+            file_training = 'Animation'+'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
                             '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
                             '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
             with open(filename / file_training, 'wb') as f:
@@ -195,30 +206,30 @@ for shift in shift_list:
     plt.show()
 
     ## plot pfc2md weights
-    wPFC2MD = log['wPFC2MD']
-    number = Num_MD
-    cmap = plt.get_cmap('rainbow') 
-    colors = [cmap(i) for i in np.linspace(0,1,number)]
-    plt.figure(figsize=(18,20))
-    for i,color in enumerate(colors, start=1):
-        plt.subplot(number,1,i)
-        plt.plot(wPFC2MD[i-1,:],color=color)
-    plt.xlabel(f'wPFC2MD; shift step = {shift}')
-    #plt.suptitle(f'wPFC2MD; shift step = {shift}')
-    plt.show()
+    # wPFC2MD = log['wPFC2MD']
+    # number = Num_MD
+    # cmap = plt.get_cmap('rainbow') 
+    # colors = [cmap(i) for i in np.linspace(0,1,number)]
+    # plt.figure(figsize=(18,20))
+    # for i,color in enumerate(colors, start=1):
+    #     plt.subplot(number,1,i)
+    #     plt.plot(wPFC2MD[i-1,:],color=color)
+    # plt.xlabel(f'wPFC2MD; shift step = {shift}')
+    # #plt.suptitle(f'wPFC2MD; shift step = {shift}')
+    # plt.show()
 
     ## plot md2pfc weights
-    wMD2PFC = log['wMD2PFC']
-    number = Num_MD
-    cmap = plt.get_cmap('rainbow') 
-    colors = [cmap(i) for i in np.linspace(0,1,number)]
-    plt.figure(figsize=(18, 20))
-    for i,color in enumerate(colors, start=1):
-        plt.subplot(number,1,i)
-        plt.plot(wMD2PFC[:,i-1],color=color)
-    plt.xlabel(f'wMD2PFC; shift step = {shift}')
-    #plt.suptitle(f'wMD2PFC; shift step = {shift}')
-    plt.show()
+    # wMD2PFC = log['wMD2PFC']
+    # number = Num_MD
+    # cmap = plt.get_cmap('rainbow') 
+    # colors = [cmap(i) for i in np.linspace(0,1,number)]
+    # plt.figure(figsize=(18, 20))
+    # for i,color in enumerate(colors, start=1):
+    #     plt.subplot(number,1,i)
+    #     plt.plot(wMD2PFC[:,i-1],color=color)
+    # plt.xlabel(f'wMD2PFC; shift step = {shift}')
+    # #plt.suptitle(f'wMD2PFC; shift step = {shift}')
+    # plt.show()
 
     ## plot pfc recurrent weights before and after training
     #fig, axes = plt.subplots(nrows=1, ncols=2)

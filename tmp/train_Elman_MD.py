@@ -33,6 +33,7 @@ def disjoint_penalty(model, reg=1e-4):
     Winput2h = model.parm['rnn.input2h.weight']
     #Wrec = model.parm['rnn.h2h.weight']
     for param in [Winput2h]:
+    #for param in [Winput2h, Wrec]:
         norm += reg * torch.abs(torch.matmul(param.t(), param)).sum()
     return norm
 
@@ -92,7 +93,7 @@ nonlinearity = 'tanh'
 Num_MD = 10
 num_active = 5
 reg = 1e-4              # disjoint penalty regularization; if Elmanlearn == True, reg = 1e-5; else, reg = 1e-4
-MDeffect = False
+MDeffect = True
 Sensoryinputlearn = True
 Elmanlearn = False
 
@@ -179,6 +180,7 @@ for i in range(total_step):
     ####print('reg', disjoint_penalty(model, reg=reg))
 
     loss = criterion(outputs, labels) + disjoint_penalty(model, reg=reg)
+    #loss = criterion(outputs, labels)
     ####print(loss)
     ####print(model.parm['rnn.input2h.weight'])
     ####print(model.parm['rnn.h2h.weight'])

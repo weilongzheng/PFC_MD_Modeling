@@ -15,6 +15,8 @@ from task import RikhyeTask
 from model import PytorchPFCMD
 import matplotlib.pyplot as plt
 import seaborn as sns
+import imageio
+from pygifsicle import optimize
 
 
 
@@ -114,3 +116,52 @@ cbar.set_label('connection weight')
 # plt.yticks(ticks=[0, 999], labels=[1, 1000])
 # plt.title('Jrec '+'PFC learnable-'+str(PFClearn)+' shift step-'+str(shift))
 # plt.show()
+
+
+# wPFC2MD evolution
+for i in range(len(log['wPFC2MD_list'])):
+    wPFC2MD = log['wPFC2MD_list'][i]
+    plt.figure(figsize=(15, 10))
+    ax = sns.heatmap(wPFC2MD, cmap='bwr', vmax=1.0, vmin=0.0)
+    ax.set_xticks([0, 999])
+    ax.set_xticklabels([1, 1000], rotation=0)
+    ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+    ax.set_xlabel('PFC neuron index')
+    ax.set_ylabel('MD neuron index')
+    ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn)+' shift step-'+str(shift))
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('connection weight')
+    fig = ax.get_figure()
+    fig.savefig('./animation/'+f'wPFC2MD_index_{i}.png')
+    plt.close() # do not show figs in line
+
+images = []
+for i in range(len(log['wPFC2MD_list'])):
+    filename = './animation/'+f'wPFC2MD_index_{i}.png'
+    images.append(imageio.imread(filename))
+gif_path = './animation/'+'wPFC2MD_evolution.gif'
+imageio.mimsave(gif_path, images, duration=0.1, subrectangles=True)
+optimize(gif_path)
+
+# wMD2PFC evolution
+for i in range(len(log['wMD2PFC_list'])):
+    wMD2PFC = log['wMD2PFC_list'][i]
+    plt.figure(figsize=(15, 10))
+    ax = sns.heatmap(wMD2PFC, cmap='bwr', vmax=0.0, vmin=-0.1) # vmax and vmin need tunning
+    ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+    ax.set_yticks([0, 999])
+    ax.set_yticklabels([1, 1000], rotation=0)
+    ax.set_xlabel('MD neuron index')
+    ax.set_ylabel('PFC neuron index')
+    ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn)+' shift step-'+str(shift))
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('connection weight')
+    fig = ax.get_figure()
+    fig.savefig('./animation/'+f'wMD2PFC_index_{i}.png')
+    plt.close() # do not show figs in line
+
+images = []
+for i in range(len(log['wMD2PFC_list'])):
+    filename = './animation/'+f'wMD2PFC_index_{i}.png'
+    images.append(imageio.imread(filename))
+imageio.mimsave('./animation/'+f'wMD2PFC_evolution.gif', images, duration=0.1)
