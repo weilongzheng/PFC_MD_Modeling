@@ -20,6 +20,7 @@ from model import PytorchPFCMD
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio
+from pygifsicle import optimize
 
 
 # Generate trainset
@@ -27,8 +28,8 @@ RNGSEED = 5 # set random seed; default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 500            # number of training cycles for each context; default 200
-Nextra = 200            # add cycles to show if block1; default 200
+Ntrain = 600            # number of training cycles for each context; default 200
+Nextra = 600            # add cycles to show if block1; default 200
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
@@ -42,7 +43,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift_list = [1] # shift step list
+shift_list = [0] # shift step list
 
 for shift in shift_list:
 
@@ -118,7 +119,7 @@ for shift in shift_list:
 
         loss = criterion(outputs, labels)
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # normalization
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip the norm of gradient
         optimizer.step()
         
         #import pdb;pdb.set_trace()

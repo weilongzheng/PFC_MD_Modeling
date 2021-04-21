@@ -140,7 +140,7 @@ for i in range(len(log['wPFC2MD_list'])):
     filename = './animation/'+f'wPFC2MD_index_{i}.png'
     images.append(imageio.imread(filename))
 gif_path = './animation/'+'wPFC2MD_evolution.gif'
-imageio.mimsave(gif_path, images, duration=0.1, subrectangles=True)
+imageio.mimsave(gif_path, images, duration=0.1)
 optimize(gif_path)
 
 # wMD2PFC evolution
@@ -164,4 +164,6 @@ images = []
 for i in range(len(log['wMD2PFC_list'])):
     filename = './animation/'+f'wMD2PFC_index_{i}.png'
     images.append(imageio.imread(filename))
-imageio.mimsave('./animation/'+f'wMD2PFC_evolution.gif', images, duration=0.1)
+gif_path = './animation/'+'wMD2PFC_evolution.gif'
+imageio.mimsave(gif_path, images, duration=0.1)
+optimize(gif_path)
