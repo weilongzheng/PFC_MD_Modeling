@@ -122,6 +122,9 @@ plt.show()
 # plt.show()
 
 
+save_W_step = 20 # save wPFC2MD and wMD2PFC every save_W_step
+font = {'family':'Times New Roman','weight':'normal', 'size':30}
+
 # wPFC2MD evolution
 for i in range(len(log['wPFC2MD_list'])):
     wPFC2MD = log['wPFC2MD_list'][i]
