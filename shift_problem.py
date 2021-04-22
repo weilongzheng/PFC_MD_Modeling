@@ -43,7 +43,7 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
-PFClearn = False
+PFClearn = True
 shift_list = [1] # shift step list
 
 for shift in shift_list:
@@ -71,6 +71,7 @@ for shift in shift_list:
     Jrec_init = model.pfc.Jrec.clone()#.numpy()
     #print(Jrec_init) # debug
     optimizer = torch.optim.Adam(training_params, lr=1e-3)
+
     #import pdb;pdb.set_trace()
 
     total_step = Ntrain*Ncontexts+Nextra
@@ -121,6 +122,8 @@ for shift in shift_list:
         loss = criterion(outputs, labels)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip the norm of gradient
+        if PFClearn==True:
+            torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-6) # normalization Jrec 1e-6
         optimizer.step()
         
         #import pdb;pdb.set_trace()
