@@ -1,7 +1,7 @@
 '''
 Fix PFC and shift wIn every cycle and check network performance
 '''
-## no delay period no switch back to past context
+
 
 import numpy as np
 import time
@@ -21,16 +21,17 @@ from model import PytorchPFCMD
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio
-#from pygifsicle import optimize
+from pygifsicle import optimize
 
 
 # Generate trainset
-RNGSEED = 5 # set random seed; default 5
+#  set random seed
+RNGSEED = 5 # default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 500            # number of training cycles for each context; default 200
-Nextra = 0            # add cycles to show if block1; default 200
+Ntrain = 200            # number of training cycles for each context; default 200
+Nextra = 200            # add cycles to show if block1; default 200; if 0, no switch back to past context
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
@@ -126,8 +127,9 @@ for shift in shift_list:
         #import pdb;pdb.set_trace()
 
         # shift wIn every training cycle here
-        #print(model.sensory2pfc.wIn[:, 0]) # debug
+        # if i%2 == 0:
         model.sensory2pfc.shift(shift=shift)
+        ####print(model.sensory2pfc.wIn[:, 0]) # debug
 
         # print statistics
         mse = loss.item()
@@ -172,23 +174,23 @@ for shift in shift_list:
             #         f.write('output_size = ' + str(output_size) + '\n')
             #         f.write('num_layers = ' + str(num_layers) + '\n')
 
-    # save model during training
-    log['Jrec'] = model.pfc.Jrec
-    if  MDeffect == True:  
-        log['wPFC2MD'] = model.md.wPFC2MD
-        log['wMD2PFC'] = model.md.wMD2PFC
-        log['wMD2PFCMult'] = model.md.wMD2PFCMult
+            # save model during training
+            log['Jrec'] = model.pfc.Jrec
+            if  MDeffect == True:  
+                log['wPFC2MD'] = model.md.wPFC2MD
+                log['wMD2PFC'] = model.md.wMD2PFC
+                log['wMD2PFCMult'] = model.md.wMD2PFCMult
 
-    filename = Path('files')
-    os.makedirs(filename, exist_ok=True)
-    # file_training = 'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
-    #                 '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
-    #                 '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
-    file_training = 'Animation'+'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
-                    '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
-                    '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
-    with open(filename / file_training, 'wb') as f:
-        pickle.dump(log, f)
+            filename = Path('files')
+            os.makedirs(filename, exist_ok=True)
+            # file_training = 'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
+            #                 '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
+            #                 '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
+            file_training = 'Animation'+'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
+                            '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
+                            '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
+            with open(filename / file_training, 'wb') as f:
+                pickle.dump(log, f)
 
 
     print('Finished Training')
