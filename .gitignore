@@ -1,6 +1,7 @@
 # Users added
 .idea/
 files/
+animation/
 temp_files/
 datasets/
 figures/
@@ -9,6 +10,7 @@ sbatch/
 slurm*
 
 tmp/models/
+tmp/animation/
 tmp/.ipynb_checkpoints
 
 auto_gitpull.py

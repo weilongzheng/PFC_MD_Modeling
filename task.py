@@ -7,7 +7,7 @@ class RikhyeTask():
         self.blockTrain = blockTrain
         self.inpsPerConext = inpsPerConext
         self.tsteps = 200
-        self.cuesteps = 100
+        self.cuesteps = 200#100
         self.Ncues = self.Ncontexts * self.inpsPerConext
 
         if self.blockTrain:
