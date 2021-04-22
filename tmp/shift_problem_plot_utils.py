@@ -118,6 +118,9 @@ cbar.set_label('connection weight')
 # plt.show()
 
 
+save_W_step = 20 # save wPFC2MD and wMD2PFC every save_W_step
+font = {'family':'Times New Roman','weight':'normal', 'size':30}
+
 # wPFC2MD evolution
 for i in range(len(log['wPFC2MD_list'])):
     wPFC2MD = log['wPFC2MD_list'][i]
@@ -128,7 +131,7 @@ for i in range(len(log['wPFC2MD_list'])):
     ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
     ax.set_xlabel('PFC neuron index')
     ax.set_ylabel('MD neuron index')
-    ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn)+' shift step-'+str(shift))
+    ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn)+' shift step-'+str(shift), fontdict=font)
     cbar = ax.collections[0].colorbar
     cbar.set_label('connection weight')
     fig = ax.get_figure()
