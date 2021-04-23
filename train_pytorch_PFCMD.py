@@ -19,8 +19,9 @@ import matplotlib.pyplot as plt
 # Generate trainset
 RNGSEED = 5 # set random seed
 np.random.seed([RNGSEED])
+torch.manual_seed(RNGSEED)
 
-Ntrain = 300            # number of training cycles for each context
+Ntrain = 500            # number of training cycles for each context
 Nextra = 200            # add cycles to show if block1
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -33,7 +34,7 @@ n_neuron_per_cue = 200
 Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
-MDeffect = True
+MDeffect = False
 PFClearn = True
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
