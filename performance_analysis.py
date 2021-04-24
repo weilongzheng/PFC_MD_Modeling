@@ -6,6 +6,7 @@ Created on Fri Apr 23 18:38:46 2021
 """
 
 import pickle
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib as mpl
@@ -56,4 +57,4 @@ plt.axvspan(0, 500, ymin=0, ymax=1, alpha=0.2, color='tab:orange')
 plt.axvspan(1000, 1200, ymin=0, ymax=1, alpha=0.2, color='tab:orange')
 plt.axvspan(500, 1000, ymin=0, ymax=1, alpha=0.2, color='tab:green')
 #plt.savefig(filesave/'mse.pdf') 
-plt.savefig(filesave/'mse.png', dpi=300) 
+plt.savefig(filesave/'mse_noise.png', dpi=300) 

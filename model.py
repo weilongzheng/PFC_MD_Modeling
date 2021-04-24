@@ -552,7 +552,7 @@ class PytorchPFC(nn.Module):
         self.Nsub = n_neuron_per_cue
         self.useMult = True
         self.noisePresent = noisePresent
-        self.noiseSD = 1e-1  # 1e-3
+        self.noiseSD = 1e-2  # 1e-3
         self.tau = 0.02
         self.dt = 0.001
 
