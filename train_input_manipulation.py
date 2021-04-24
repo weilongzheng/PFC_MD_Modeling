@@ -3,6 +3,8 @@
 Created on Fri Apr 23 19:41:11 2021
 
 @author: weilong
+
+Train pfc-md model with noisy inputs and pfc activity with imposed noise
 """
 
 import numpy as np
@@ -24,7 +26,7 @@ import matplotlib.pyplot as plt
 
 
 # Generate trainset
-RNGSEED = 5 # set random seed
+RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
@@ -41,11 +43,12 @@ n_neuron_per_cue = 200
 Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
-MDeffect = False
+noiseSD = 2e-1
+MDeffect = True
 PFClearn = True
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
-MDeffect=MDeffect)
+MDeffect=MDeffect, noisePresent = True)
 
 # Training
 criterion = nn.MSELoss() 
@@ -62,7 +65,7 @@ if PFClearn==True:
 Jrec_init = model.pfc.Jrec.clone()#.numpy()
 print(Jrec_init)
 optimizer = torch.optim.Adam(training_params, lr=1e-3)
-#import pdb;pdb.set_trace()
+#
 
 total_step = Ntrain*Ncontexts+Nextra
 print_step = 10
@@ -86,6 +89,7 @@ for i in range(total_step):
 
     # extract data
     inputs, labels = dataset()
+    inputs += np.random.normal(size=(np.shape(inputs))) * noiseSD
     inputs = torch.from_numpy(inputs).type(torch.float)
     labels = torch.from_numpy(labels).type(torch.float)
 
@@ -159,7 +163,7 @@ if  MDeffect == True:
 
 filename = Path('files')
 os.makedirs(filename, exist_ok=True)
-file_training = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+file_training = 'train_noisyinput_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
 with open(filename / file_training, 'wb') as f:
     pickle.dump(log, f)
     
@@ -197,20 +201,20 @@ if  MDeffect == True:
     plt.suptitle('wMD2PFC')
 
 ## plot pfc recurrent weights before and after training
-Jrec = model.pfc.Jrec.detach().numpy()
-Jrec_init = Jrec_init.detach().numpy()
-fig, axes = plt.subplots(nrows=1, ncols=2)
-# find minimum of minima & maximum of maxima
-minmin = np.min([np.percentile(Jrec_init,10), np.percentile(Jrec,10)])
-maxmax = np.max([np.percentile(Jrec_init,90), np.percentile(Jrec,90)])
-num_show = 200
-im1 = axes[0].imshow(Jrec_init[:num_show,:num_show], vmin=minmin, vmax=maxmax,
-                     extent=(0,num_show,0,num_show), cmap='viridis')
-im2 = axes[1].imshow(Jrec[:num_show,:num_show], vmin=minmin, vmax=maxmax,
-                     extent=(0,num_show,0,num_show), cmap='viridis')
-
-# add space for colour bar
-fig.subplots_adjust(right=0.85)
-cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
-fig.colorbar(im2, cax=cbar_ax)
+#Jrec = model.pfc.Jrec.detach().numpy()
+#Jrec_init = Jrec_init.detach().numpy()
+#fig, axes = plt.subplots(nrows=1, ncols=2)
+## find minimum of minima & maximum of maxima
+#minmin = np.min([np.percentile(Jrec_init,10), np.percentile(Jrec,10)])
+#maxmax = np.max([np.percentile(Jrec_init,90), np.percentile(Jrec,90)])
+#num_show = 200
+#im1 = axes[0].imshow(Jrec_init[:num_show,:num_show], vmin=minmin, vmax=maxmax,
+#                     extent=(0,num_show,0,num_show), cmap='viridis')
+#im2 = axes[1].imshow(Jrec[:num_show,:num_show], vmin=minmin, vmax=maxmax,
+#                     extent=(0,num_show,0,num_show), cmap='viridis')
+#
+## add space for colour bar
+#fig.subplots_adjust(right=0.85)
+#cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
+#fig.colorbar(im2, cax=cbar_ax)
 

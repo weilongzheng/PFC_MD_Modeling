@@ -546,12 +546,12 @@ import torch
 from torch import nn
 
 class PytorchPFC(nn.Module):
-    def __init__(self, n_neuron, n_neuron_per_cue, positiveRates=True, MDeffect=True):
+    def __init__(self, n_neuron, n_neuron_per_cue, positiveRates=True, MDeffect=True, noisePresent = False):
         super().__init__()
         self.Nneur = n_neuron
         self.Nsub = n_neuron_per_cue
         self.useMult = True
-        self.noisePresent = False
+        self.noisePresent = noisePresent
         self.noiseSD = 1e-1  # 1e-3
         self.tau = 0.02
         self.dt = 0.001
@@ -609,7 +609,7 @@ class PytorchPFC(nn.Module):
         self.xinp += self.dt / self.tau * (-self.xinp + xadd)
         
         if self.noisePresent:
-            self.xinp += torch.normal(mean=0, std=self.noiseSD * np.sqrt(self.dt) / self.tau, size=(self.Nneur))
+            self.xinp += torch.normal(mean=0, std=self.noiseSD * np.sqrt(self.dt) / self.tau, size=(self.Nneur,))
                     
         rout = self.activation(self.xinp)
         self.activity = rout
@@ -711,7 +711,7 @@ class PytorchPFC(nn.Module):
 
 
 class PytorchPFCMD(nn.Module):
-    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, MDeffect=True):
+    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, MDeffect=True, noisePresent = False):
         super().__init__()
 
         dt = 0.001
@@ -724,7 +724,7 @@ class PytorchPFCMD(nn.Module):
         # try learnable input weights
         # self.PytorchSensory2pfc = nn.Linear(4, Num_PFC)
 
-        self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, MDeffect=MDeffect)
+        self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, MDeffect=MDeffect, noisePresent = noisePresent)
 
         #self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
         self.pfc2out = nn.Linear(Num_PFC, num_output)
