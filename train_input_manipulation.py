@@ -20,7 +20,7 @@ import pickle
 root = os.getcwd()
 sys.path.append(root)
 sys.path.append('..')
-from task import RikhyeTask
+from task import RikhyeTask,RikhyeTaskMultiCues
 from model import PytorchPFCMD
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -30,13 +30,13 @@ RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 200            # number of training cycles for each context
+Ntrain = 500            # number of training cycles for each context
 Nextra = 200            # add cycles to show if block1
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
-dataset = RikhyeTask(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=True)
-
+#dataset = RikhyeTask(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=True)
+dataset_multicues = RikhyeTaskMultiCues(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=True)
 # Model settings
 n_neuron = 1000
 n_neuron_per_cue = 200
@@ -44,11 +44,12 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 noiseSD = 1e-1
-MDeffect = False
+noisePresent = False
+MDeffect = True
 PFClearn = True
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
-MDeffect=MDeffect, noisePresent = True)
+MDeffect=MDeffect, noisePresent = noisePresent)
 
 # Training
 criterion = nn.MSELoss() 
@@ -86,10 +87,13 @@ PFCouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
 for i in range(total_step):
 
     train_time_start = time.time()
-
+    # import pdb;pdb.set_trace()
     # extract data
-    inputs, labels = dataset()
-    inputs += np.random.normal(size=(np.shape(inputs))) * noiseSD
+    # noisy inputs
+#    inputs, labels = dataset()
+#    inputs += np.random.normal(size=(np.shape(inputs))) * noiseSD
+    # input with multiple cues
+    inputs, labels = dataset_multicues()
     inputs = torch.from_numpy(inputs).type(torch.float)
     labels = torch.from_numpy(labels).type(torch.float)
 
