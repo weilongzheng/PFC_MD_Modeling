@@ -21,12 +21,12 @@ filename = Path('files')
 Num_MD = 10
 Ncontexts = 2
 PFClearn = True
-seed_setup = [1,3,5]
+seed_setup = [1]#[1,3,5]
 
 MDeffect = True
 mse_md = list()
 for RNGSEED in seed_setup:
-    file = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+    file = 'train_multicues_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
     file = open(filename / file,'rb')
     data = pickle.load(file)
     mse_md.append(data['mse'])
@@ -36,7 +36,7 @@ mse_md = np.mean(mse_md,axis=0)
 MDeffect = False
 mse_mdoff = list()
 for RNGSEED in seed_setup:
-    file = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+    file = 'train_multicues_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
     file = open(filename / file,'rb')
     data = pickle.load(file)
     mse_mdoff.append(data['mse'])
@@ -57,4 +57,4 @@ plt.axvspan(0, 500, ymin=0, ymax=1, alpha=0.2, color='tab:orange')
 plt.axvspan(1000, 1200, ymin=0, ymax=1, alpha=0.2, color='tab:orange')
 plt.axvspan(500, 1000, ymin=0, ymax=1, alpha=0.2, color='tab:green')
 #plt.savefig(filesave/'mse.pdf') 
-plt.savefig(filesave/'mse_noise.png', dpi=300) 
+plt.savefig(filesave/'mse_multicues.png', dpi=300) 
