@@ -154,7 +154,7 @@ optimize(gif_path)
 for i in range(len(log['wMD2PFC_list'])):
     wMD2PFC = log['wMD2PFC_list'][i]
     plt.figure(figsize=(15, 10))
-    ax = sns.heatmap(wMD2PFC, cmap='bwr', vmax=0.0, vmin=-0.2) # vmax and vmin need tunning
+    ax = sns.heatmap(wMD2PFC, cmap='bwr', vmax=0.0, vmin=-0.1) # vmax and vmin need tunning
     ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
     ax.set_yticks([0, 999])
     ax.set_yticklabels([1, 1000], rotation=0)

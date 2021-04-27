@@ -44,8 +44,8 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
-PFClearn = False
-shift_list = [1] # shift step list
+PFClearn = True
+shift_list = [0] # shift step list
 
 for shift in shift_list:
 
@@ -127,8 +127,8 @@ for shift in shift_list:
         #import pdb;pdb.set_trace()
 
         # shift wIn every training cycle here
-        # if i%2 == 0:
-        model.sensory2pfc.shift(shift=shift)
+        # if i == 49:
+        # model.sensory2pfc.shift(shift=shift)
         ####print(model.sensory2pfc.wIn[:, 0]) # debug
 
         # print statistics
