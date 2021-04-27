@@ -26,17 +26,17 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Generate trainset
-RNGSEED = 5 # set random seed
+RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 300            # number of training cycles for each context
+Ntrain = 200            # number of training cycles for each context
 Nextra = 200            # add cycles to show if block1
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
-#dataset = RikhyeTask(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=True)
-dataset_multicues = RikhyeTaskMultiCues(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=True)
+dataset = RikhyeTask(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=True)
+#dataset_multicues = RikhyeTaskMultiCues(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=True)
 # Model settings
 n_neuron = 1000
 n_neuron_per_cue = 200
@@ -44,8 +44,8 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 noiseSD = 1e-1
-noisePresent = False
-MDeffect = False
+noisePresent = True
+MDeffect = True
 PFClearn = True
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
@@ -90,10 +90,10 @@ for i in range(total_step):
     # import pdb;pdb.set_trace()
     # extract data
     # noisy inputs
-#    inputs, labels = dataset()
-#    inputs += np.random.normal(size=(np.shape(inputs))) * noiseSD
+    inputs, labels = dataset()
+    inputs += np.random.normal(size=(np.shape(inputs))) * noiseSD
     # input with multiple cues
-    inputs, labels = dataset_multicues()
+#    inputs, labels = dataset_multicues()
     inputs = torch.from_numpy(inputs).type(torch.float)
     labels = torch.from_numpy(labels).type(torch.float)
 
@@ -167,7 +167,7 @@ if  MDeffect == True:
 
 filename = Path('files')
 os.makedirs(filename, exist_ok=True)
-file_training = 'train_multicues_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+file_training = 'train_noisyinput_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
 with open(filename / file_training, 'wb') as f:
     pickle.dump(log, f)
     
