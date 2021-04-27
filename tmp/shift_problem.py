@@ -30,8 +30,8 @@ RNGSEED = 5 # default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 200            # number of training cycles for each context; default 200
-Nextra = 200            # add cycles to show if block1; default 200; if 0, no switch back to past context
+Ntrain = 600            # number of training cycles for each context; default 200
+Nextra = 0            # add cycles to show if block1; default 200; if 0, no switch back to past context
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
@@ -44,8 +44,8 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
-PFClearn = True
-shift_list = [0] # shift step list
+PFClearn = False
+shift_list = [50] # shift step list
 
 for shift in shift_list:
 
@@ -74,9 +74,10 @@ for shift in shift_list:
     optimizer = torch.optim.Adam(training_params, lr=1e-3)
     #import pdb;pdb.set_trace()
 
-    total_step = Ntrain*Ncontexts+Nextra
+    #total_step = Ntrain*Ncontexts+Nextra
+    total_step = Ntrain+Nextra
     print_step = 10 # print statistics every print_step
-    save_W_step = 20 # save wPFC2MD and wMD2PFC every save_W_step
+    save_W_step = 10 # save wPFC2MD and wMD2PFC every save_W_step
     running_loss = 0.0
     running_train_time = 0
     mses = list()
@@ -127,8 +128,8 @@ for shift in shift_list:
         #import pdb;pdb.set_trace()
 
         # shift wIn every training cycle here
-        # if i == 49:
-        # model.sensory2pfc.shift(shift=shift)
+        if i in [49, 249, 449]:
+            model.sensory2pfc.shift(shift=shift)
         ####print(model.sensory2pfc.wIn[:, 0]) # debug
 
         # print statistics
