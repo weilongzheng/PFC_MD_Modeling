@@ -21,14 +21,15 @@ filename = Path('files')
 Num_MD = 10
 Ncontexts = 2
 PFClearn = True
-seed_setup = [1]#[1,3,5]
+seed_setup = [5]#[1,3,5]
 
 MDeffect = True
 mse_md = list()
 for RNGSEED in seed_setup:
-    file = 'train_multicues_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+    file = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
     file = open(filename / file,'rb')
     data = pickle.load(file)
+    import pdb;pdb.set_trace()
     mse_md.append(data['mse'])
     
 mse_md = np.mean(mse_md,axis=0)
@@ -36,7 +37,7 @@ mse_md = np.mean(mse_md,axis=0)
 MDeffect = False
 mse_mdoff = list()
 for RNGSEED in seed_setup:
-    file = 'train_multicues_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+    file = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
     file = open(filename / file,'rb')
     data = pickle.load(file)
     mse_mdoff.append(data['mse'])

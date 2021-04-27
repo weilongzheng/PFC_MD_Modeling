@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 
 # Generate trainset
-RNGSEED = 3 # set random seed
+RNGSEED = 5 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
@@ -34,7 +34,7 @@ n_neuron_per_cue = 200
 Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
-MDeffect = False
+MDeffect = True
 PFClearn = True
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \

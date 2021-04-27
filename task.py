@@ -92,7 +92,7 @@ class RikhyeTaskMultiCues():
         self.blockTrain = blockTrain
         self.inpsPerConext = inpsPerConext
         self.tsteps = 200
-        self.cuesteps = 200 #200 # if 200, no delay period
+        self.cuesteps = 100 #200 # if 200, no delay period
         self.Ncues = self.Ncontexts * self.inpsPerConext
         self.tsteps_noise = 50
 
