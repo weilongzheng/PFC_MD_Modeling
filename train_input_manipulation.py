@@ -26,11 +26,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Generate trainset
-RNGSEED = 1 # set random seed
+RNGSEED = 5 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 500            # number of training cycles for each context
+Ntrain = 300            # number of training cycles for each context
 Nextra = 200            # add cycles to show if block1
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
