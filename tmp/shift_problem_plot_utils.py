@@ -126,10 +126,16 @@ save_W_step = 20 # save wPFC2MD and wMD2PFC every save_W_step
 font = {'family':'Times New Roman','weight':'normal', 'size':30}
 
 # wPFC2MD evolution
+wPFC2MD_max = 0
+for i in range(len(log['wPFC2MD_list'])):
+    wPFC2MD = log['wPFC2MD_list'][i]
+    if  wPFC2MD_max < wPFC2MD.max():
+        wPFC2MD_max = wPFC2MD.max()
+
 for i in range(len(log['wPFC2MD_list'])):
     wPFC2MD = log['wPFC2MD_list'][i]
     plt.figure(figsize=(15, 10))
-    ax = sns.heatmap(wPFC2MD, cmap='bwr', vmax=1.0, vmin=0.0)
+    ax = sns.heatmap(wPFC2MD, cmap='Reds', vmax=wPFC2MD_max, vmin=0.0)
     ax.set_xticks([0, 999])
     ax.set_xticklabels([1, 1000], rotation=0)
     ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
@@ -151,10 +157,16 @@ imageio.mimsave(gif_path, images, duration=0.1)
 optimize(gif_path)
 
 # wMD2PFC evolution
+wMD2PFC_min = 0
+for i in range(len(log['wMD2PFC_list'])):
+    wMD2PFC = log['wMD2PFC_list'][i]
+    if  wMD2PFC_min > wMD2PFC.min():
+        wMD2PFC_min = wMD2PFC.min()
+
 for i in range(len(log['wMD2PFC_list'])):
     wMD2PFC = log['wMD2PFC_list'][i]
     plt.figure(figsize=(15, 10))
-    ax = sns.heatmap(wMD2PFC, cmap='bwr', vmax=0.0, vmin=-0.1) # vmax and vmin need tunning
+    ax = sns.heatmap(wMD2PFC, cmap='Blues_r', vmax=0.0, vmin=wMD2PFC_min) # vmax and vmin need tunning
     ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
     ax.set_yticks([0, 999])
     ax.set_yticklabels([1, 1000], rotation=0)
