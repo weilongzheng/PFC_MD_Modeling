@@ -136,8 +136,8 @@ for i in range(len(log['wPFC2MD_list'])):
     wPFC2MD = log['wPFC2MD_list'][i]
     plt.figure(figsize=(15, 10))
     ax = sns.heatmap(wPFC2MD, cmap='Reds', vmax=wPFC2MD_max, vmin=0.0)
-    ax.set_xticks([0, 999])
-    ax.set_xticklabels([1, 1000], rotation=0)
+    ax.set_xticks([0, 99, 199, 299, 399, 499, 599, 699, 799, 899, 999])
+    ax.set_xticklabels([1, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], rotation=0)
     ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
     ax.set_xlabel('PFC neuron index')
     ax.set_ylabel('MD neuron index')
@@ -168,8 +168,8 @@ for i in range(len(log['wMD2PFC_list'])):
     plt.figure(figsize=(15, 10))
     ax = sns.heatmap(wMD2PFC, cmap='Blues_r', vmax=0.0, vmin=wMD2PFC_min) # vmax and vmin need tunning
     ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-    ax.set_yticks([0, 999])
-    ax.set_yticklabels([1, 1000], rotation=0)
+    ax.set_yticks([0, 99, 199, 299, 399, 499, 599, 699, 799, 899, 999])
+    ax.set_yticklabels([1, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], rotation=0)
     ax.set_xlabel('MD neuron index')
     ax.set_ylabel('PFC neuron index')
     ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn)+' Shift-'+str(shift)+' Cycle-'+str((i+1)*save_W_step), fontdict=font)
