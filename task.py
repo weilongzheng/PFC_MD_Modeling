@@ -87,14 +87,14 @@ class RikhyeTask():
         return cueList[0]
 
 class RikhyeTaskMultiCues():
-    def __init__(self, Ntrain, Nextra, Ncontexts, inpsPerConext, blockTrain):
+    def __init__(self, Ntrain, Nextra, Ncontexts, inpsPerConext, blockTrain, tsteps_noise):
         self.Ncontexts = Ncontexts
         self.blockTrain = blockTrain
         self.inpsPerConext = inpsPerConext
         self.tsteps = 200
         self.cuesteps = 100 #200 # if 200, no delay period
         self.Ncues = self.Ncontexts * self.inpsPerConext
-        self.tsteps_noise = 50
+        self.tsteps_noise = tsteps_noise
 
         if self.blockTrain:
             self.Nextra = Nextra            # add cycles to show if block1
@@ -131,12 +131,13 @@ class RikhyeTaskMultiCues():
 
         inputs = np.zeros((self.tsteps * num_trial, self.Ncues))
         targets = np.zeros((self.tsteps * num_trial, 2))
+        delaytsteps = self.tsteps-self.cuesteps
         t_start = 0
         for taski, cuei in cues_order:
             cue, target = \
                 self.get_cue_target(taski, cuei)
             inputs[t_start:t_start+self.cuesteps] = cue
-            inputs[t_start+self.tsteps-self.tsteps_noise:t_start+self.tsteps] = np.ones_like(cue)
+            inputs[t_start+self.tsteps-delaytsteps-self.tsteps_noise:t_start+self.tsteps-delaytsteps] = np.ones_like(cue)
             targets[t_start:t_start+self.tsteps] = target
             t_start += self.tsteps
 
