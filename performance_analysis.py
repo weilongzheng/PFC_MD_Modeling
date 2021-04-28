@@ -21,7 +21,7 @@ filename = Path('files')
 Num_MD = 10
 Ncontexts = 2
 PFClearn = True
-seed_setup = [5]#[1,3,5]
+seed_setup = [1,3,5]
 
 MDeffect = True
 mse_md = list()
@@ -29,7 +29,6 @@ for RNGSEED in seed_setup:
     file = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
     file = open(filename / file,'rb')
     data = pickle.load(file)
-    import pdb;pdb.set_trace()
     mse_md.append(data['mse'])
     
 mse_md = np.mean(mse_md,axis=0)
@@ -50,12 +49,12 @@ os.makedirs(filesave, exist_ok=True)
 plt.figure(figsize=(3,2.4))
 plt.plot(mse_mdoff,'tab:red',label='Without MD')
 plt.plot(mse_md,'tab:blue',label='With MD')
-plt.xticks(np.arange(0,1201,200),np.arange(0,2401,400))
+plt.xticks(np.arange(0,601,200),np.arange(0,1201,400))
 plt.xlabel('Trials'),plt.ylabel('MSE')
 plt.legend(frameon=False)
 plt.tight_layout()
-plt.axvspan(0, 500, ymin=0, ymax=1, alpha=0.2, color='tab:orange')
-plt.axvspan(1000, 1200, ymin=0, ymax=1, alpha=0.2, color='tab:orange')
-plt.axvspan(500, 1000, ymin=0, ymax=1, alpha=0.2, color='tab:green')
+plt.axvspan(0, 200, ymin=0, ymax=1, alpha=0.2, color='tab:orange')
+plt.axvspan(400, 600, ymin=0, ymax=1, alpha=0.2, color='tab:orange')
+plt.axvspan(200, 400, ymin=0, ymax=1, alpha=0.2, color='tab:green')
 #plt.savefig(filesave/'mse.pdf') 
-plt.savefig(filesave/'mse_multicues.png', dpi=300) 
+plt.savefig(filesave/'mse.png', dpi=300) 
