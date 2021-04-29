@@ -528,14 +528,17 @@ class MD_dev():
 #        # if not self.MDeffect: Gbase = 1.875
 
         # initialize PFC-MD weights
-        self.wPFC2MD = np.random.normal(0, 1 / np.sqrt(
-            self.Num_MD * self.Nneur), size=(self.Num_MD, self.Nneur))
-        self.wMD2PFC = np.random.normal(0, 1 / np.sqrt(
-            self.Num_MD * self.Nneur), size=(self.Nneur, self.Num_MD))
-        self.wMD2PFCMult = np.random.normal(0, 1 / np.sqrt(
-            self.Num_MD * self.Nneur), size=(self.Nneur, self.Num_MD))
+        self.wPFC2MD = np.random.normal(0, \
+                                        1 / np.sqrt(self.Num_MD * self.Nneur), \
+                                        size=(self.Num_MD, self.Nneur))
+        self.wMD2PFC = np.random.normal(0, \
+                                        1 / np.sqrt(self.Num_MD * self.Nneur), \
+                                        size=(self.Nneur, self.Num_MD))
+        self.wMD2PFCMult = np.random.normal(0, \
+                                            1 / np.sqrt(self.Num_MD * self.Nneur), \
+                                            size=(self.Nneur, self.Num_MD))
         
-        # initialize MD traces
+        # initialize MD traces & MD threshold
         self.MDpreTrace = np.zeros(shape=(self.Nneur))
         self.MDpostTrace = np.zeros(shape=(self.Num_MD))
         self.MDpreTrace_threshold = 0
@@ -573,10 +576,10 @@ class MD_dev():
         #  so as to somewhat integrate PFC input
         if self.positiveRates:
             self.MDinp += self.dt / self.tauMD * \
-                     (-self.MDinp + np.dot(self.wPFC2MD, input))
+                         (-self.MDinp + np.dot(self.wPFC2MD, input))
         else:  # shift PFC rates, so that mean is non-zero to turn MD on
             self.MDinp += self.dt / self.tauMD * \
-                     (-self.MDinp + np.dot(self.wPFC2MD, (input + 1. / 2)))
+                         (-self.MDinp + np.dot(self.wPFC2MD, (input + 1. / 2)))
                      
         #num_active = np.round(self.Num_MD / self.Ntasks)
         MDout = self.winner_take_all(self.MDinp)
@@ -624,8 +627,8 @@ class MD_dev():
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
 
         # Update and clip the weights
-        self.wPFC2MD = np.clip(self.wPFC2MD + 1.0 *  wPFC2MDdelta,      0., 1.)
-        self.wMD2PFC = np.clip(self.wMD2PFC + 0.8 * (wPFC2MDdelta.T), -10., 0.)
+        self.wPFC2MD = np.clip(self.wPFC2MD + 1.0 *  wPFC2MDdelta,      0., 10.)
+        self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
 
     def winner_take_all(self, MDinp):
