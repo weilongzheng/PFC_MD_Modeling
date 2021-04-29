@@ -178,22 +178,22 @@ for shift in shift_list:
             #         f.write('num_layers = ' + str(num_layers) + '\n')
 
             # save model during training
-            log['Jrec'] = model.pfc.Jrec
-            if  MDeffect == True:  
-                log['wPFC2MD'] = model.md.wPFC2MD
-                log['wMD2PFC'] = model.md.wMD2PFC
-                log['wMD2PFCMult'] = model.md.wMD2PFCMult
+    log['Jrec'] = model.pfc.Jrec
+    if  MDeffect == True:  
+        log['wPFC2MD'] = model.md.wPFC2MD
+        log['wMD2PFC'] = model.md.wMD2PFC
+        log['wMD2PFCMult'] = model.md.wMD2PFCMult
 
-            filename = Path('files')
-            os.makedirs(filename, exist_ok=True)
-            # file_training = 'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
-            #                 '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
-            #                 '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
-            file_training = 'Animation'+'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
-                            '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
-                            '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
-            with open(filename / file_training, 'wb') as f:
-                pickle.dump(log, f)
+    filename = Path('files')
+    os.makedirs(filename, exist_ok=True)
+    # file_training = 'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
+    #                 '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
+    #                 '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
+    file_training = 'nodelayAnimation'+'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
+                    '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
+                    '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
+    with open(filename / file_training, 'wb') as f:
+        pickle.dump(log, f)
 
 
     print('Finished Training')

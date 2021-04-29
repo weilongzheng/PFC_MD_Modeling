@@ -17,7 +17,7 @@ root = os.getcwd()
 sys.path.append(root)
 sys.path.append('..')
 from task import RikhyeTask
-from model import PytorchPFCMD
+from model import PytorchPFCMD,PytorchPFCMD_Shift
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio
@@ -29,7 +29,7 @@ RNGSEED = 5 # set random seed; default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 500            # number of training cycles for each context; default 200
+Ntrain = 400            # number of training cycles for each context; default 200
 Nextra = 0            # add cycles to show if block1; default 200
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -49,7 +49,7 @@ shift_list = [1] # shift step list
 for shift in shift_list:
 
 
-    model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
+    model = PytorchPFCMD_Shift(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, shift_step=shift,\
     MDeffect=MDeffect)
 
     # Training

@@ -24,7 +24,7 @@ from pygifsicle import optimize
 RNGSEED = 5 # set random seed
 np.random.seed([RNGSEED])
 
-Ntrain = 500            # number of training cycles for each context; default 200
+Ntrain = 1000            # number of training cycles for each context; default 200
 Nextra = 0            # add cycles to show if block1; default 200
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -39,7 +39,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift = 1 # shift step list
+shift = 100 # shift step list
 save_W_step = 20
 
 # Get data
