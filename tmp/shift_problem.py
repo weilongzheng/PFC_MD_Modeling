@@ -17,7 +17,8 @@ root = os.getcwd()
 sys.path.append(root)
 sys.path.append('..')
 from task import RikhyeTask
-from model import PytorchPFCMD
+#from model import PytorchPFCMD
+from model_dev import PytorchPFCMD # use model_dev.py
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio
@@ -30,7 +31,7 @@ RNGSEED = 5 # default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 600           # number of training cycles for each context; default 200
+Ntrain = 1000           # number of training cycles for each context; default 200
 Nextra = 0            # add cycles to show if block1; default 200; if 0, no switch back to past context
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -45,7 +46,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift_list = [1] # shift step list
+shift_list = [100] # shift step list
 
 for shift in shift_list:
 
@@ -74,7 +75,8 @@ for shift in shift_list:
     optimizer = torch.optim.Adam(training_params, lr=1e-3)
     #import pdb;pdb.set_trace()
 
-    total_step = Ntrain*Ncontexts+Nextra
+    #total_step = Ntrain*Ncontexts+Nextra
+    total_step = Ntrain+Nextra
     print_step = 10 # print statistics every print_step
     save_W_step = 20 # save wPFC2MD and wMD2PFC every save_W_step
     running_loss = 0.0
@@ -129,7 +131,7 @@ for shift in shift_list:
         #import pdb;pdb.set_trace()
 
         # shift wIn here
-        if i >= 599:
+        if i in [649]:
             model.sensory2pfc.shift(shift=shift)
         ####print(model.sensory2pfc.wIn[:, 0]) # debug
 
