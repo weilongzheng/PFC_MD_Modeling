@@ -592,7 +592,7 @@ class MD_dev():
         # MD presynaptic traces filtered over 10 trials
         # Ideally one should weight them with MD syn weights,
         #  but syn plasticity just uses pre!
-        self.MDpreTrace += 1. / self.tsteps / 5.0 * (-self.MDpreTrace + rout)
+        self.MDpreTrace  += 1. / self.tsteps / 5.0 * (-self.MDpreTrace + rout)
         self.MDpostTrace += 1. / self.tsteps / 5.0 * (-self.MDpostTrace + MDout)
         # MDoutTrace =  self.MDpostTrace
 
@@ -627,8 +627,12 @@ class MD_dev():
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
 
         # Update and clip the weights
-        self.wPFC2MD = np.clip(self.wPFC2MD + 1.0 *  wPFC2MDdelta,      0., 10.)
-        self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
+        # keep wPFC2MD and wMD2PFC symmetrical
+        # self.wPFC2MD = np.clip(self.wPFC2MD + 1.0 *  wPFC2MDdelta,      0., 10.)
+        # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
+        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
+        self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
+        self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
 
     def winner_take_all(self, MDinp):
