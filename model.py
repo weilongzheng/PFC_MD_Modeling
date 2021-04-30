@@ -426,7 +426,7 @@ class SensoryInputLayer():
         self._use_torch = use_torch
 
     
-    def shift(self, shift=1):
+    def shift(self, shift=0):
         '''
         shift Win to test shift problem in PFC_MD model
         '''
