@@ -35,7 +35,7 @@ Nextra = 200            # add cycles to show if block1
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
-tsteps_noise = 10
+tsteps_noise = 20
 #dataset = RikhyeTask(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=True)
 dataset_multicues = RikhyeTaskMultiCues(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=True, tsteps_noise=tsteps_noise)
 # Model settings
@@ -46,7 +46,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 noiseSD = 1e-1
 noisePresent = True
-MDeffect = True
+MDeffect = False
 PFClearn = True
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
@@ -88,7 +88,7 @@ PFCouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
 for i in range(total_step):
 
     train_time_start = time.time()
-    #import pdb;pdb.set_trace()
+    import pdb;pdb.set_trace()
     # extract data
     # noisy inputs
     #inputs, labels = dataset()
