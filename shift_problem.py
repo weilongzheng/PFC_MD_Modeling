@@ -137,6 +137,14 @@ for shift in shift_list:
         log['mse'].append(mse)
         running_train_time += time.time() - train_time_start
         running_loss += loss.item()
+        
+        if i ==349:
+            
+            plt.figure(),plt.plot(model.md.MDpreTrace)
+            plt.figure(),sns.heatmap(model.md.wPFC2MD, cmap='Reds')
+            plt.figure(),plt.plot(PFCouts_all[700,150,:]),plt.plot(PFCouts_all[699,150,:])
+            plt.figure(),plt.plot(MDouts_all[700,150,:]),plt.plot(MDouts_all[699,150,:])
+            import pdb;pdb.set_trace()
 
         #  save wPFC2MD and wMD2PFC
         if i % save_W_step == (save_W_step - 1):
@@ -197,8 +205,8 @@ for shift in shift_list:
     print('Finished Training')
 
     # Make some plots
-    with open(filename / file_training, 'rb') as f:
-        log = pickle.load(f)
+#    with open(filename / file_training, 'rb') as f:
+#        log,PFCouts_all,MDouts_all = pickle.load(f)
 
     # Plot MSE curve
     plt.plot(log['mse'], label=f'With MD; shift step = {shift}')
