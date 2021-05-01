@@ -593,6 +593,7 @@ class MD_dev():
         # Ideally one should weight them with MD syn weights,
         #  but syn plasticity just uses pre!
         self.MDpreTrace  += 1. / self.tsteps / 5.0 * (-self.MDpreTrace + rout)
+        #self.MDpreTrace  = rout
         self.MDpostTrace += 1. / self.tsteps / 5.0 * (-self.MDpostTrace + MDout)
         # MDoutTrace =  self.MDpostTrace
 
