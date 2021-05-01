@@ -74,6 +74,7 @@ optimizer = torch.optim.Adam(training_params, lr=1e-3)
 #import pdb;pdb.set_trace()
 
 total_step = Ntrain*Ncontexts+Nextra
+#total_step = Ntrain+Nextra
 print_step = 10 # print statistics every print_step
 save_W_step = 10 # save wPFC2MD and wMD2PFC every save_W_step
 running_loss = 0.0

@@ -188,22 +188,23 @@ imageio.mimsave(gif_path, images, duration=0.1)
 optimize(gif_path)
 
 # PFC outputs evolution
-# font = {'family':'Times New Roman','weight':'normal', 'size':30}
-# plot_step = 10
+font = {'family':'Times New Roman','weight':'normal', 'size':30}
+plot_step = 10
 
-# for i in range(len(PFCouts_all)):
-#     if (i+1) % plot_step == 0:
-#         meanPFCouts = meanPFCouts_all[i, :]
-#         plt.plot(meanPFCouts)
-#         plt.title('PFC outputs' + ' Cycle-'+str(i+1), fontdict=font)
-#         plt.savefig('./animation/'+f'PFCoutputs_index_{i}.png')
-#         plt.close() # do not show figs in line
+meanPFCouts_all = np.mean(PFCouts_all, axis=1)
+for i in range(len(PFCouts_all)):
+    if (i+1) % plot_step == 0:
+        meanPFCouts = meanPFCouts_all[i, :]
+        plt.plot(meanPFCouts)
+        plt.title('PFC outputs' + ' Cycle-'+str(i+1), fontdict=font)
+        plt.savefig('./animation/'+f'PFCoutputs_index_{i}.png')
+        plt.close() # do not show figs in line
 
-# images = []
-# for i in range(len(PFCouts_all)):
-#     if (i+1) % plot_step == 0:
-#         filename = './animation/'+f'PFCoutputs_index_{i}.png'
-#         images.append(imageio.imread(filename))
-# gif_path = './animation/'+'PFCoutputs_evolution.gif'
-# imageio.mimsave(gif_path, images, duration=0.1)
-# optimize(gif_path)
+images = []
+for i in range(len(PFCouts_all)):
+    if (i+1) % plot_step == 0:
+        filename = './animation/'+f'PFCoutputs_index_{i}.png'
+        images.append(imageio.imread(filename))
+gif_path = './animation/'+'PFCoutputs_evolution.gif'
+imageio.mimsave(gif_path, images, duration=0.15)
+optimize(gif_path)

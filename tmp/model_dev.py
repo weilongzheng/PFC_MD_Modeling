@@ -577,6 +577,7 @@ class MD_dev():
         if self.positiveRates:
             self.MDinp += self.dt / self.tauMD * \
                          (-self.MDinp + np.dot(self.wPFC2MD, input))
+            # self.MDinp = np.dot(self.wPFC2MD, input)
         else:  # shift PFC rates, so that mean is non-zero to turn MD on
             self.MDinp += self.dt / self.tauMD * \
                          (-self.MDinp + np.dot(self.wPFC2MD, (input + 1. / 2)))
@@ -593,8 +594,9 @@ class MD_dev():
         # Ideally one should weight them with MD syn weights,
         #  but syn plasticity just uses pre!
         self.MDpreTrace  += 1. / self.tsteps / 5.0 * (-self.MDpreTrace + rout)
-        #self.MDpreTrace  = rout
+        # self.MDpreTrace  = rout
         self.MDpostTrace += 1. / self.tsteps / 5.0 * (-self.MDpostTrace + MDout)
+        # self.MDpostTrace = MDout
         # MDoutTrace =  self.MDpostTrace
 
         MDoutTrace = self.winner_take_all(self.MDpostTrace)
@@ -621,17 +623,18 @@ class MD_dev():
         MDoutTrace = self.update_trace(rout, MDout)
         #                    if self.MDpostTrace[0] > self.MDpostTrace[1]: MDoutTrace = np.array([1,0])
         #                    else: MDoutTrace = np.array([0,1])
+        #self.MDpreTrace_threshold = np.median(np.sort(self.MDpreTrace)[-800:]) # original np.mean(self.MDpreTrace)
         self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
         #self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:self.Nsub * self.Ncues])  # first 800 cells are cue selective
         # MDoutTrace_threshold = np.mean(MDoutTrace) #median
-        MDoutTrace_threshold = 0.5  
+        MDoutTrace_threshold = 0.5 # original 0.5  
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
 
         # Update and clip the weights
         # keep wPFC2MD and wMD2PFC symmetrical
         # self.wPFC2MD = np.clip(self.wPFC2MD + 1.0 *  wPFC2MDdelta,      0., 10.)
         # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
-        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
+        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0., 7. / self.G)
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
@@ -678,7 +681,7 @@ class PytorchPFCMD(nn.Module):
         self.MDeffect = MDeffect
         if self.MDeffect:
             # use MD_dev here
-            self.md = MD_dev(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active, dt=dt)
+            self.md = MD(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active, dt=dt)
             self.md_output = np.zeros(Num_MD)
             index = np.random.permutation(Num_MD)
             self.md_output[index[:num_active]] = 1 # randomly set part of md_output to 1
