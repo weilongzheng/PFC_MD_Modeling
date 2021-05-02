@@ -208,3 +208,25 @@ for i in range(len(PFCouts_all)):
 gif_path = './animation/'+'PFCoutputs_evolution.gif'
 imageio.mimsave(gif_path, images, duration=0.15)
 optimize(gif_path)
+
+# MD outputs evolution
+font = {'family':'Times New Roman','weight':'normal', 'size':30}
+plot_step = 10
+
+meanMDouts_all = np.mean(MDouts_all, axis=1)
+for i in range(len(MDouts_all)):
+    if (i+1) % plot_step == 0:
+        meanMDouts = meanMDouts_all[i, :]
+        plt.plot(meanMDouts)
+        plt.title('MD outputs' + ' Cycle-'+str(i+1), fontdict=font)
+        plt.savefig('./animation/'+f'MDoutputs_index_{i}.png')
+        plt.close() # do not show figs in line
+
+images = []
+for i in range(len(MDouts_all)):
+    if (i+1) % plot_step == 0:
+        filename = './animation/'+f'MDoutputs_index_{i}.png'
+        images.append(imageio.imread(filename))
+gif_path = './animation/'+'MDoutputs_evolution.gif'
+imageio.mimsave(gif_path, images, duration=0.15)
+optimize(gif_path)

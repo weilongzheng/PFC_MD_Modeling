@@ -628,13 +628,22 @@ class MD_dev():
         #self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:self.Nsub * self.Ncues])  # first 800 cells are cue selective
         # MDoutTrace_threshold = np.mean(MDoutTrace) #median
         MDoutTrace_threshold = 0.5 # original 0.5  
-        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
-
+        # original
+        # wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 5.0 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+        
         # Update and clip the weights
+
         # keep wPFC2MD and wMD2PFC symmetrical
         # self.wPFC2MD = np.clip(self.wPFC2MD + 1.0 *  wPFC2MDdelta,      0., 10.)
         # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
         # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0., 7. / self.G)
+
+        # original
+        # self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
+        # self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
+        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
+
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
@@ -656,6 +665,10 @@ class MD_dev():
         MDout[index_pos] = 1
         MDout[index_neg] = 0
         return MDout
+    
+    def shift_weights(self, shift=0):
+        self.wPFC2MD = np.roll(self.wPFC2MD, shift=shift, axis=1)
+        self.wMD2PFC = np.roll(self.wMD2PFC, shift=shift, axis=0)
 
 
 class PytorchPFCMD(nn.Module):
@@ -681,7 +694,7 @@ class PytorchPFCMD(nn.Module):
         self.MDeffect = MDeffect
         if self.MDeffect:
             # use MD_dev here
-            self.md = MD(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active, dt=dt)
+            self.md = MD_dev(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active, dt=dt)
             self.md_output = np.zeros(Num_MD)
             index = np.random.permutation(Num_MD)
             self.md_output[index[:num_active]] = 1 # randomly set part of md_output to 1
@@ -710,6 +723,8 @@ class PytorchPFCMD(nn.Module):
         self.pfc_outputs = torch.zeros((n_time, self.pfc.Nneur))
         if self.MDeffect:
             self.md_output_t *= 0
+            # reinitialize pretrace every cycle
+            self.md.MDpreTrace = np.zeros(shape=(1000))
 
         for i in range(n_time):
             input_t = input[i]

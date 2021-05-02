@@ -17,8 +17,8 @@ root = os.getcwd()
 sys.path.append(root)
 sys.path.append('..')
 from task import RikhyeTask
-from model import PytorchPFCMD
-#from model_dev import PytorchPFCMD # use model_dev.py
+#from model import PytorchPFCMD
+from model_dev import PytorchPFCMD # use model_dev.py
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio
@@ -31,7 +31,7 @@ RNGSEED = 5 # default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 150           # number of training cycles for each context; default 200
+Ntrain = 100           # number of training cycles for each context; default 200
 Nextra = 0            # add cycles to show if block1; default 200; if 0, no switch back to past context
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -46,7 +46,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift = 3 # shift step
+shift = 1 # shift step
 
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
@@ -116,7 +116,8 @@ for i in range(total_step):
     #     MDpreTraces[i,:] = model.md.MDpreTrace
     for itrial in range(inpsPerConext): 
         #PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
-        PFCouts_all[i,:,:] = model.pfc_outputs.detach().numpy()
+        #PFCouts_all[i,:,:] = model.pfc_outputs.detach().numpy()
+        PFCouts_all[i,:,:] = model.md.MDpreTrace
         if  MDeffect == True:
             #MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
             MDouts_all[i,:,:] = model.md_output_t
@@ -131,7 +132,11 @@ for i in range(total_step):
     #import pdb;pdb.set_trace()
 
     # shift wIn here
+    # if i >= 649:
     model.sensory2pfc.shift(shift=shift)
+    #model.md.shift_weights(shift=shift)
+    ####print(model.md.wPFC2MD[0, 0:20])
+    ####rint(model.md.wMD2PFC[0:20, 0])
     ####print(model.sensory2pfc.wIn[:, 0]) # debug
 
     # print statistics
@@ -199,6 +204,7 @@ with open(filename / file_training, 'wb') as f:
 
 
 print('Finished Training')
+
 
 # Make some plots
 with open(filename / file_training, 'rb') as f:
