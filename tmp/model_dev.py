@@ -596,13 +596,13 @@ class MD_dev():
 
         # original
         # self.MDpreTrace  += 1. / self.tsteps / 5.0 * (-self.MDpreTrace + rout)
-        self.MDpreTrace  += 1. / 5.0 * (-self.MDpreTrace + rout)
-        # self.MDpreTrace  = rout
+        # self.MDpreTrace  += 1. / 5.0 * (-self.MDpreTrace + rout)
+        self.MDpreTrace  = rout
 
         # original
         # self.MDpostTrace += 1. / self.tsteps / 5.0 * (-self.MDpostTrace + MDout)
-        self.MDpostTrace += 1. / 5.0 * (-self.MDpostTrace + MDout)
-        # self.MDpostTrace = MDout
+        # self.MDpostTrace += 1. / 5.0 * (-self.MDpostTrace + MDout)
+        self.MDpostTrace = MDout
 
         
         MDoutTrace = self.winner_take_all(self.MDpostTrace)
