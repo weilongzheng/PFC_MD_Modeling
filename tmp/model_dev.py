@@ -630,7 +630,7 @@ class MD_dev():
         MDoutTrace_threshold = 0.5 # original 0.5  
         # original
         # wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
-        wPFC2MDdelta = 5.0 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
         
         # Update and clip the weights
 
@@ -724,7 +724,7 @@ class PytorchPFCMD(nn.Module):
         if self.MDeffect:
             self.md_output_t *= 0
             # reinitialize pretrace every cycle
-            self.md.MDpreTrace = np.zeros(shape=(1000))
+            # self.md.MDpreTrace = np.zeros(shape=(1000))
 
         for i in range(n_time):
             input_t = input[i]
