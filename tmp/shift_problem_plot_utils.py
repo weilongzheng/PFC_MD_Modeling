@@ -122,10 +122,9 @@ plt.show()
 # plt.show()
 
 
-save_W_step = 10 # save wPFC2MD and wMD2PFC every save_W_step
-font = {'family':'Times New Roman','weight':'normal', 'size':30}
 
 # wPFC2MD evolution
+font = {'family':'Times New Roman','weight':'normal', 'size':30}
 wPFC2MD_max = 0
 for i in range(len(log['wPFC2MD_list'])):
     wPFC2MD = log['wPFC2MD_list'][i]
@@ -184,7 +183,7 @@ for i in range(len(log['wMD2PFC_list'])):
     filename = './animation/'+f'wMD2PFC_index_{i}.png'
     images.append(imageio.imread(filename))
 gif_path = './animation/'+'wMD2PFC_evolution.gif'
-imageio.mimsave(gif_path, images, duration=0.1)
+imageio.mimsave(gif_path, images, duration=0.2)
 optimize(gif_path)
 
 # PFC outputs evolution
@@ -206,7 +205,7 @@ for i in range(len(PFCouts_all)):
         filename = './animation/'+f'PFCoutputs_index_{i}.png'
         images.append(imageio.imread(filename))
 gif_path = './animation/'+'PFCoutputs_evolution.gif'
-imageio.mimsave(gif_path, images, duration=0.15)
+imageio.mimsave(gif_path, images, duration=0.2)
 optimize(gif_path)
 
 # MD outputs evolution
@@ -228,7 +227,7 @@ for i in range(len(MDouts_all)):
         filename = './animation/'+f'MDoutputs_index_{i}.png'
         images.append(imageio.imread(filename))
 gif_path = './animation/'+'MDoutputs_evolution.gif'
-imageio.mimsave(gif_path, images, duration=0.15)
+imageio.mimsave(gif_path, images, duration=0.2)
 optimize(gif_path)
 
 # MD pretraces evolution
@@ -253,5 +252,5 @@ for i in range(len(MDpreTraces_all)):
         filename = './animation/'+f'MDpreTraces_index_{i}.png'
         images.append(imageio.imread(filename))
 gif_path = './animation/'+'MDpreTraces_evolution.gif'
-imageio.mimsave(gif_path, images, duration=0.15)
+imageio.mimsave(gif_path, images, duration=0.2)
 optimize(gif_path)

@@ -18,7 +18,7 @@ sys.path.append(root)
 sys.path.append('..')
 from task import RikhyeTask
 #from model import PytorchPFCMD
-from model_dev import PytorchPFCMD # use model_dev.py
+from model_dev import PytorchPFCMD
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio
@@ -31,8 +31,8 @@ RNGSEED = 5 # default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 100           # number of training cycles for each context; default 200
-Nextra = 0            # add cycles to show if block1; default 200; if 0, no switch back to past context
+Ntrain = 200           # number of training cycles for each context; default 200
+Nextra = 200            # add cycles to show if block1; default 200; if 0, no switch back to past context
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
@@ -46,7 +46,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift = 3 # shift step
+shift = 0 # shift step
 
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
@@ -73,8 +73,8 @@ Jrec_init = model.pfc.Jrec.clone()#.numpy()
 optimizer = torch.optim.Adam(training_params, lr=1e-3)
 #import pdb;pdb.set_trace()
 
-#total_step = Ntrain*Ncontexts+Nextra
-total_step = Ntrain+Nextra
+total_step = Ntrain*Ncontexts+Nextra
+#total_step = Ntrain+Nextra
 print_step = 10 # print statistics every print_step
 save_W_step = 10 # save wPFC2MD and wMD2PFC every save_W_step
 running_loss = 0.0
@@ -121,7 +121,7 @@ for i in range(total_step):
     # save PFC and MD activities
     # PFCouts_all[i,:,:] = model.pfc_outputs.detach().numpy()
     if  MDeffect == True:
-        #MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+        # MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
         MDouts_all[i,:,:] = model.md_output_t
         MDpreTraces_all[i,:,:] = model.md_preTraces
         MDpreTrace_threshold_all[i, :, :] = model.md_preTrace_thresholds
@@ -142,7 +142,7 @@ for i in range(total_step):
     #model.md.shift_weights(shift=shift)
     ####print(model.md.wPFC2MD[0, 0:20])
     ####rint(model.md.wMD2PFC[0:20, 0])
-    ####print(model.sensory2pfc.wIn[:, 0]) # debug
+    ####print(model.sensory2pfc.wIn[:, 0])
 
     # print statistics
     mse = loss.item()

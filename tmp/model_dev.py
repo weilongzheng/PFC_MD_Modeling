@@ -582,10 +582,10 @@ class MD_dev():
             self.MDinp += self.dt / self.tauMD * \
                          (-self.MDinp + np.dot(self.wPFC2MD, (input + 1. / 2)))
                      
-        #num_active = np.round(self.Num_MD / self.Ntasks)
+        # num_active = np.round(self.Num_MD / self.Ntasks)
         MDout = self.winner_take_all(self.MDinp)
 
-        self.update_weights(input, MDout)
+        # self.update_weights(input, MDout)
 
         return MDout
 
@@ -593,59 +593,33 @@ class MD_dev():
         # MD presynaptic traces filtered over 10 trials
         # Ideally one should weight them with MD syn weights,
         #  but syn plasticity just uses pre!
-        self.MDpreTrace  += 1. / self.tsteps / 5.0 * (-self.MDpreTrace + rout)
+
+        # original
+        # self.MDpreTrace  += 1. / self.tsteps / 5.0 * (-self.MDpreTrace + rout)
+        self.MDpreTrace  += 1. / 5.0 * (-self.MDpreTrace + rout)
         # self.MDpreTrace  = rout
-        self.MDpostTrace += 1. / self.tsteps / 5.0 * (-self.MDpostTrace + MDout)
+
+        # original
+        # self.MDpostTrace += 1. / self.tsteps / 5.0 * (-self.MDpostTrace + MDout)
+        self.MDpostTrace += 1. / 5.0 * (-self.MDpostTrace + MDout)
         # self.MDpostTrace = MDout
-        # MDoutTrace =  self.MDpostTrace
 
-        MDoutTrace = self.winner_take_all(self.MDpostTrace)
-#        MDoutTrace = np.zeros(self.Num_MD)
-#        MDpostTrace_sorted = np.sort(self.MDpostTrace)
-#        num_active = np.round(self.Num_MD / self.Ntasks)
-#        # MDthreshold  = np.mean(MDpostTrace_sorted[-4:])
-#        MDthreshold = np.mean(
-#            MDpostTrace_sorted[-int(num_active) * 2:])
-#        # MDthreshold  = np.mean(self.MDpostTrace)
-#        index_pos = np.where(self.MDpostTrace >= MDthreshold)
-#        index_neg = np.where(self.MDpostTrace < MDthreshold)
-#        MDoutTrace[index_pos] = 1
-#        MDoutTrace[index_neg] = 0
-        return MDoutTrace
-
-    def update_weights(self, rout, MDout):
-        """Update weights with plasticity rules.
-
-        Args:
-            rout: input to MD
-            MDout: activity of MD
-        """
-        MDoutTrace = self.update_trace(rout, MDout)
-        #                    if self.MDpostTrace[0] > self.MDpostTrace[1]: MDoutTrace = np.array([1,0])
-        #                    else: MDoutTrace = np.array([0,1])
-        #self.MDpreTrace_threshold = np.median(np.sort(self.MDpreTrace)[-800:]) # original np.mean(self.MDpreTrace)
-        self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
-        #self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:self.Nsub * self.Ncues])  # first 800 cells are cue selective
-        # MDoutTrace_threshold = np.mean(MDoutTrace) #median
-        MDoutTrace_threshold = 0.5 # original 0.5  
-        # original
-        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
         
-        # Update and clip the weights
+        MDoutTrace = self.winner_take_all(self.MDpostTrace)
 
-        # keep wPFC2MD and wMD2PFC symmetrical
-        # self.wPFC2MD = np.clip(self.wPFC2MD + 1.0 *  wPFC2MDdelta,      0., 10.)
-        # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
-        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0., 7. / self.G)
+        # MDoutTrace = np.zeros(self.Num_MD)
+        # MDpostTrace_sorted = np.sort(self.MDpostTrace)
+        # num_active = np.round(self.Num_MD / self.Ntasks)
+        # # MDthreshold  = np.mean(MDpostTrace_sorted[-4:])
+        # MDthreshold = np.mean(
+        #     MDpostTrace_sorted[-int(num_active) * 2:])
+        # # MDthreshold  = np.mean(self.MDpostTrace)
+        # index_pos = np.where(self.MDpostTrace >= MDthreshold)
+        # index_neg = np.where(self.MDpostTrace < MDthreshold)
+        # MDoutTrace[index_pos] = 1
+        # MDoutTrace[index_neg] = 0
 
-        # original
-        # self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        # self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
-        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
-
-        self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
-        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
+        return MDoutTrace
 
     def winner_take_all(self, MDinp):
         '''Winner take all on the MD
@@ -664,6 +638,47 @@ class MD_dev():
         MDout[index_pos] = 1
         MDout[index_neg] = 0
         return MDout
+
+    def update_weights(self, rout, MDout):
+        """Update weights with plasticity rules.
+
+        Args:
+            rout: input to MD
+            MDout: activity of MD
+        """
+        MDoutTrace = self.update_trace(rout, MDout)
+
+        # if self.MDpostTrace[0] > self.MDpostTrace[1]: MDoutTrace = np.array([1,0])
+        # else: MDoutTrace = np.array([0,1])
+
+         
+        # original
+        # self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
+        # self.MDpreTrace_threshold = np.median(np.sort(self.MDpreTrace)[-800:])
+        self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
+        
+        # MDoutTrace_threshold = np.mean(MDoutTrace) #median
+        MDoutTrace_threshold = 0.5 # original 0.5  
+
+        
+        # original
+        # wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 20.0 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+        
+        # Update and clip the weights
+        # original
+        # self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
+        # self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
+        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
+        
+        # keep wPFC2MD and wMD2PFC symmetrical
+        # self.wPFC2MD = np.clip(self.wPFC2MD + 1.0 *  wPFC2MDdelta,      0., 10.)
+        # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
+        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0., 7. / self.G)
+
+        self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
+        self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
+        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
     
     def shift_weights(self, shift=0):
         self.wPFC2MD = np.roll(self.wPFC2MD, shift=shift, axis=1)
@@ -742,8 +757,7 @@ class PytorchPFCMD(nn.Module):
 
             input2pfc = self.sensory2pfc(input_t)
             # try learnable input weights
-            # input2pfc = self.PytorchSensory2pfc(input_t)
-            #import pdb;pdb.set_trace() 
+            # input2pfc = self.PytorchSensory2pfc(input_t) 
             if self.MDeffect:
                 self.md_output = self.md(pfc_output.detach().numpy())
 
@@ -770,7 +784,11 @@ class PytorchPFCMD(nn.Module):
                 pfc_output = self.pfc(input2pfc)
                 pfc_output_t = pfc_output.view(1,pfc_output.shape[0])
                 self.pfc_outputs[i, :] = pfc_output_t
-            
+        
+        # update PFC-MD weights every training cycle
+        if self.MDeffect:
+            self.md.update_weights(np.mean(self.pfc_outputs.detach().numpy(), axis=0), np.mean(self.md_output_t, axis=0))
+        
         outputs = self.pfc2out(self.pfc_outputs)
         outputs = torch.tanh(outputs)
             
