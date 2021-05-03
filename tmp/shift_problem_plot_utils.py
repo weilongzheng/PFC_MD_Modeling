@@ -230,3 +230,28 @@ for i in range(len(MDouts_all)):
 gif_path = './animation/'+'MDoutputs_evolution.gif'
 imageio.mimsave(gif_path, images, duration=0.15)
 optimize(gif_path)
+
+# MD pretraces evolution
+font = {'family':'Times New Roman','weight':'normal', 'size':30}
+plot_step = 10
+
+meanMDpreTraces_all = np.mean(MDpreTraces_all, axis=1)
+meanMDpreTrace_threshold_all = np.mean(MDpreTrace_threshold_all, axis=1)
+for i in range(len(MDpreTraces_all)):
+    if (i+1) % plot_step == 0:
+        MDpreTraces = meanMDpreTraces_all[i, :]
+        MDpreTrace_threshold = meanMDpreTrace_threshold_all[i, :]
+        plt.plot(MDpreTraces)    
+        plt.axhline(y=MDpreTrace_threshold, color='r', linestyle='-')
+        plt.title('MD pretraces' + ' Cycle-'+str(i+1), fontdict=font)
+        plt.savefig('./animation/'+f'MDpreTraces_index_{i}.png')
+        plt.close() # do not show figs in line
+
+images = []
+for i in range(len(MDpreTraces_all)):
+    if (i+1) % plot_step == 0:
+        filename = './animation/'+f'MDpreTraces_index_{i}.png'
+        images.append(imageio.imread(filename))
+gif_path = './animation/'+'MDpreTraces_evolution.gif'
+imageio.mimsave(gif_path, images, duration=0.15)
+optimize(gif_path)

@@ -31,7 +31,7 @@ RNGSEED = 5 # default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 200           # number of training cycles for each context; default 200
+Ntrain = 100           # number of training cycles for each context; default 200
 Nextra = 0            # add cycles to show if block1; default 200; if 0, no switch back to past context
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -46,7 +46,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift = 1 # shift step
+shift = 3 # shift step
 
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
@@ -73,8 +73,8 @@ Jrec_init = model.pfc.Jrec.clone()#.numpy()
 optimizer = torch.optim.Adam(training_params, lr=1e-3)
 #import pdb;pdb.set_trace()
 
-total_step = Ntrain*Ncontexts+Nextra
-#total_step = Ntrain+Nextra
+#total_step = Ntrain*Ncontexts+Nextra
+total_step = Ntrain+Nextra
 print_step = 10 # print statistics every print_step
 save_W_step = 10 # save wPFC2MD and wMD2PFC every save_W_step
 running_loss = 0.0
@@ -92,6 +92,8 @@ tsteps = 200
 #MDouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,Num_MD))
 #PFCouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
 MDouts_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, Num_MD))
+MDpreTraces_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, n_neuron))
+MDpreTrace_threshold_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, 1))
 PFCouts_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, n_neuron))
 
 for i in range(total_step):
@@ -109,18 +111,21 @@ for i in range(total_step):
     # forward + backward + optimize
     outputs = model(inputs, labels)
 
-    # check PFC and MD outputs
+    # save PFC and MD activities
     # PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
     # if  MDeffect == True:
     #     MDouts_all[i,:] = model.md_output
     #     MDpreTraces[i,:] = model.md.MDpreTrace
-    for itrial in range(inpsPerConext): 
+    # for itrial in range(inpsPerConext): 
         #PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
-        #PFCouts_all[i,:,:] = model.pfc_outputs.detach().numpy()
-        PFCouts_all[i,:,:] = model.md.MDpreTrace
-        if  MDeffect == True:
-            #MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
-            MDouts_all[i,:,:] = model.md_output_t
+    # save PFC and MD activities
+    # PFCouts_all[i,:,:] = model.pfc_outputs.detach().numpy()
+    if  MDeffect == True:
+        #MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+        MDouts_all[i,:,:] = model.md_output_t
+        MDpreTraces_all[i,:,:] = model.md_preTraces
+        MDpreTrace_threshold_all[i, :, :] = model.md_preTrace_thresholds
+
 
     loss = criterion(outputs, labels)
     loss.backward()
