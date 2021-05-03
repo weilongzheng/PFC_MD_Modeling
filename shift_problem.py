@@ -29,7 +29,7 @@ RNGSEED = 5 # set random seed; default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 500            # number of training cycles for each context; default 200
+Ntrain = 200            # number of training cycles for each context; default 200
 Nextra = 0            # add cycles to show if block1; default 200
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -114,7 +114,8 @@ for shift in shift_list:
         #     MDpreTraces[i,:] = model.md.MDpreTrace
         tstart = 0
         for itrial in range(inpsPerConext): 
-            PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
+            #PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
+            PFCouts_all[i*inpsPerConext+tstart,:,:] = model.md.MDpreTrace
             if  MDeffect == True:
                 MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
             tstart += 1
@@ -138,13 +139,13 @@ for shift in shift_list:
         running_train_time += time.time() - train_time_start
         running_loss += loss.item()
         
-        if i ==349:
-            
-            plt.figure(),plt.plot(model.md.MDpreTrace)
-            plt.figure(),sns.heatmap(model.md.wPFC2MD, cmap='Reds')
-            plt.figure(),plt.plot(PFCouts_all[700,150,:]),plt.plot(PFCouts_all[699,150,:])
-            plt.figure(),plt.plot(MDouts_all[700,150,:]),plt.plot(MDouts_all[699,150,:])
-            import pdb;pdb.set_trace()
+#        if i ==349:
+#            
+#            plt.figure(),plt.plot(model.md.MDpreTrace)
+#            plt.figure(),sns.heatmap(model.md.wPFC2MD, cmap='Reds')
+#            plt.figure(),plt.plot(PFCouts_all[700,150,:]),plt.plot(PFCouts_all[699,150,:])
+#            plt.figure(),plt.plot(MDouts_all[700,150,:]),plt.plot(MDouts_all[699,150,:])
+#            import pdb;pdb.set_trace()
 
         #  save wPFC2MD and wMD2PFC
         if i % save_W_step == (save_W_step - 1):

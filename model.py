@@ -285,6 +285,7 @@ class MD():
         MDout = self.winner_take_all(self.MDinp)
 
         self.update_weights(input, MDout)
+        self.update_weights(input, MDout)
 
         return MDout
 
@@ -322,7 +323,8 @@ class MD():
         MDoutTrace = self.update_trace(rout, MDout)
         #                    if self.MDpostTrace[0] > self.MDpostTrace[1]: MDoutTrace = np.array([1,0])
         #                    else: MDoutTrace = np.array([0,1])
-        self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
+        # self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
+        self.MDpreTrace_threshold = np.mean(self.MDpreTrace)+0.4*np.std(self.MDpreTrace)
         #self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:self.Nsub * self.Ncues])  # first 800 cells are cue selective
         # MDoutTrace_threshold = np.mean(MDoutTrace) #median
         MDoutTrace_threshold = 0.5  
