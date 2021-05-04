@@ -31,7 +31,7 @@ RNGSEED = 5 # default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 500           # number of training cycles for each context; default 200
+Ntrain = 400           # number of training cycles for each context; default 200
 Nextra = 0            # add cycles to show if block1; default 200; if 0, no switch back to past context
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli

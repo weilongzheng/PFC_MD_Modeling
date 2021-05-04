@@ -311,8 +311,15 @@ class PytorchPFC(nn.Module):
             self.xinp += torch.normal(mean=0, std=self.noiseSD * np.sqrt(self.dt) / self.tau, size=(self.Nneur,))
                     
         rout = self.activation(self.xinp)
-        self.activity = rout
-        return rout
+        # compute moving average of PFC outputs
+        rout_movingaverage = np.convolve(rout.detach().numpy(), np.ones(20)/20, mode='same')
+        rout_movingaverage = torch.from_numpy(rout_movingaverage).type(torch.float)
+        # original self.activity = rout
+        # return rout
+        self.activity = rout_movingaverage
+        return rout_movingaverage
+        
+        
 
 #model = PytorchPFC(n_neuron=10, n_neuron_per_cue=1)
 #input = torch.randn(10)
@@ -665,7 +672,7 @@ class MD_dev():
         # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
         # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0., 7. / self.G)
 
-        # Increase the inhibition
+        # Increase the inhibition and decrease the excitation
         self.wPFC2MD = np.clip(self.wPFC2MD + 0.1 * wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
