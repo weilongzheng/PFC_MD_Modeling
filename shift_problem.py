@@ -29,7 +29,7 @@ RNGSEED = 5 # set random seed; default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 200            # number of training cycles for each context; default 200
+Ntrain = 500            # number of training cycles for each context; default 200
 Nextra = 0            # add cycles to show if block1; default 200
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -200,7 +200,8 @@ for shift in shift_list:
                     '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
                     '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
     with open(filename / file_training, 'wb') as f:
-        pickle.dump([log,PFCouts_all,MDouts_all], f)
+        pickle.dump(log, f)
+        #pickle.dump([log,PFCouts_all,MDouts_all], f)
 
 
     print('Finished Training')
