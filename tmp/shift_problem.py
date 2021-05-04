@@ -46,7 +46,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift = 1 # shift step
+shift = 3 # shift step
 
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
@@ -139,7 +139,7 @@ for i in range(total_step):
     #import pdb;pdb.set_trace()
 
     # shift wIn here
-    # if i >= 649:
+    # if i <= 269:
     model.sensory2pfc.shift(shift=shift)
     ###model.md.shift_weights(shift=shift)
     ###print(model.md.wPFC2MD[0, 0:20])

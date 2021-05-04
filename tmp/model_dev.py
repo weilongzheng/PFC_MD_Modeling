@@ -659,7 +659,7 @@ class MD_dev():
 
         
         # original wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
-        wPFC2MDdelta = 25.0 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 100.0 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
         
         # Update and clip the weights
         # original
@@ -673,9 +673,14 @@ class MD_dev():
         # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0., 7. / self.G)
 
         # Increase the inhibition and decrease the excitation
-        self.wPFC2MD = np.clip(self.wPFC2MD + 0.1 * wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
-        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
+        # self.wPFC2MD = np.clip(self.wPFC2MD + 0.1 * wPFC2MDdelta, 0., 1.)
+        # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
+        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
+        
+        # only keep wPFC2MDdelta
+        self.wPFC2MD = np.clip(1.0 * wPFC2MDdelta, 0., 1.)
+        self.wMD2PFC = np.clip(1.0 * (wPFC2MDdelta.T), -10., 0.)
+        self.wMD2PFCMult = np.clip(1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
 
     # should not shift PFC-MD weights in the shift problem
     def shift_weights(self, shift=0):
