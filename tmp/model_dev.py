@@ -497,7 +497,7 @@ class MD_dev():
         self.tsteps = 200
         self.Hebb_learning_rate = 1e-4
         # working!
-        Gbase = 0.75  # determines also the cross-task recurrence
+        Gbase = 0.75  # also determines the cross-task recurrence
 #        self.MDstrength = 1
 #        if self.MDstrength is None:
 #            MDval = 1.
@@ -594,30 +594,15 @@ class MD_dev():
         # Ideally one should weight them with MD syn weights,
         #  but syn plasticity just uses pre!
 
-        # original
-        # self.MDpreTrace  += 1. / self.tsteps / 5.0 * (-self.MDpreTrace + rout)
+        # original self.MDpreTrace  += 1. / self.tsteps / 5.0 * (-self.MDpreTrace + rout)
         # self.MDpreTrace  += 1. / 5.0 * (-self.MDpreTrace + rout)
         self.MDpreTrace  = rout
 
-        # original
-        # self.MDpostTrace += 1. / self.tsteps / 5.0 * (-self.MDpostTrace + MDout)
+        # original self.MDpostTrace += 1. / self.tsteps / 5.0 * (-self.MDpostTrace + MDout)
         # self.MDpostTrace += 1. / 5.0 * (-self.MDpostTrace + MDout)
         self.MDpostTrace = MDout
-
         
         MDoutTrace = self.winner_take_all(self.MDpostTrace)
-
-        # MDoutTrace = np.zeros(self.Num_MD)
-        # MDpostTrace_sorted = np.sort(self.MDpostTrace)
-        # num_active = np.round(self.Num_MD / self.Ntasks)
-        # # MDthreshold  = np.mean(MDpostTrace_sorted[-4:])
-        # MDthreshold = np.mean(
-        #     MDpostTrace_sorted[-int(num_active) * 2:])
-        # # MDthreshold  = np.mean(self.MDpostTrace)
-        # index_pos = np.where(self.MDpostTrace >= MDthreshold)
-        # index_neg = np.where(self.MDpostTrace < MDthreshold)
-        # MDoutTrace[index_pos] = 1
-        # MDoutTrace[index_neg] = 0
 
         return MDoutTrace
 
@@ -652,8 +637,7 @@ class MD_dev():
         # else: MDoutTrace = np.array([0,1])
 
          
-        # original
-        # self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
+        # original self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
         # self.MDpreTrace_threshold = np.median(np.sort(self.MDpreTrace)[-800:])
         self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
         
@@ -661,9 +645,8 @@ class MD_dev():
         MDoutTrace_threshold = 0.5 # original 0.5  
 
         
-        # original
-        # wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
-        wPFC2MDdelta = 20.0 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+        # original wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 50.0 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
         
         # Update and clip the weights
         # original
@@ -676,10 +659,12 @@ class MD_dev():
         # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
         # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0., 7. / self.G)
 
-        self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
-        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
-    
+        # Increase the inhibition
+        self.wPFC2MD = np.clip(self.wPFC2MD + 0.05 * wPFC2MDdelta, 0., 1.)
+        self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
+        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
+
+    # should not shift PFC-MD weights in the shift problem
     def shift_weights(self, shift=0):
         self.wPFC2MD = np.roll(self.wPFC2MD, shift=shift, axis=1)
         self.wMD2PFC = np.roll(self.wMD2PFC, shift=shift, axis=0)
@@ -703,7 +688,7 @@ class PytorchPFCMD(nn.Module):
 
         #self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
         self.pfc2out = nn.Linear(Num_PFC, num_output)
-        #self.pfc_output_t = np.array([])
+
 
         self.MDeffect = MDeffect
         if self.MDeffect:
