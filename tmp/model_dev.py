@@ -460,9 +460,15 @@ class MD():
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
 
         # Update and clip the weights
+        # original
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
+
+        # Increase the inhibition
+        # self.wPFC2MD = np.clip(self.wPFC2MD + 0.1 * wPFC2MDdelta, 0., 1.)
+        # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
+        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
 
     def winner_take_all(self, MDinp):
         '''Winner take all on the MD
@@ -646,7 +652,7 @@ class MD_dev():
 
         
         # original wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
-        wPFC2MDdelta = 50.0 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 25.0 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
         
         # Update and clip the weights
         # original
@@ -660,7 +666,7 @@ class MD_dev():
         # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0., 7. / self.G)
 
         # Increase the inhibition
-        self.wPFC2MD = np.clip(self.wPFC2MD + 0.05 * wPFC2MDdelta, 0., 1.)
+        self.wPFC2MD = np.clip(self.wPFC2MD + 0.1 * wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
 

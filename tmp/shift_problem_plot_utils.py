@@ -152,7 +152,7 @@ for i in range(len(log['wPFC2MD_list'])):
     filename = './animation/'+f'wPFC2MD_index_{i}.png'
     images.append(imageio.imread(filename))
 gif_path = './animation/'+'wPFC2MD_evolution.gif'
-imageio.mimsave(gif_path, images, duration=0.1)
+imageio.mimsave(gif_path, images, duration=0.2)
 optimize(gif_path)
 
 
