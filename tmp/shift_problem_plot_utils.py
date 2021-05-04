@@ -122,10 +122,9 @@ plt.show()
 # plt.show()
 
 
-save_W_step = 10 # save wPFC2MD and wMD2PFC every save_W_step
-font = {'family':'Times New Roman','weight':'normal', 'size':30}
 
 # wPFC2MD evolution
+font = {'family':'Times New Roman','weight':'normal', 'size':30}
 wPFC2MD_max = 0
 for i in range(len(log['wPFC2MD_list'])):
     wPFC2MD = log['wPFC2MD_list'][i]
@@ -153,8 +152,9 @@ for i in range(len(log['wPFC2MD_list'])):
     filename = './animation/'+f'wPFC2MD_index_{i}.png'
     images.append(imageio.imread(filename))
 gif_path = './animation/'+'wPFC2MD_evolution.gif'
-imageio.mimsave(gif_path, images, duration=0.1)
+imageio.mimsave(gif_path, images, duration=0.2)
 optimize(gif_path)
+
 
 # wMD2PFC evolution
 wMD2PFC_min = 0
@@ -184,29 +184,38 @@ for i in range(len(log['wMD2PFC_list'])):
     filename = './animation/'+f'wMD2PFC_index_{i}.png'
     images.append(imageio.imread(filename))
 gif_path = './animation/'+'wMD2PFC_evolution.gif'
-imageio.mimsave(gif_path, images, duration=0.1)
+imageio.mimsave(gif_path, images, duration=0.2)
 optimize(gif_path)
 
-# PFC outputs evolution
+# MD pretraces evolution
 font = {'family':'Times New Roman','weight':'normal', 'size':30}
 plot_step = 10
 
-meanPFCouts_all = np.mean(PFCouts_all, axis=1)
-for i in range(len(PFCouts_all)):
+meanMDpreTraces_all = np.mean(MDpreTraces_all, axis=1)
+meanMDpreTrace_threshold_all = np.mean(MDpreTrace_threshold_all, axis=1)
+for i in range(len(MDpreTraces_all)):
     if (i+1) % plot_step == 0:
-        meanPFCouts = meanPFCouts_all[i, :]
-        plt.plot(meanPFCouts)
-        plt.title('PFC outputs' + ' Cycle-'+str(i+1), fontdict=font)
-        plt.savefig('./animation/'+f'PFCoutputs_index_{i}.png')
+        MDpreTraces = meanMDpreTraces_all[i, :]
+        MDpreTrace_threshold = meanMDpreTrace_threshold_all[i, :]
+        plt.plot(MDpreTraces)  
+        plt.axhline(y=MDpreTrace_threshold, color='r', linestyle='-')
+        plt.title('MD pretraces' + ' Cycle-'+str(i+1), fontdict=font)
+        plt.xlabel('PFC neuron index')
+        plt.ylabel('Presynaptic activities')
+        plt.xlim([-50, 1050])
+        plt.ylim([0.0, 1.0])
+        plt.xticks(ticks=[100*i for i in range(11)], rotation=0)
+        plt.yticks(ticks=[0.1*i for i in range(11)], rotation=0)
+        plt.savefig('./animation/'+f'MDpreTraces_index_{i}.png')
         plt.close() # do not show figs in line
 
 images = []
-for i in range(len(PFCouts_all)):
+for i in range(len(MDpreTraces_all)):
     if (i+1) % plot_step == 0:
-        filename = './animation/'+f'PFCoutputs_index_{i}.png'
+        filename = './animation/'+f'MDpreTraces_index_{i}.png'
         images.append(imageio.imread(filename))
-gif_path = './animation/'+'PFCoutputs_evolution.gif'
-imageio.mimsave(gif_path, images, duration=0.15)
+gif_path = './animation/'+'MDpreTraces_evolution.gif'
+imageio.mimsave(gif_path, images, duration=0.2)
 optimize(gif_path)
 
 # MD outputs evolution
@@ -219,6 +228,12 @@ for i in range(len(MDouts_all)):
         meanMDouts = meanMDouts_all[i, :]
         plt.plot(meanMDouts)
         plt.title('MD outputs' + ' Cycle-'+str(i+1), fontdict=font)
+        plt.xlabel('MD neuron index')
+        plt.ylabel('MD activities')
+        plt.xlim([0, 9])
+        plt.ylim([-0.05, 1.05])
+        plt.xticks(ticks=[i for i in range(10)], labels=[i+1 for i in range(10)], rotation=0)
+        plt.yticks(ticks=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], rotation=0)
         plt.savefig('./animation/'+f'MDoutputs_index_{i}.png')
         plt.close() # do not show figs in line
 
@@ -228,5 +243,33 @@ for i in range(len(MDouts_all)):
         filename = './animation/'+f'MDoutputs_index_{i}.png'
         images.append(imageio.imread(filename))
 gif_path = './animation/'+'MDoutputs_evolution.gif'
-imageio.mimsave(gif_path, images, duration=0.15)
+imageio.mimsave(gif_path, images, duration=0.2)
+optimize(gif_path)
+
+# PFC outputs evolution
+font = {'family':'Times New Roman','weight':'normal', 'size':30}
+plot_step = 10
+
+meanPFCouts_all = np.mean(PFCouts_all, axis=1)
+for i in range(len(PFCouts_all)):
+    if (i+1) % plot_step == 0:
+        meanPFCouts = meanPFCouts_all[i, :]
+        plt.plot(meanPFCouts)
+        plt.title('PFC outputs' + ' Cycle-'+str(i+1), fontdict=font)
+        plt.xlabel('PFC neuron index')
+        plt.ylabel('PFC activities')
+        plt.xlim([-50, 1050])
+        plt.ylim([0.0, 1.0])
+        plt.xticks(ticks=[100*i for i in range(11)], rotation=0)
+        plt.yticks(ticks=[0.1*i for i in range(11)], rotation=0)
+        plt.savefig('./animation/'+f'PFCoutputs_index_{i}.png')
+        plt.close() # do not show figs in line
+
+images = []
+for i in range(len(PFCouts_all)):
+    if (i+1) % plot_step == 0:
+        filename = './animation/'+f'PFCoutputs_index_{i}.png'
+        images.append(imageio.imread(filename))
+gif_path = './animation/'+'PFCoutputs_evolution.gif'
+imageio.mimsave(gif_path, images, duration=0.2)
 optimize(gif_path)

@@ -285,6 +285,10 @@ class MD():
         MDout = self.winner_take_all(self.MDinp)
 
         self.update_weights(input, MDout)
+<<<<<<< HEAD
+=======
+        # self.update_weights(input, MDout)
+>>>>>>> e9e5b75829641ccab446e2f8de04d0b2d720aaab
 
         return MDout
 
@@ -322,8 +326,13 @@ class MD():
         MDoutTrace = self.update_trace(rout, MDout)
         #                    if self.MDpostTrace[0] > self.MDpostTrace[1]: MDoutTrace = np.array([1,0])
         #                    else: MDoutTrace = np.array([0,1])
+<<<<<<< HEAD
         # self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
         self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
+=======
+        self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
+        # self.MDpreTrace_threshold = np.mean(self.MDpreTrace)+0.4*np.std(self.MDpreTrace)
+>>>>>>> e9e5b75829641ccab446e2f8de04d0b2d720aaab
         #self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:self.Nsub * self.Ncues])  # first 800 cells are cue selective
         # MDoutTrace_threshold = np.mean(MDoutTrace) #median
         MDoutTrace_threshold = 0.5  
@@ -894,7 +903,12 @@ class PytorchPFCMD(nn.Module):
 
         #output = torch.zeros((n_time, target.shape[-1]))
         #self.pfc_output_t *= 0
+
+        # initialize variables for saving important network activities
         self.pfc_outputs = torch.zeros((n_time, self.pfc.Nneur))
+        self.md_preTraces = np.zeros(shape=(n_time, self.pfc.Nneur))
+        self.md_preTrace_thresholds = np.zeros(shape=(n_time, 1))
+        
         if self.MDeffect:
             self.md_output_t *= 0
 
@@ -923,8 +937,12 @@ class PytorchPFCMD(nn.Module):
                 #pfc_output = self.pfc(torch.from_numpy(input2pfc), torch.from_numpy(md2pfc)).numpy()
                 
                 pfc_output = self.pfc(input2pfc,torch.from_numpy(md2pfc))
+                
+                # save important network activities
                 pfc_output_t = pfc_output.view(1,pfc_output.shape[0])
                 self.pfc_outputs[i, :] = pfc_output_t
+                self.md_preTraces[i, :] = self.md.MDpreTrace
+                self.md_preTrace_thresholds[i, :] = self.md.MDpreTrace_threshold
                 
 #                pfc_output = self.pfc(input2pfc, torch.from_numpy(md2pfc)).detach().numpy()
 #                pfc_output_t = pfc_output.reshape((1, pfc_output.shape[0]))

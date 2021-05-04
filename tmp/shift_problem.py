@@ -18,7 +18,7 @@ sys.path.append(root)
 sys.path.append('..')
 from task import RikhyeTask
 #from model import PytorchPFCMD
-from model_dev import PytorchPFCMD # use model_dev.py
+from model_dev import PytorchPFCMD
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio
@@ -31,7 +31,7 @@ RNGSEED = 5 # default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 200           # number of training cycles for each context; default 200
+Ntrain = 400           # number of training cycles for each context; default 200
 Nextra = 0            # add cycles to show if block1; default 200; if 0, no switch back to past context
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -46,7 +46,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift = 1 # shift step
+shift = 3 # shift step
 
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
@@ -69,30 +69,34 @@ else:
     
     
 Jrec_init = model.pfc.Jrec.clone()#.numpy()
-#print(Jrec_init) # debug
+###print(Jrec_init)
 optimizer = torch.optim.Adam(training_params, lr=1e-3)
 #import pdb;pdb.set_trace()
 
-total_step = Ntrain*Ncontexts+Nextra
-#total_step = Ntrain+Nextra
+#total_step = Ntrain*Ncontexts+Nextra
+total_step = Ntrain+Nextra
+tsteps = 200 # time steps in a trial
+MDpreTraces = np.zeros(shape=(total_step,n_neuron))
+#MDouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,Num_MD))
+#PFCouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
+MDouts_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, Num_MD))
+MDpreTraces_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, n_neuron))
+MDpreTrace_threshold_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, 1))
+PFCouts_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, n_neuron))
+
 print_step = 10 # print statistics every print_step
 save_W_step = 10 # save wPFC2MD and wMD2PFC every save_W_step
 running_loss = 0.0
 running_train_time = 0
 mses = list()
+log = defaultdict(list)
 #losses = []
 #timestamps = []
 #model_name = 'model-' + str(int(time.time()))
 #savemodel = False
-log = defaultdict(list)
-MDpreTraces = np.zeros(shape=(total_step,n_neuron))
-#MDouts_all = np.zeros(shape=(total_step,Num_MD))
-#PFCouts_all = np.zeros(shape=(total_step,n_neuron))
-tsteps = 200
-#MDouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,Num_MD))
-#PFCouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
-MDouts_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, Num_MD))
-PFCouts_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, n_neuron))
+
+
+
 
 for i in range(total_step):
 
@@ -106,22 +110,25 @@ for i in range(total_step):
     # zero the parameter gradients
     optimizer.zero_grad()
 
-    # forward + backward + optimize
+    # forward
     outputs = model(inputs, labels)
 
-    # check PFC and MD outputs
+    # save PFC and MD activities
     # PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
     # if  MDeffect == True:
     #     MDouts_all[i,:] = model.md_output
     #     MDpreTraces[i,:] = model.md.MDpreTrace
-    for itrial in range(inpsPerConext): 
+    # for itrial in range(inpsPerConext): 
         #PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
-        #PFCouts_all[i,:,:] = model.pfc_outputs.detach().numpy()
-        PFCouts_all[i,:,:] = model.md.MDpreTrace
-        if  MDeffect == True:
-            #MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
-            MDouts_all[i,:,:] = model.md_output_t
+    # save PFC and MD activities
+    PFCouts_all[i,:,:] = model.pfc_outputs.detach().numpy()
+    if  MDeffect == True:
+        # MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+        MDouts_all[i,:,:] = model.md_output_t
+        MDpreTraces_all[i,:,:] = model.md_preTraces
+        MDpreTrace_threshold_all[i, :, :] = model.md_preTrace_thresholds
 
+    # backward + optimize
     loss = criterion(outputs, labels)
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip the norm of gradients 
@@ -132,12 +139,12 @@ for i in range(total_step):
     #import pdb;pdb.set_trace()
 
     # shift wIn here
-    # if i >= 649:
+    # if i <= 269:
     model.sensory2pfc.shift(shift=shift)
-    #model.md.shift_weights(shift=shift)
-    ####print(model.md.wPFC2MD[0, 0:20])
-    ####rint(model.md.wMD2PFC[0:20, 0])
-    ####print(model.sensory2pfc.wIn[:, 0]) # debug
+    ###model.md.shift_weights(shift=shift)
+    ###print(model.md.wPFC2MD[0, 0:20])
+    ###rint(model.md.wMD2PFC[0:20, 0])
+    ###print(model.sensory2pfc.wIn[:, 0])
 
     # print statistics
     mse = loss.item()
@@ -145,7 +152,7 @@ for i in range(total_step):
     running_train_time += time.time() - train_time_start
     running_loss += loss.item()
 
-    #  save wPFC2MD and wMD2PFC
+    #  save wPFC2MD and wMD2PFC during training
     if i % save_W_step == (save_W_step - 1) and MDeffect:
         log['wPFC2MD_list'].append(model.md.wPFC2MD)
         log['wMD2PFC_list'].append(model.md.wMD2PFC)
