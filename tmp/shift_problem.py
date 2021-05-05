@@ -31,7 +31,7 @@ RNGSEED = 5 # default 5
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 500           # number of training cycles for each context; default 200
+Ntrain = 100           # number of training cycles for each context; default 200
 Nextra = 0            # add cycles to show if block1; default 200; if 0, no switch back to past context
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -46,7 +46,7 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = True
 PFClearn = False
-shift = 2 # shift step
+shift = 5 # shift step
 
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \

@@ -311,18 +311,10 @@ class PytorchPFC(nn.Module):
             self.xinp += torch.normal(mean=0, std=self.noiseSD * np.sqrt(self.dt) / self.tau, size=(self.Nneur,))
                     
         rout = self.activation(self.xinp)
-        # compute moving average of PFC outputs
-        # rout_movingaverage = np.convolve(rout.detach().numpy(), np.ones(20)/20, mode='same')
-        # rout_movingaverage = torch.from_numpy(rout_movingaverage).type(torch.float)
-        
-        # original
+
         self.activity = rout
         return rout
-        
-        # self.activity = rout_movingaverage
-        # return rout_movingaverage
-        
-        
+
 
 #model = PytorchPFC(n_neuron=10, n_neuron_per_cue=1)
 #input = torch.randn(10)
@@ -475,11 +467,6 @@ class MD():
         # self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
         # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
 
-        # increase the inhibition
-        # self.wPFC2MD = np.clip(self.wPFC2MD + 0.1 * wPFC2MDdelta, 0., 1.)
-        # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
-        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
-
         # only keep wPFC2MDdelta
         # self.wPFC2MD = np.clip(1.0 * wPFC2MDdelta, 0., 1.)
         # self.wMD2PFC = np.clip(1.0 * (wPFC2MDdelta.T), -10., 0.)
@@ -506,199 +493,6 @@ class MD():
         MDout[index_pos] = 1
         MDout[index_neg] = 0
         return MDout
-
-
-# Zhongxuan: developing MD layer
-class MD_dev():
-    def __init__(self, Nneur, Num_MD, num_active=1, positiveRates=True,
-                 dt=0.001):
-        self.Nneur = Nneur # number of PFC neurons
-        self.Num_MD = Num_MD # number of MD neurons
-        self.positiveRates = positiveRates
-        self.num_active = num_active # num_active: num MD active per context
-
-        self.tau = 0.02
-        self.tau_times = 4
-        self.dt = dt
-        self.tsteps = 200
-        self.Hebb_learning_rate = 1e-4
-        # working!
-        Gbase = 0.75  # also determines the cross-task recurrence
-#        self.MDstrength = 1
-#        if self.MDstrength is None:
-#            MDval = 1.
-#        elif self.MDstrength < 0.:
-#            MDval = 0.
-#        else:
-#            MDval = self.MDstrength
-#        # subtract across tasks (task with higher MD suppresses cross-tasks)
-#        self.wMD2PFC = np.ones(shape=(self.Nneur, self.Num_MD)) * (
-#            -10.) * MDval
-#        self.useMult = True
-#        # multiply recurrence within task, no addition across tasks
-#        ## choose below option for cross-recurrence
-#        ##  if you want "MD inactivated" (low recurrence) state
-#        ##  as the state before MD learning
-#        # self.wMD2PFCMult = np.zeros(shape=(self.Nneur,self.Ntasks))
-#        # choose below option for cross-recurrence
-#        #  if you want "reservoir" (high recurrence) state
-#        #  as the state before MD learning (makes learning more difficult)
-#        self.wMD2PFCMult = np.ones(shape=(self.Nneur, self.Num_MD)) \
-#                           * PFC_G_off / Gbase * (1 - MDval)
-#        # threshold for sharp sigmoid (0.1 width) transition of MDinp
-#        self.MDthreshold = 0.4
-#
-#        # With MDeffect = True and MDstrength = 0, i.e. MD inactivated
-#        #  PFC recurrence is (1+PFC_G_off)*Gbase = (1+1.5)*0.75 = 1.875
-#        # So with MDeffect = False, ensure the same PFC recurrence for the pure reservoir
-#        # if not self.MDeffect: Gbase = 1.875
-
-        # initialize PFC-MD weights
-        self.wPFC2MD = np.random.normal(0, \
-                                        1 / np.sqrt(self.Num_MD * self.Nneur), \
-                                        size=(self.Num_MD, self.Nneur))
-        self.wMD2PFC = np.random.normal(0, \
-                                        1 / np.sqrt(self.Num_MD * self.Nneur), \
-                                        size=(self.Nneur, self.Num_MD))
-        self.wMD2PFCMult = np.random.normal(0, \
-                                            1 / np.sqrt(self.Num_MD * self.Nneur), \
-                                            size=(self.Nneur, self.Num_MD))
-        
-        # initialize MD traces & MD threshold
-        self.MDpreTrace = np.zeros(shape=(self.Nneur))
-        self.MDpostTrace = np.zeros(shape=(self.Num_MD))
-        self.MDpreTrace_threshold = 0
-
-        # Choose G based on the type of activation function
-        # unclipped activation requires lower G than clipped activation,
-        #  which in turn requires lower G than shifted tanh activation.
-        if self.positiveRates:
-            self.G = Gbase
-            self.tauMD = self.tau * self.tau_times  ##self.tau
-        else:
-            self.G = Gbase
-            self.MDthreshold = 0.4
-            self.tauMD = self.tau * 10 * self.tau_times
-        self.init_activity()
-        
-    def init_activity(self):
-        self.MDinp = np.zeros(shape=self.Num_MD)
-        
-    def __call__(self, input, *args, **kwargs):
-        """Run the network one step
-
-        For now, consider this network receiving input from PFC,
-        input stands for activity of PFC neurons
-        output stands for output current to MD neurons
-
-        Args:
-            input: array (n_input,)
-            
-
-        Returns:
-            output: array (n_output,)
-        """
-        # MD decays 10x slower than PFC neurons,
-        #  so as to somewhat integrate PFC input
-        if self.positiveRates:
-            self.MDinp += self.dt / self.tauMD * \
-                         (-self.MDinp + np.dot(self.wPFC2MD, input))
-            # self.MDinp = np.dot(self.wPFC2MD, input)
-        else:  # shift PFC rates, so that mean is non-zero to turn MD on
-            self.MDinp += self.dt / self.tauMD * \
-                         (-self.MDinp + np.dot(self.wPFC2MD, (input + 1. / 2)))
-                     
-        # num_active = np.round(self.Num_MD / self.Ntasks)
-        MDout = self.winner_take_all(self.MDinp)
-
-        # self.update_weights(input, MDout)
-
-        return MDout
-
-    def update_trace(self, rout, MDout):
-        # MD presynaptic traces filtered over 10 trials
-        # Ideally one should weight them with MD syn weights,
-        #  but syn plasticity just uses pre!
-
-        # original self.MDpreTrace  += 1. / self.tsteps / 5.0 * (-self.MDpreTrace + rout)
-        # self.MDpreTrace  += 1. / 5.0 * (-self.MDpreTrace + rout)
-        self.MDpreTrace  = rout
-
-        # original self.MDpostTrace += 1. / self.tsteps / 5.0 * (-self.MDpostTrace + MDout)
-        # self.MDpostTrace += 1. / 5.0 * (-self.MDpostTrace + MDout)
-        self.MDpostTrace = MDout
-        
-        MDoutTrace = self.winner_take_all(self.MDpostTrace)
-
-        return MDoutTrace
-
-    def winner_take_all(self, MDinp):
-        '''Winner take all on the MD
-        '''
-
-        # Thresholding
-        MDout = np.zeros(self.Num_MD)
-        MDinp_sorted = np.sort(MDinp)
-        # num_active = np.round(self.Num_MD / self.Ntasks)
-
-        MDthreshold = np.mean(MDinp_sorted[-int(self.num_active) * 2:])
-        # MDthreshold  = np.mean(MDinp)
-        index_pos = np.where(MDinp >= MDthreshold)
-        index_neg = np.where(MDinp < MDthreshold)
-        # binary MD outputs
-        MDout[index_pos] = 1
-        MDout[index_neg] = 0
-        return MDout
-
-    def update_weights(self, rout, MDout):
-        """Update weights with plasticity rules.
-
-        Args:
-            rout: input to MD
-            MDout: activity of MD
-        """
-        MDoutTrace = self.update_trace(rout, MDout)
-
-        # if self.MDpostTrace[0] > self.MDpostTrace[1]: MDoutTrace = np.array([1,0])
-        # else: MDoutTrace = np.array([0,1])
-
-         
-        # original self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
-        # self.MDpreTrace_threshold = np.median(np.sort(self.MDpreTrace)[-800:])
-        self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
-        
-        # MDoutTrace_threshold = np.mean(MDoutTrace) #median
-        MDoutTrace_threshold = 0.5 # original 0.5  
-
-        
-        # original wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
-        wPFC2MDdelta = 100.0 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
-        
-        # Update and clip the weights
-        # original
-        # self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        # self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
-        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
-        
-        # keep wPFC2MD and wMD2PFC symmetrical
-        # self.wPFC2MD = np.clip(self.wPFC2MD + 1.0 *  wPFC2MDdelta,      0., 10.)
-        # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
-        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0., 7. / self.G)
-
-        # Increase the inhibition and decrease the excitation
-        # self.wPFC2MD = np.clip(self.wPFC2MD + 0.1 * wPFC2MDdelta, 0., 1.)
-        # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
-        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
-        
-        # only keep wPFC2MDdelta
-        self.wPFC2MD = np.clip(1.0 * wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(1.0 * (wPFC2MDdelta.T), -10., 0.)
-        self.wMD2PFCMult = np.clip(1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
-
-    # should not shift PFC-MD weights in the shift problem
-    def shift_weights(self, shift=0):
-        self.wPFC2MD = np.roll(self.wPFC2MD, shift=shift, axis=1)
-        self.wMD2PFC = np.roll(self.wMD2PFC, shift=shift, axis=0)
 
 
 class PytorchPFCMD(nn.Module):
@@ -800,10 +594,6 @@ class PytorchPFCMD(nn.Module):
                 pfc_output = self.pfc(input2pfc)
                 pfc_output_t = pfc_output.view(1,pfc_output.shape[0])
                 self.pfc_outputs[i, :] = pfc_output_t
-        
-        # update PFC-MD weights every training cycle
-        # if self.MDeffect:
-        #     self.md.update_weights(np.mean(self.pfc_outputs.detach().numpy(), axis=0), np.mean(self.md_output_t, axis=0))
         
         outputs = self.pfc2out(self.pfc_outputs)
         outputs = torch.tanh(outputs)
