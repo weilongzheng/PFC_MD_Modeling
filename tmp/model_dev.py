@@ -312,12 +312,15 @@ class PytorchPFC(nn.Module):
                     
         rout = self.activation(self.xinp)
         # compute moving average of PFC outputs
-        rout_movingaverage = np.convolve(rout.detach().numpy(), np.ones(20)/20, mode='same')
-        rout_movingaverage = torch.from_numpy(rout_movingaverage).type(torch.float)
-        # original self.activity = rout
-        # return rout
-        self.activity = rout_movingaverage
-        return rout_movingaverage
+        # rout_movingaverage = np.convolve(rout.detach().numpy(), np.ones(20)/20, mode='same')
+        # rout_movingaverage = torch.from_numpy(rout_movingaverage).type(torch.float)
+        
+        # original
+        self.activity = rout
+        return rout
+        
+        # self.activity = rout_movingaverage
+        # return rout_movingaverage
         
         
 
@@ -466,16 +469,26 @@ class MD():
         MDoutTrace_threshold = 0.5  
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
 
-        # Update and clip the weights
+        # update and clip the weights
         # original
-        self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
-        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
+        # self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
+        # self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
+        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
 
-        # Increase the inhibition
+        # increase the inhibition
         # self.wPFC2MD = np.clip(self.wPFC2MD + 0.1 * wPFC2MDdelta, 0., 1.)
         # self.wMD2PFC = np.clip(self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
         # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
+
+        # only keep wPFC2MDdelta
+        # self.wPFC2MD = np.clip(1.0 * wPFC2MDdelta, 0., 1.)
+        # self.wMD2PFC = np.clip(1.0 * (wPFC2MDdelta.T), -10., 0.)
+        # self.wMD2PFCMult = np.clip(1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
+
+        # decaying PFC-MD weights
+        self.wPFC2MD = np.clip(0.5 * self.wPFC2MD + (1-0.5) * wPFC2MDdelta, 0., 1.)
+        self.wMD2PFC = np.clip(0.5 * self.wMD2PFC + (1-0.5) * (wPFC2MDdelta.T), -10., 0.)
+        self.wMD2PFCMult = np.clip(0.5 * self.wMD2PFCMult + (1-0.5) * (wPFC2MDdelta.T), 0.,7. / self.G)
 
     def winner_take_all(self, MDinp):
         '''Winner take all on the MD
@@ -711,7 +724,7 @@ class PytorchPFCMD(nn.Module):
         self.MDeffect = MDeffect
         if self.MDeffect:
             # use MD_dev here
-            self.md = MD_dev(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active, dt=dt)
+            self.md = MD(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active, dt=dt)
             self.md_output = np.zeros(Num_MD)
             index = np.random.permutation(Num_MD)
             self.md_output[index[:num_active]] = 1 # randomly set part of md_output to 1
@@ -789,8 +802,8 @@ class PytorchPFCMD(nn.Module):
                 self.pfc_outputs[i, :] = pfc_output_t
         
         # update PFC-MD weights every training cycle
-        if self.MDeffect:
-            self.md.update_weights(np.mean(self.pfc_outputs.detach().numpy(), axis=0), np.mean(self.md_output_t, axis=0))
+        # if self.MDeffect:
+        #     self.md.update_weights(np.mean(self.pfc_outputs.detach().numpy(), axis=0), np.mean(self.md_output_t, axis=0))
         
         outputs = self.pfc2out(self.pfc_outputs)
         outputs = torch.tanh(outputs)
