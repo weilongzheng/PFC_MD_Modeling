@@ -285,7 +285,6 @@ class MD():
         MDout = self.winner_take_all(self.MDinp)
 
         self.update_weights(input, MDout)
-        # self.update_weights(input, MDout)
 
         return MDout
 
