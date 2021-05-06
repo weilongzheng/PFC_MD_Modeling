@@ -459,7 +459,7 @@ class MD():
         #self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:self.Nsub * self.Ncues])  # first 800 cells are cue selective
         # MDoutTrace_threshold = np.mean(MDoutTrace) #median
         MDoutTrace_threshold = 0.5  
-        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 10000 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
 
         # update and clip the weights
         # original
@@ -473,9 +473,19 @@ class MD():
         # self.wMD2PFCMult = np.clip(1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
 
         # decaying PFC-MD weights
-        self.wPFC2MD = np.clip(0.5 * self.wPFC2MD + (1-0.5) * wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(0.5 * self.wMD2PFC + (1-0.5) * (wPFC2MDdelta.T), -10., 0.)
-        self.wMD2PFCMult = np.clip(0.5 * self.wMD2PFCMult + (1-0.5) * (wPFC2MDdelta.T), 0.,7. / self.G)
+        # self.wPFC2MD = np.clip(0.9 * self.wPFC2MD + 1.0 * wPFC2MDdelta, 0., 1.)
+        # self.wMD2PFC = np.clip(0.9 * self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
+        # self.wMD2PFCMult = np.clip(0.9 * self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
+
+        # slow-decaying PFC-MD weights
+        self.wPFC2MD += 1. / self.tsteps / 5. * (-1.0 * self.wPFC2MD + 1.0 * wPFC2MDdelta)
+        self.wPFC2MD = np.clip(self.wPFC2MD, 0., 1.)
+        
+        self.wMD2PFC += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFC + 1.0 * (wPFC2MDdelta.T))
+        self.wMD2PFC = np.clip(self.wMD2PFC, -10., 0.)
+        
+        self.wMD2PFCMult = 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T))
+        self.wMD2PFCMult = np.clip(self.wMD2PFCMult, 0.,7. / self.G)
 
     def winner_take_all(self, MDinp):
         '''Winner take all on the MD
