@@ -14,10 +14,10 @@ sys.path.append('..')
 from task import RikhyeTask
 from model import PytorchPFCMD
 import matplotlib.pyplot as plt
-
+import seaborn as sns
 
 # Generate trainset
-RNGSEED = 5 # set random seed
+RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
@@ -152,7 +152,7 @@ if  MDeffect == True:
 
 filename = Path('files')
 os.makedirs(filename, exist_ok=True)
-file_training = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+file_training = 'train_noiseW_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
 with open(filename / file_training, 'wb') as f:
     pickle.dump(log, f)
     
@@ -169,25 +169,55 @@ plt.show()
 
 ## plot pfc2md and md2pfc weights
 if  MDeffect == True: 
+    ## plot pfc2md weights
     wPFC2MD = log['wPFC2MD']
-    number = Num_MD
-    cmap = plt.get_cmap('rainbow') 
-    colors = [cmap(i) for i in np.linspace(0,1,number)]
-    plt.figure()
-    for i,color in enumerate(colors, start=1):
-        plt.subplot(number,1,i)
-        plt.plot(wPFC2MD[i-1,:],color=color)
-    plt.suptitle('wPFC2MD')
-    
     wMD2PFC = log['wMD2PFC']
-    number = Num_MD
-    cmap = plt.get_cmap('rainbow') 
-    colors = [cmap(i) for i in np.linspace(0,1,number)]
-    plt.figure()
-    for i,color in enumerate(colors, start=1):
-        plt.subplot(number,1,i)
-        plt.plot(wMD2PFC[:,i-1],color=color)
-    plt.suptitle('wMD2PFC')
+    ax = plt.figure()
+    ax = sns.heatmap(wPFC2MD, cmap='Reds')
+    ax.set_xticks([0, 999])
+    ax.set_xticklabels([1, 1000], rotation=0)
+    ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+    ax.set_xlabel('PFC neuron index')
+    ax.set_ylabel('MD neuron index')
+    ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn))
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('connection weight')
+    plt.tight_layout()
+    plt.show()
+    
+    # Heatmap wMD2PFC
+    ax = plt.figure()
+    ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
+    ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+    ax.set_yticks([0, 999])
+    ax.set_yticklabels([1, 1000], rotation=0)
+    ax.set_xlabel('MD neuron index')
+    ax.set_ylabel('PFC neuron index')
+    ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn))
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('connection weight')
+    plt.tight_layout()
+    plt.show()
+    
+    # wPFC2MD = log['wPFC2MD']
+    # number = Num_MD
+    # cmap = plt.get_cmap('rainbow') 
+    # colors = [cmap(i) for i in np.linspace(0,1,number)]
+    # plt.figure()
+    # for i,color in enumerate(colors, start=1):
+    #     plt.subplot(number,1,i)
+    #     plt.plot(wPFC2MD[i-1,:],color=color)
+    # plt.suptitle('wPFC2MD')
+    
+    # wMD2PFC = log['wMD2PFC']
+    # number = Num_MD
+    # cmap = plt.get_cmap('rainbow') 
+    # colors = [cmap(i) for i in np.linspace(0,1,number)]
+    # plt.figure()
+    # for i,color in enumerate(colors, start=1):
+    #     plt.subplot(number,1,i)
+    #     plt.plot(wMD2PFC[:,i-1],color=color)
+    # plt.suptitle('wMD2PFC')
 
 ## plot pfc recurrent weights before and after training
 Jrec = model.pfc.Jrec.detach().numpy()
