@@ -329,10 +329,17 @@ class MD():
         MDoutTrace_threshold = 0.5  
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
 
-        # Update and clip the weights
+        # update and clip the weights
+        # original
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
+        
+        # decaying PFC-MD weights
+        # alpha = 0 # 0.5 when shift on, 0 when shift off
+        # self.wPFC2MD = np.clip((1-alpha)* self.wPFC2MD + wPFC2MDdelta, 0., 1.)
+        # self.wMD2PFC = np.clip((1-alpha) * self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
+        # self.wMD2PFCMult = np.clip((1-alpha) * self.wMD2PFCMult + (wPFC2MDdelta.T), 0.,7. / self.G)
 
     def winner_take_all(self, MDinp):
         '''Winner take all on the MD
@@ -389,6 +396,7 @@ class SensoryInputLayer():
         self.Nsub = n_sub
         self.Nneur = n_output
         self.positiveRates = True
+        self.weightNoise = True
 
         self.wIn = np.zeros((self.Nneur, self.Ncues))
         self.cueFactor = 1.5
@@ -400,7 +408,11 @@ class SensoryInputLayer():
             self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1), cuei] = \
                 np.random.uniform(lowcue, highcue, size=self.Nsub) \
                 * self.cueFactor
-                
+        # add random noise to input weights
+        if self.weightNoise==True:
+            noiseSD = 1e-1
+            self.wIn += np.random.normal(size=(np.shape(self.wIn))) * noiseSD
+        
         # ramdom init input weights
         # self.wIn = np.random.uniform(0, 1, size=(self.Nneur, self.Ncues))
         
