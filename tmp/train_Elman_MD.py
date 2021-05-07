@@ -53,7 +53,7 @@ num_cueingcontext = 2
 num_cue = 2
 num_rule = 2
 rule = [0, 1, 0, 1]
-blocklen = [200, 200, 200]
+blocklen = [100, 100, 50]
 block_cueingcontext = [0, 1, 0]
 tsteps = 200
 cuesteps = 100
@@ -95,7 +95,7 @@ num_layers = 1
 nonlinearity = 'tanh'
 Num_MD = 10
 num_active = 5
-reg = 1e-2              # disjoint penalty regularization; if Elmanlearn == True, reg = 1e-5; else, reg = 1e-2
+reg = 1e-4              # disjoint penalty regularization; penalize Win: reg = 1e-4
 MDeffect = True
 Sensoryinputlearn = True
 Elmanlearn = False
@@ -185,8 +185,8 @@ for i in range(total_step):
 
     # forward
     outputs = model(inputs, labels)
-    ####print('MSE', criterion(outputs, labels))
-    ####print('reg', disjoint_penalty(model, reg=reg))
+    ###print('MSE', criterion(outputs, labels))
+    ###print('reg', disjoint_penalty(model, reg=reg))
 
     # save MD activities
     if  MDeffect == True:
@@ -198,10 +198,10 @@ for i in range(total_step):
     # backward + optimize
     loss = criterion(outputs, labels) + disjoint_penalty(model, reg=reg)
     #loss = criterion(outputs, labels)
-    ####print(criterion(outputs, labels), disjoint_penalty(model, reg=reg))
-    ####print(loss)
-    ####print(model.parm['rnn.input2h.weight'])
-    ####print(model.parm['rnn.h2h.weight'])
+    ###print(criterion(outputs, labels), disjoint_penalty(model, reg=reg))
+    ###print(loss)
+    ###print(model.parm['rnn.input2h.weight'])
+    ###print(model.parm['rnn.h2h.weight'])
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip gradients
     #torch.nn.utils.clip_grad_norm_(model.parameters(), 1e-4) # clip gradients
@@ -271,6 +271,7 @@ plt.legend()
 #plt.ylim([0.0, 1.0])
 #plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 #plt.tight_layout()
+plt.savefig('./animation/'+'total_loss')
 plt.show()
 
 # Plot MSE curve
@@ -282,6 +283,7 @@ plt.legend()
 #plt.ylim([0.0, 1.0])
 #plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 #plt.tight_layout()
+plt.savefig('./animation/'+'MSE_loss')
 plt.show()
 
 

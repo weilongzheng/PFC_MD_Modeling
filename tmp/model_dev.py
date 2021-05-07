@@ -202,7 +202,7 @@ class SensoryInputLayer():
         if self.positiveRates:
             lowcue, highcue = 0.5, 1.
         else:
-            lowcue, highcue = -1., 1
+            lowcue, highcue = -1., 1.
         for cuei in np.arange(self.Ncues):
             self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1), cuei] = \
                 np.random.uniform(lowcue, highcue, size=self.Nsub) \
@@ -547,10 +547,11 @@ class PytorchPFCMD(nn.Module):
         n_time = input.shape[0]
         tsteps = 200
 
-        self.pfc.init_activity()  # Reinit PFC activity
+        # initialize RNN and MD activities
+        self.pfc.init_activity()
         pfc_output = self.pfc.activity
         if self.MDeffect:
-            self.md.init_activity()  # Reinit MD activity
+            self.md.init_activity()
 
         #output = torch.zeros((n_time, target.shape[-1]))
         #self.pfc_output_t *= 0
@@ -559,11 +560,11 @@ class PytorchPFCMD(nn.Module):
         self.pfc_outputs = torch.zeros((n_time, self.pfc.Nneur))
         self.md_preTraces = np.zeros(shape=(n_time, self.pfc.Nneur))
         self.md_preTrace_thresholds = np.zeros(shape=(n_time, 1))
-
         if self.MDeffect:
             self.md_output_t *= 0
             # reinitialize pretrace every cycle
             # self.md.MDpreTrace = np.zeros(shape=(self.pfc.Nneur))
+
 
         for i in range(n_time):
             input_t = input[i]
@@ -639,11 +640,14 @@ class Elman(nn.Module):
         if nonlinearity == 'relu':
             self.activation = torch.relu
         else:
-            self.activation = torch.tanh
-            #self.activation = lambda inp: torch.clip(torch.tanh(inp), 0, None)
+            #self.activation = torch.tanh
+            # keep Elman activities positive
+            self.activation = lambda inp: torch.clip(torch.tanh(inp), 0, None)
 
         # Sensory input -> RNN
         self.input2h = nn.Linear(input_size, hidden_size, bias=False)
+        # keep sensory input layer's weights positive
+        nn.init.uniform_(self.input2h.weight, a=0.1, b=0.8)
 
         # RNN -> RNN
         self.h2h = nn.Linear(hidden_size, hidden_size, bias=False)
@@ -671,9 +675,7 @@ class Elman(nn.Module):
         '''
         pre_activation = self.input2h(input) + self.h2h(hidden)
 
-        if mdinput is None:
-            mdinput = torch.zeros_like(pre_activation)
-        else:
+        if mdinput is not None:
             pre_activation += mdinput
         
         h_new = self.activation(pre_activation)
@@ -740,7 +742,7 @@ class Elman_MD(nn.Module):
         # Output layer
         self.fc = nn.Linear(hidden_size, output_size)
 
-        # Track parameters
+        # Track model parameters
         self.parm = dict()
         for name, param in self.named_parameters():
             self.parm[name] = param
@@ -754,13 +756,14 @@ class Elman_MD(nn.Module):
 
         # initialize variables for saving important network activities
         RNN_output = torch.zeros((n_time, batch_size, self.hidden_size))
-        #RNN_hidden_t = torch.zeros((self.num_layers, batch_size, self.hidden_size))
-        RNN_hidden_t = torch.zeros((batch_size, self.hidden_size))
         self.md_preTraces = np.zeros(shape=(n_time, self.hidden_size))
         self.md_preTrace_thresholds = np.zeros(shape=(n_time, 1))
         if self.MDeffect:
             self.md_output_t *= 0
 
+        # initialize RNN and MD activities
+        #RNN_hidden_t = torch.zeros((self.num_layers, batch_size, self.hidden_size))
+        RNN_hidden_t = torch.zeros((batch_size, self.hidden_size))
         if self.MDeffect:
             self.md.init_activity()  # Reinit MD activity
         
@@ -787,7 +790,6 @@ class Elman_MD(nn.Module):
                 md2pfc = torch.from_numpy(md2pfc).view_as(RNN_hidden_t)
                 
                 # Generate RNN activities
-                #RNN_output[t, :, :], RNN_hidden_t = self.rnn(input_t, RNN_hidden_t, md2pfc)
                 RNN_hidden_t = self.rnn(input_t, RNN_hidden_t, md2pfc)
                 RNN_output[t, :, :] = RNN_hidden_t
 
@@ -802,7 +804,6 @@ class Elman_MD(nn.Module):
                     self.md_output_t = np.concatenate((self.md_output_t, self.md_output.reshape((1,self.md_output.shape[0]))),axis=0)
 
             else:
-                #RNN_output[t, :, :], RNN_hidden_t = self.rnn(input_t, RNN_hidden_t)
                 RNN_hidden_t = self.rnn(input_t, RNN_hidden_t)
                 RNN_output[t, :, :] = RNN_hidden_t
 
