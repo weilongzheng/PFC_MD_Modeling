@@ -7,8 +7,11 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from collections import defaultdict
 import matplotlib.pyplot as plt
 import seaborn as sns
+import imageio
+from pygifsicle import optimize
 import pickle
 from pathlib import Path
 import os
@@ -18,24 +21,24 @@ sys.path.append(root)
 sys.path.append('..')
 
 from task import RikhyeTaskBatch
-from model import Elman_MD
+#from model import ElmanMD
+from model_dev import Elman_MD
 
 
 #---------------- Helper funtions ----------------#
 def disjoint_penalty(model, reg=1e-4):
     '''
-    Keep weight matrices disjoint by adding ||matmul(W.T, W)||1 to loss
+    Keep weight matrices disjoint by adding ||matmul(W.T, W)||1 to the loss function (diagonal elements removed)
     '''
-    norm = torch.tensor(0.)
-    # for name, param in model.named_parameters():
-    #     if 'rnn.input2h.weight' in name or 'rnn.h2h.weight' in name:
-    #         norm += reg * torch.abs(torch.matmul(param.t(), param)).sum()
+    penalty = torch.tensor(0.)
     Winput2h = model.parm['rnn.input2h.weight']
     #Wrec = model.parm['rnn.h2h.weight']
-    for param in [Winput2h]:
     #for param in [Winput2h, Wrec]:
-        norm += reg * torch.abs(torch.matmul(param.t(), param)).sum()
-    return norm
+    for param in [Winput2h]:
+        penalty = torch.matmul(param.t(), param)
+        penalty = reg * torch.abs(penalty - torch.diag_embed(torch.diag(penalty)))
+        penalty = penalty.sum()
+    return penalty
 
 
 #---------------- Rikhye dataset with batch dimension ----------------#
@@ -50,7 +53,7 @@ num_cueingcontext = 2
 num_cue = 2
 num_rule = 2
 rule = [0, 1, 0, 1]
-blocklen = [200, 200, 200]
+blocklen = [200, 200, 100]
 block_cueingcontext = [0, 1, 0]
 tsteps = 200
 cuesteps = 100
@@ -92,10 +95,10 @@ num_layers = 1
 nonlinearity = 'tanh'
 Num_MD = 10
 num_active = 5
-reg = 1e-4              # disjoint penalty regularization; if Elmanlearn == True, reg = 1e-5; else, reg = 1e-4
-MDeffect = True
+reg = 0.5*1e-4              # disjoint penalty regularization; penalize Win: reg = 1e-4
+MDeffect = False
 Sensoryinputlearn = True
-Elmanlearn = False
+Elmanlearn = True
 
 
 # save model settings
@@ -148,18 +151,24 @@ for name, param in model.named_parameters():
     print(name, param.shape)
     training_params.append(param)
 print('\n', end='')
-optimizer = torch.optim.Adam(training_params, lr=1e-3)
+optimizer = torch.optim.Adam(training_params, lr=1e-3) # original 1e-3
 
 criterion = nn.MSELoss()
 
 total_step = sum(blocklen)//batch_size
-print_step = 10
+print_step = 10 # print statistics every print_step
+save_W_step = 10 # save wPFC2MD and wMD2PFC every save_W_step
 running_loss = 0.0
 running_mseloss = 0.0
 running_train_time = 0
 
 log['loss_val'] = []
 log['mse'] = []
+log['wPFC2MD_list'] = []
+log['wMD2PFC_list'] = []
+# MDouts_all = np.zeros(shape=(total_step, tsteps*num_cue, Num_MD))
+# MDpreTraces_all = np.zeros(shape=(total_step, tsteps*num_cue, hidden_size))
+# MDpreTrace_threshold_all = np.zeros(shape=(total_step, tsteps*num_cue, 1))
 
 
 for i in range(total_step):
@@ -174,16 +183,25 @@ for i in range(total_step):
     # zero the parameter gradients
     optimizer.zero_grad()
 
-    # forward + backward + optimize
+    # forward
     outputs = model(inputs, labels)
-    ####print('MSE', criterion(outputs, labels))
-    ####print('reg', disjoint_penalty(model, reg=reg))
+    ###print('MSE', criterion(outputs, labels))
+    ###print('reg', disjoint_penalty(model, reg=reg))
 
-    loss = criterion(outputs, labels) + disjoint_penalty(model, reg=reg)
-    #loss = criterion(outputs, labels)
-    ####print(loss)
-    ####print(model.parm['rnn.input2h.weight'])
-    ####print(model.parm['rnn.h2h.weight'])
+    # save MD activities
+    # if  MDeffect == True:
+    #     # MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+    #     MDouts_all[i,:,:] = model.md_output_t
+    #     MDpreTraces_all[i,:,:] = model.md_preTraces
+    #     MDpreTrace_threshold_all[i, :, :] = model.md_preTrace_thresholds
+
+    # backward + optimize
+    #loss = criterion(outputs, labels) + disjoint_penalty(model, reg=reg)
+    loss = criterion(outputs, labels)
+    ###print(criterion(outputs, labels), disjoint_penalty(model, reg=reg))
+    ###print(loss)
+    ###print(model.parm['rnn.input2h.weight'])
+    ###print(model.parm['rnn.h2h.weight'])
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip gradients
     #torch.nn.utils.clip_grad_norm_(model.parameters(), 1e-4) # clip gradients
@@ -215,17 +233,24 @@ for i in range(total_step):
         end='\n\n')
         running_train_time = 0
 
-        # save model during training
-        log['Winput2h'] = model.parm['rnn.input2h.weight'].data.detach().numpy()
-        log['Wrec'] = model.parm['rnn.h2h.weight'].data.detach().numpy()
-        if MDeffect == True:  
-            log['wPFC2MD'] = model.md.wPFC2MD
-            log['wMD2PFC'] = model.md.wMD2PFC
-            log['wMD2PFCMult'] = model.md.wMD2PFCMult
+        #  save wPFC2MD and wMD2PFC during training
+        if i % save_W_step == (save_W_step - 1) and MDeffect:
+            log['wPFC2MD_list'].append(model.md.wPFC2MD)
+            log['wMD2PFC_list'].append(model.md.wMD2PFC)
 
-        with open(directory / (model_name + '.pkl'), 'wb') as f:
-            pickle.dump(log, f)
-        torch.save(model.state_dict(), directory / (model_name + '.pth'))
+
+# save model after training
+log['Winput2h'] = model.parm['rnn.input2h.weight'].data.detach().numpy()
+log['Wrec'] = model.parm['rnn.h2h.weight'].data.detach().numpy()
+if MDeffect == True:  
+    log['wPFC2MD'] = model.md.wPFC2MD
+    log['wMD2PFC'] = model.md.wMD2PFC
+    log['wMD2PFCMult'] = model.md.wMD2PFCMult
+
+with open(directory / (model_name + '.pkl'), 'wb') as f:
+    pickle.dump(log, f)
+torch.save(model.state_dict(), directory / (model_name + '.pth'))
+
 
 print('Finished Training')
 
@@ -246,6 +271,7 @@ plt.legend()
 #plt.ylim([0.0, 1.0])
 #plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 #plt.tight_layout()
+plt.savefig('./animation/'+'total_loss')
 plt.show()
 
 # Plot MSE curve
@@ -257,32 +283,33 @@ plt.legend()
 #plt.ylim([0.0, 1.0])
 #plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 #plt.tight_layout()
+plt.savefig('./animation/'+'MSE_loss')
 plt.show()
 
 
-# Plot connection weights
-Winput2h = log['Winput2h']
-Wrec = log['Wrec']
+# # Plot connection weights
+# Winput2h = log['Winput2h']
+# Wrec = log['Wrec']
 
-## Heatmap Winput2h
-ax = plt.figure(figsize=(15, 10))
-ax = sns.heatmap(Winput2h, cmap='bwr')
-ax.set_xticklabels([1, 2, 3, 4], rotation=0)
-ax.set_yticks([0, 999])
-ax.set_yticklabels([1, 1000], rotation=0)
-ax.set_xlabel('Cue index', fontdict=font)
-ax.set_ylabel('Elman neuron index', fontdict=font)
-ax.set_title('Weights: input to hiddenlayer', fontdict=font)
-cbar = ax.collections[0].colorbar
-cbar.set_label('connection weight', fontdict=font)
-plt.show()
+# ## Heatmap Winput2h
+# ax = plt.figure(figsize=(15, 10))
+# ax = sns.heatmap(Winput2h, cmap='bwr')
+# ax.set_xticklabels([1, 2, 3, 4], rotation=0)
+# ax.set_yticks([0, 999])
+# ax.set_yticklabels([1, 1000], rotation=0)
+# ax.set_xlabel('Cue index', fontdict=font)
+# ax.set_ylabel('Elman neuron index', fontdict=font)
+# ax.set_title('Weights: input to hiddenlayer', fontdict=font)
+# cbar = ax.collections[0].colorbar
+# cbar.set_label('connection weight', fontdict=font)
+# plt.show()
 
-## Heatmap Wrec
-im = plt.matshow(Wrec, cmap='bwr')
-plt.xlabel('Elman neuron index', fontdict=font)
-plt.ylabel('Elman neuron index', fontdict=font)
-plt.xticks(ticks=[0, 999], labels=[1, 1000])
-plt.yticks(ticks=[0, 999], labels=[1, 1000])
-plt.title('Weights: recurrent', fontdict=font)
-plt.colorbar(im)
-plt.show()
+# ## Heatmap Wrec
+# im = plt.matshow(Wrec, cmap='bwr')
+# plt.xlabel('Elman neuron index', fontdict=font)
+# plt.ylabel('Elman neuron index', fontdict=font)
+# plt.xticks(ticks=[0, 999], labels=[1, 1000])
+# plt.yticks(ticks=[0, 999], labels=[1, 1000])
+# plt.title('Weights: recurrent', fontdict=font)
+# plt.colorbar(im)
+# plt.show()
