@@ -9,6 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import seaborn as sns
+import imageio
+from pygifsicle import optimize
 import pickle
 from pathlib import Path
 import os
@@ -18,24 +20,24 @@ sys.path.append(root)
 sys.path.append('..')
 
 from task import RikhyeTaskBatch
-from model import Elman_MD
+#from model import ElmanMD
+from model_dev import Elman_MD
 
 
 #---------------- Helper funtions ----------------#
 def disjoint_penalty(model, reg=1e-4):
     '''
-    Keep weight matrices disjoint by adding ||matmul(W.T, W)||1 to loss
+    Keep weight matrices disjoint by adding ||matmul(W.T, W)||1 to loss and remove the diagonal elements
     '''
-    norm = torch.tensor(0.)
-    # for name, param in model.named_parameters():
-    #     if 'rnn.input2h.weight' in name or 'rnn.h2h.weight' in name:
-    #         norm += reg * torch.abs(torch.matmul(param.t(), param)).sum()
+    penalty = torch.tensor(0.)
     Winput2h = model.parm['rnn.input2h.weight']
     #Wrec = model.parm['rnn.h2h.weight']
-    for param in [Winput2h]:
     #for param in [Winput2h, Wrec]:
-        norm += reg * torch.abs(torch.matmul(param.t(), param)).sum()
-    return norm
+    for param in [Winput2h]:
+        penalty = torch.matmul(param.t(), param)
+        penalty = reg * torch.abs(penalty - torch.diag_embed(torch.diag(penalty)))
+        penalty = penalty.sum()
+    return penalty
 
 
 #---------------- Rikhye dataset with batch dimension ----------------#
@@ -152,7 +154,8 @@ optimizer = torch.optim.Adam(training_params, lr=1e-3)
 
 criterion = nn.MSELoss()
 
-total_step = sum(blocklen)//batch_size
+#total_step = sum(blocklen)//batch_size
+total_step = 20
 print_step = 10
 running_loss = 0.0
 running_mseloss = 0.0
@@ -160,6 +163,9 @@ running_train_time = 0
 
 log['loss_val'] = []
 log['mse'] = []
+MDouts_all = np.zeros(shape=(total_step, tsteps*num_cue, Num_MD))
+MDpreTraces_all = np.zeros(shape=(total_step, tsteps*num_cue, hidden_size))
+MDpreTrace_threshold_all = np.zeros(shape=(total_step, tsteps*num_cue, 1))
 
 
 for i in range(total_step):
@@ -174,11 +180,19 @@ for i in range(total_step):
     # zero the parameter gradients
     optimizer.zero_grad()
 
-    # forward + backward + optimize
+    # forward
     outputs = model(inputs, labels)
     ####print('MSE', criterion(outputs, labels))
     ####print('reg', disjoint_penalty(model, reg=reg))
 
+    # save MD activities
+    if  MDeffect == True:
+        # MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+        MDouts_all[i,:,:] = model.md_output_t
+        MDpreTraces_all[i,:,:] = model.md_preTraces
+        MDpreTrace_threshold_all[i, :, :] = model.md_preTrace_thresholds
+
+    # backward + optimize
     loss = criterion(outputs, labels) + disjoint_penalty(model, reg=reg)
     #loss = criterion(outputs, labels)
     ####print(loss)
@@ -260,29 +274,29 @@ plt.legend()
 plt.show()
 
 
-# Plot connection weights
-Winput2h = log['Winput2h']
-Wrec = log['Wrec']
+# # Plot connection weights
+# Winput2h = log['Winput2h']
+# Wrec = log['Wrec']
 
-## Heatmap Winput2h
-ax = plt.figure(figsize=(15, 10))
-ax = sns.heatmap(Winput2h, cmap='bwr')
-ax.set_xticklabels([1, 2, 3, 4], rotation=0)
-ax.set_yticks([0, 999])
-ax.set_yticklabels([1, 1000], rotation=0)
-ax.set_xlabel('Cue index', fontdict=font)
-ax.set_ylabel('Elman neuron index', fontdict=font)
-ax.set_title('Weights: input to hiddenlayer', fontdict=font)
-cbar = ax.collections[0].colorbar
-cbar.set_label('connection weight', fontdict=font)
-plt.show()
+# ## Heatmap Winput2h
+# ax = plt.figure(figsize=(15, 10))
+# ax = sns.heatmap(Winput2h, cmap='bwr')
+# ax.set_xticklabels([1, 2, 3, 4], rotation=0)
+# ax.set_yticks([0, 999])
+# ax.set_yticklabels([1, 1000], rotation=0)
+# ax.set_xlabel('Cue index', fontdict=font)
+# ax.set_ylabel('Elman neuron index', fontdict=font)
+# ax.set_title('Weights: input to hiddenlayer', fontdict=font)
+# cbar = ax.collections[0].colorbar
+# cbar.set_label('connection weight', fontdict=font)
+# plt.show()
 
-## Heatmap Wrec
-im = plt.matshow(Wrec, cmap='bwr')
-plt.xlabel('Elman neuron index', fontdict=font)
-plt.ylabel('Elman neuron index', fontdict=font)
-plt.xticks(ticks=[0, 999], labels=[1, 1000])
-plt.yticks(ticks=[0, 999], labels=[1, 1000])
-plt.title('Weights: recurrent', fontdict=font)
-plt.colorbar(im)
-plt.show()
+# ## Heatmap Wrec
+# im = plt.matshow(Wrec, cmap='bwr')
+# plt.xlabel('Elman neuron index', fontdict=font)
+# plt.ylabel('Elman neuron index', fontdict=font)
+# plt.xticks(ticks=[0, 999], labels=[1, 1000])
+# plt.yticks(ticks=[0, 999], labels=[1, 1000])
+# plt.title('Weights: recurrent', fontdict=font)
+# plt.colorbar(im)
+# plt.show()
