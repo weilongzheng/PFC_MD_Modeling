@@ -484,7 +484,7 @@ class MD():
         self.wMD2PFC += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFC + 1.0 * (wPFC2MDdelta.T))
         self.wMD2PFC = np.clip(self.wMD2PFC, -10., 0.)
         
-        self.wMD2PFCMult = 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T))
+        self.wMD2PFCMult += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T))
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult, 0.,7. / self.G)
 
     def winner_take_all(self, MDinp):

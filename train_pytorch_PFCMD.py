@@ -21,8 +21,8 @@ RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 200            # number of training cycles for each context
-Nextra = 200            # add cycles to show if block1
+Ntrain = 100            # number of training cycles for each context
+Nextra = 100            # add cycles to show if block1
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
@@ -34,11 +34,13 @@ n_neuron_per_cue = 200
 Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
+noiseSD = 1e-1
 MDeffect = True
 PFClearn = True
+noiseInput = False # additional noise input neuron 
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
-MDeffect=MDeffect)
+MDeffect=MDeffect, noiseInput = noiseInput)
 
 # Training
 criterion = nn.MSELoss() 
@@ -79,6 +81,10 @@ for i in range(total_step):
 
     # extract data
     inputs, labels = dataset()
+    if noiseInput == True:
+        inputs = np.hstack((inputs,np.random.normal(size=(inputs.shape[0],1)) * noiseSD))
+
+    #import pdb;pdb.set_trace()    
     inputs = torch.from_numpy(inputs).type(torch.float)
     labels = torch.from_numpy(labels).type(torch.float)
 
@@ -105,7 +111,7 @@ for i in range(total_step):
         torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-6) # normalization Jrec 1e-6
     optimizer.step()
     
-    #import pdb;pdb.set_trace()
+    #
     # print statistics
     mse = loss.item()
     log['mse'].append(mse)
@@ -152,7 +158,7 @@ if  MDeffect == True:
 
 filename = Path('files')
 os.makedirs(filename, exist_ok=True)
-file_training = 'train_noiseW_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+file_training = 'train_overlapWcontx_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
 with open(filename / file_training, 'wb') as f:
     pickle.dump(log, f)
     

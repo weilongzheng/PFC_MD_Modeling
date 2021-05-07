@@ -327,13 +327,25 @@ class MD():
         #self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:self.Nsub * self.Ncues])  # first 800 cells are cue selective
         # MDoutTrace_threshold = np.mean(MDoutTrace) #median
         MDoutTrace_threshold = 0.5  
-        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
-
+        
         # update and clip the weights
         # original
+        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
-        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
+        self.wMD2PFC = np.clip(self.wMD2PFC + 0.1*(wPFC2MDdelta.T), -10., 0.)
+        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0.,7. / self.G)
+        
+        # slow-decaying PFC-MD weights
+#        wPFC2MDdelta = 30000 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+#        self.wPFC2MD += 1. / self.tsteps / 5. * (-1.0 * self.wPFC2MD + 1.0 * wPFC2MDdelta)
+#        self.wPFC2MD = np.clip(self.wPFC2MD, 0., 1.)
+#        
+#        self.wMD2PFC += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFC + 1.0 * (wPFC2MDdelta.T))
+#        self.wMD2PFC = np.clip(self.wMD2PFC, -10., 0.)
+#        
+#        self.wMD2PFCMult += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T))
+#        self.wMD2PFCMult = np.clip(self.wMD2PFCMult, 0.,7. / self.G)
         
         # decaying PFC-MD weights
         # alpha = 0 # 0.5 when shift on, 0 when shift off
@@ -396,7 +408,8 @@ class SensoryInputLayer():
         self.Nsub = n_sub
         self.Nneur = n_output
         self.positiveRates = True
-        self.weightNoise = True
+        self.weightNoise = False
+        self.weightOverlap = True
 
         self.wIn = np.zeros((self.Nneur, self.Ncues))
         self.cueFactor = 1.5
@@ -412,6 +425,33 @@ class SensoryInputLayer():
         if self.weightNoise==True:
             noiseSD = 1e-1
             self.wIn += np.random.normal(size=(np.shape(self.wIn))) * noiseSD
+        
+        # Input weights have overlops (mix neurons)
+        if self.weightOverlap == True:
+#            ''' overlap across rules'''
+#            for cuei in np.arange(self.Ncues):
+#                self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1)+int(self.Nsub/2), cuei] = \
+#                    np.random.uniform(lowcue, highcue, size=self.Nsub+int(self.Nsub/2)) \
+#                    * self.cueFactor
+                    
+            ''' overlap across context'''
+            N_overlap = 15
+            self.wIn[400:400+N_overlap,0] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+            self.wIn[600:600+N_overlap,1] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+            self.wIn[0:0+N_overlap,2] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+            self.wIn[200:200+N_overlap,3] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+      
+        ## plot Win
+#        import seaborn as sns
+#        ax = sns.heatmap(self.wIn,cmap='Reds')
+#        ax.set_yticks(np.arange(0,1001,200))
+#        ax.set_yticklabels(np.arange(0,1001,200), rotation=0)
+#        ax.set_xticklabels(np.arange(1,5,1), rotation=0)
+#        ax.set_xlabel('Cue Inputs')
+#        ax.set_ylabel('PFC Neuron Index')
+#        ax.set_title('Input Weights')
+#        plt.tight_layout()
+#        import pdb;pdb.set_trace() 
         
         # ramdom init input weights
         # self.wIn = np.random.uniform(0, 1, size=(self.Nneur, self.Ncues))
@@ -445,6 +485,56 @@ class SensoryInputLayer():
         '''
         self.wIn = np.roll(self.wIn, shift=shift, axis=0)
 
+
+class SensoryInputLayer_NoiseNeuro():
+    def __init__(self, n_sub, n_cues, n_output):
+
+        self.Ncues = n_cues
+        self.Nsub = n_sub
+        self.Nneur = n_output
+        self.positiveRates = True
+
+        self.wIn = np.zeros((self.Nneur, self.Ncues+1)) ## additional noise neuron
+        self.cueFactor = 1.5
+        if self.positiveRates:
+            lowcue, highcue = 0.5, 1.
+        else:
+            lowcue, highcue = -1., 1
+        for cuei in np.arange(self.Ncues):
+            self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1), cuei] = \
+                np.random.uniform(lowcue, highcue, size=self.Nsub) \
+                * self.cueFactor
+                
+        self.wIn[:,self.Ncues] = np.random.uniform(lowcue, highcue, size=self.Nneur) \
+                * self.cueFactor
+        ## plot Win
+#        import seaborn as sns
+#        ax = sns.heatmap(self.wIn,cmap='Reds')
+#        ax.set_yticks(np.arange(0,1001,200))
+#        ax.set_yticklabels(np.arange(0,1001,200), rotation=0)
+#        ax.set_xticklabels(np.arange(1,6,1), rotation=0)
+#        ax.set_xlabel('Cue Inputs')
+#        ax.set_ylabel('PFC Neuron Index')
+#        ax.set_title('Input Weights')
+#        plt.tight_layout()
+#        import pdb;pdb.set_trace() 
+        
+        self._use_torch = False
+
+    def __call__(self, input):
+        if self._use_torch:
+            input = input.numpy()
+
+        output = np.dot(self.wIn, input)
+
+        if self._use_torch:
+            #output = torch.from_numpy(output, dtype=torch.float).astype(torch.float)
+            output = torch.from_numpy(output).type(torch.float)
+
+        return output
+
+    def torch(self, use_torch=True):
+        self._use_torch = use_torch
 
 class FullNetwork():
     def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active,
@@ -857,18 +947,26 @@ class PytorchMD(nn.Module):
 
 
 class PytorchPFCMD(nn.Module):
-    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, MDeffect=True, noisePresent = False):
+    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, MDeffect=True, noisePresent = False, noiseInput = False):
         super().__init__()
-
+        """
+        additional noise input neuron if noiseInput is true
+        """
         dt = 0.001
-
-        self.sensory2pfc = SensoryInputLayer(
-            n_sub=n_neuron_per_cue,
-            n_cues=4,
-            n_output=Num_PFC)
-        self.sensory2pfc.torch(use_torch=True)
-        # try learnable input weights
-        # self.PytorchSensory2pfc = nn.Linear(4, Num_PFC)
+        if noiseInput==False:
+            self.sensory2pfc = SensoryInputLayer(
+                n_sub=n_neuron_per_cue,
+                n_cues=4,
+                n_output=Num_PFC)
+            self.sensory2pfc.torch(use_torch=True)
+            # try learnable input weights
+            # self.PytorchSensory2pfc = nn.Linear(4, Num_PFC)
+        else:
+            self.sensory2pfc = SensoryInputLayer_NoiseNeuro(
+                n_sub=n_neuron_per_cue,
+                n_cues=4,
+                n_output=Num_PFC)
+            self.sensory2pfc.torch(use_torch=True)
 
         self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, MDeffect=MDeffect, noisePresent = noisePresent)
 
