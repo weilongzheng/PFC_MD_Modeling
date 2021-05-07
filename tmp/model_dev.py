@@ -645,49 +645,59 @@ class Elman(nn.Module):
             # self.activation = lambda inp: torch.clip(torch.tanh(inp), 0, None)
 
         # Sensory input -> RNN
-        self.input2h = nn.Linear(input_size, hidden_size, bias=False)
+        # self.input2h = nn.Linear(input_size, hidden_size, bias=False)
         # keep sensory input layer's weights positive
         # nn.init.uniform_(self.input2h.weight, a=0.5, b=1.0)
+        self.input2h = nn.Linear(input_size, hidden_size)
+        k = (1./self.hidden_size)**0.5
+        nn.init.uniform_(self.input2h.weight, a=-k, b=k) # same as pytorch built-in RNN module
+        nn.init.uniform_(self.input2h.bias, a=-k, b=k)
 
         # RNN -> RNN
-        self.h2h = nn.Linear(hidden_size, hidden_size, bias=False)
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        '''
-        Reset RNN weights
-        '''
-        #nn.init.eye_(self.h2h.weight)
-        #self.h2h.weight.data *= 0.5
-
-        #nn.init.normal_(self.h2h.weight, mean=0.0, std=1.0)
-
+        # self.h2h = nn.Linear(hidden_size, hidden_size, bias=False)
+        # self.reset_parameters()
+        self.h2h = nn.Linear(hidden_size, hidden_size)
         k = (1./self.hidden_size)**0.5
         nn.init.uniform_(self.h2h.weight, a=-k, b=k) # same as pytorch built-in RNN module
+        nn.init.uniform_(self.h2h.bias, a=-k, b=k)
+
+    # def reset_parameters(self):
+    #     '''
+    #     Reset RNN weights
+    #     '''
+    #     #nn.init.eye_(self.h2h.weight)
+    #     #self.h2h.weight.data *= 0.5
+
+    #     #nn.init.normal_(self.h2h.weight, mean=0.0, std=1.0)
+
+    #     k = (1./self.hidden_size)**0.5
+    #     nn.init.uniform_(self.h2h.weight, a=-k, b=k) # same as pytorch built-in RNN module
         
     def init_hidden(self, input):
         batch_size = input.shape[1]
-        return torch.zeros(batch_size, self.hidden_size)
+        return torch.zeros(1, batch_size, self.hidden_size)
 
-    def recurrence(self, input, hidden, mdinput):
-        '''
-        Recurrence helper function
-        '''
-        pre_activation = self.input2h(input) + self.h2h(hidden)
+    # def recurrence(self, input, hidden, mdinput):
+    #     '''
+    #     Recurrence helper function
+    #     '''
+    #     pre_activation = self.input2h(input) + self.h2h(hidden)
 
-        if mdinput is not None:
-            pre_activation += mdinput
+    #     if mdinput is not None:
+    #         pre_activation += mdinput
         
-        h_new = self.activation(pre_activation)
+    #     h_new = self.activation(pre_activation)
 
-        return h_new
+    #     return h_new
 
     def forward(self, input, hidden=None, mdinput=None):
         '''
         Propogate input through the network
         '''
-        if hidden is None:
-            hidden = self.init_hidden(input)
+        # TODO: input.shape has to be [timestep=1, batch_size, input_size]
+
+        # if hidden is None:
+        #     hidden = self.init_hidden(input)
 
         # output = []
         # steps = range(input.size(0))
@@ -696,8 +706,17 @@ class Elman(nn.Module):
         #     output.append(hidden)
         # output = torch.stack(output, dim=0)
 
-        # TODO: input.shape has to be [timestep=1, batch_size, input_size]
-        hidden = self.recurrence(input[0], hidden, mdinput)
+        # hidden = self.recurrence(input[0], hidden, mdinput)
+
+        if hidden is None:
+            hidden = self.init_hidden(input)
+
+        pre_activation = self.input2h(input) + self.h2h(hidden)
+
+        if mdinput is not None:
+            pre_activation += mdinput
+        
+        hidden = self.activation(pre_activation)
         
         return hidden
 
