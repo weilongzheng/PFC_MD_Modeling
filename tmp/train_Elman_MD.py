@@ -28,7 +28,7 @@ from model_dev import Elman_MD
 #---------------- Helper funtions ----------------#
 def disjoint_penalty(model, reg=1e-4):
     '''
-    Keep weight matrices disjoint by adding ||matmul(W.T, W)||1 to loss and remove the diagonal elements
+    Keep weight matrices disjoint by adding ||matmul(W.T, W)||1 to the loss function (diagonal elements removed)
     '''
     penalty = torch.tensor(0.)
     Winput2h = model.parm['rnn.input2h.weight']
@@ -53,7 +53,7 @@ num_cueingcontext = 2
 num_cue = 2
 num_rule = 2
 rule = [0, 1, 0, 1]
-blocklen = [100, 100, 50]
+blocklen = [200, 200, 100]
 block_cueingcontext = [0, 1, 0]
 tsteps = 200
 cuesteps = 100
@@ -95,10 +95,10 @@ num_layers = 1
 nonlinearity = 'tanh'
 Num_MD = 10
 num_active = 5
-reg = 1e-4              # disjoint penalty regularization; penalize Win: reg = 1e-4
-MDeffect = True
+reg = 0.5*1e-4              # disjoint penalty regularization; penalize Win: reg = 1e-4
+MDeffect = False
 Sensoryinputlearn = True
-Elmanlearn = False
+Elmanlearn = True
 
 
 # save model settings
@@ -151,7 +151,7 @@ for name, param in model.named_parameters():
     print(name, param.shape)
     training_params.append(param)
 print('\n', end='')
-optimizer = torch.optim.Adam(training_params, lr=1e-3)
+optimizer = torch.optim.Adam(training_params, lr=1e-3) # original 1e-3
 
 criterion = nn.MSELoss()
 
@@ -166,9 +166,9 @@ log['loss_val'] = []
 log['mse'] = []
 log['wPFC2MD_list'] = []
 log['wMD2PFC_list'] = []
-MDouts_all = np.zeros(shape=(total_step, tsteps*num_cue, Num_MD))
-MDpreTraces_all = np.zeros(shape=(total_step, tsteps*num_cue, hidden_size))
-MDpreTrace_threshold_all = np.zeros(shape=(total_step, tsteps*num_cue, 1))
+# MDouts_all = np.zeros(shape=(total_step, tsteps*num_cue, Num_MD))
+# MDpreTraces_all = np.zeros(shape=(total_step, tsteps*num_cue, hidden_size))
+# MDpreTrace_threshold_all = np.zeros(shape=(total_step, tsteps*num_cue, 1))
 
 
 for i in range(total_step):
@@ -189,15 +189,15 @@ for i in range(total_step):
     ###print('reg', disjoint_penalty(model, reg=reg))
 
     # save MD activities
-    if  MDeffect == True:
-        # MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
-        MDouts_all[i,:,:] = model.md_output_t
-        MDpreTraces_all[i,:,:] = model.md_preTraces
-        MDpreTrace_threshold_all[i, :, :] = model.md_preTrace_thresholds
+    # if  MDeffect == True:
+    #     # MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+    #     MDouts_all[i,:,:] = model.md_output_t
+    #     MDpreTraces_all[i,:,:] = model.md_preTraces
+    #     MDpreTrace_threshold_all[i, :, :] = model.md_preTrace_thresholds
 
     # backward + optimize
-    loss = criterion(outputs, labels) + disjoint_penalty(model, reg=reg)
-    #loss = criterion(outputs, labels)
+    #loss = criterion(outputs, labels) + disjoint_penalty(model, reg=reg)
+    loss = criterion(outputs, labels)
     ###print(criterion(outputs, labels), disjoint_penalty(model, reg=reg))
     ###print(loss)
     ###print(model.parm['rnn.input2h.weight'])

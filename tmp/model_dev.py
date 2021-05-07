@@ -640,14 +640,14 @@ class Elman(nn.Module):
         if nonlinearity == 'relu':
             self.activation = torch.relu
         else:
-            #self.activation = torch.tanh
+            self.activation = torch.tanh
             # keep Elman activities positive
-            self.activation = lambda inp: torch.clip(torch.tanh(inp), 0, None)
+            # self.activation = lambda inp: torch.clip(torch.tanh(inp), 0, None)
 
         # Sensory input -> RNN
         self.input2h = nn.Linear(input_size, hidden_size, bias=False)
         # keep sensory input layer's weights positive
-        nn.init.uniform_(self.input2h.weight, a=0.1, b=0.8)
+        # nn.init.uniform_(self.input2h.weight, a=0.5, b=1.0)
 
         # RNN -> RNN
         self.h2h = nn.Linear(hidden_size, hidden_size, bias=False)
@@ -756,13 +756,12 @@ class Elman_MD(nn.Module):
 
         # initialize variables for saving important network activities
         RNN_output = torch.zeros((n_time, batch_size, self.hidden_size))
-        self.md_preTraces = np.zeros(shape=(n_time, self.hidden_size))
-        self.md_preTrace_thresholds = np.zeros(shape=(n_time, 1))
         if self.MDeffect:
+            self.md_preTraces = np.zeros(shape=(n_time, self.hidden_size))
+            self.md_preTrace_thresholds = np.zeros(shape=(n_time, 1))
             self.md_output_t *= 0
 
         # initialize RNN and MD activities
-        #RNN_hidden_t = torch.zeros((self.num_layers, batch_size, self.hidden_size))
         RNN_hidden_t = torch.zeros((batch_size, self.hidden_size))
         if self.MDeffect:
             self.md.init_activity()  # Reinit MD activity

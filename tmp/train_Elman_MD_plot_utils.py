@@ -178,6 +178,7 @@ for i in range(len(MDpreTraces_all)):
     if (i+1) % plot_step == 0:
         MDpreTraces = meanMDpreTraces_all[i, :]
         MDpreTrace_threshold = meanMDpreTrace_threshold_all[i, :]
+        #MDpreTraces = np.convolve(MDpreTraces, np.ones(20)/20, mode='same') # smooth
         plt.plot(MDpreTraces)  
         plt.axhline(y=MDpreTrace_threshold, color='r', linestyle='-')
         plt.title('MD pretraces' + ' Cycle-'+str(i+1), fontdict=font)

@@ -373,7 +373,7 @@ class PytorchPFC(nn.Module):
             self.xinp += torch.normal(mean=0, std=self.noiseSD * np.sqrt(self.dt) / self.tau, size=(self.Nneur,))
                     
         rout = self.activation(self.xinp)
-        compute moving average of PFC outputs
+        # compute moving average of PFC outputs
         rout_movingaverage = np.convolve(rout.detach().numpy(), np.ones(20)/20, mode='same')
         rout_movingaverage = torch.from_numpy(rout_movingaverage).type(torch.float)
         
