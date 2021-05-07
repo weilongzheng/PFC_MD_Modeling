@@ -7,6 +7,7 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from collections import defaultdict
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio
@@ -94,7 +95,7 @@ num_layers = 1
 nonlinearity = 'tanh'
 Num_MD = 10
 num_active = 5
-reg = 1e-4              # disjoint penalty regularization; if Elmanlearn == True, reg = 1e-5; else, reg = 1e-4
+reg = 1e-2              # disjoint penalty regularization; if Elmanlearn == True, reg = 1e-5; else, reg = 1e-2
 MDeffect = True
 Sensoryinputlearn = True
 Elmanlearn = False
@@ -154,15 +155,17 @@ optimizer = torch.optim.Adam(training_params, lr=1e-3)
 
 criterion = nn.MSELoss()
 
-#total_step = sum(blocklen)//batch_size
-total_step = 20
-print_step = 10
+total_step = sum(blocklen)//batch_size
+print_step = 10 # print statistics every print_step
+save_W_step = 10 # save wPFC2MD and wMD2PFC every save_W_step
 running_loss = 0.0
 running_mseloss = 0.0
 running_train_time = 0
 
 log['loss_val'] = []
 log['mse'] = []
+log['wPFC2MD_list'] = []
+log['wMD2PFC_list'] = []
 MDouts_all = np.zeros(shape=(total_step, tsteps*num_cue, Num_MD))
 MDpreTraces_all = np.zeros(shape=(total_step, tsteps*num_cue, hidden_size))
 MDpreTrace_threshold_all = np.zeros(shape=(total_step, tsteps*num_cue, 1))
@@ -195,6 +198,7 @@ for i in range(total_step):
     # backward + optimize
     loss = criterion(outputs, labels) + disjoint_penalty(model, reg=reg)
     #loss = criterion(outputs, labels)
+    ####print(criterion(outputs, labels), disjoint_penalty(model, reg=reg))
     ####print(loss)
     ####print(model.parm['rnn.input2h.weight'])
     ####print(model.parm['rnn.h2h.weight'])
@@ -229,17 +233,24 @@ for i in range(total_step):
         end='\n\n')
         running_train_time = 0
 
-        # save model during training
-        log['Winput2h'] = model.parm['rnn.input2h.weight'].data.detach().numpy()
-        log['Wrec'] = model.parm['rnn.h2h.weight'].data.detach().numpy()
-        if MDeffect == True:  
-            log['wPFC2MD'] = model.md.wPFC2MD
-            log['wMD2PFC'] = model.md.wMD2PFC
-            log['wMD2PFCMult'] = model.md.wMD2PFCMult
+        #  save wPFC2MD and wMD2PFC during training
+        if i % save_W_step == (save_W_step - 1) and MDeffect:
+            log['wPFC2MD_list'].append(model.md.wPFC2MD)
+            log['wMD2PFC_list'].append(model.md.wMD2PFC)
 
-        with open(directory / (model_name + '.pkl'), 'wb') as f:
-            pickle.dump(log, f)
-        torch.save(model.state_dict(), directory / (model_name + '.pth'))
+
+# save model after training
+log['Winput2h'] = model.parm['rnn.input2h.weight'].data.detach().numpy()
+log['Wrec'] = model.parm['rnn.h2h.weight'].data.detach().numpy()
+if MDeffect == True:  
+    log['wPFC2MD'] = model.md.wPFC2MD
+    log['wMD2PFC'] = model.md.wMD2PFC
+    log['wMD2PFCMult'] = model.md.wMD2PFCMult
+
+with open(directory / (model_name + '.pkl'), 'wb') as f:
+    pickle.dump(log, f)
+torch.save(model.state_dict(), directory / (model_name + '.pth'))
+
 
 print('Finished Training')
 

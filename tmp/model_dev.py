@@ -640,6 +640,7 @@ class Elman(nn.Module):
             self.activation = torch.relu
         else:
             self.activation = torch.tanh
+            #self.activation = lambda inp: torch.clip(torch.tanh(inp), 0, None)
 
         # Sensory input -> RNN
         self.input2h = nn.Linear(input_size, hidden_size, bias=False)
@@ -693,7 +694,7 @@ class Elman(nn.Module):
         #     output.append(hidden)
         # output = torch.stack(output, dim=0)
 
-        # TODO: input.shape has to be [1, batch_size, input_size]
+        # TODO: input.shape has to be [timestep=1, batch_size, input_size]
         hidden = self.recurrence(input[0], hidden, mdinput)
         
         return hidden
