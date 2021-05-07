@@ -408,7 +408,8 @@ class SensoryInputLayer():
         self.Nsub = n_sub
         self.Nneur = n_output
         self.positiveRates = True
-        self.weightNoise = True
+        self.weightNoise = False
+        self.weightOverlap = True
 
         self.wIn = np.zeros((self.Nneur, self.Ncues))
         self.cueFactor = 1.5
@@ -424,6 +425,33 @@ class SensoryInputLayer():
         if self.weightNoise==True:
             noiseSD = 1e-1
             self.wIn += np.random.normal(size=(np.shape(self.wIn))) * noiseSD
+        
+        # Input weights have overlops (mix neurons)
+        if self.weightOverlap == True:
+#            ''' overlap across rules'''
+#            for cuei in np.arange(self.Ncues):
+#                self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1)+int(self.Nsub/2), cuei] = \
+#                    np.random.uniform(lowcue, highcue, size=self.Nsub+int(self.Nsub/2)) \
+#                    * self.cueFactor
+                    
+            ''' overlap across context'''
+            N_overlap = 15
+            self.wIn[400:400+N_overlap,0] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+            self.wIn[600:600+N_overlap,1] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+            self.wIn[0:0+N_overlap,2] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+            self.wIn[200:200+N_overlap,3] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+      
+        ## plot Win
+#        import seaborn as sns
+#        ax = sns.heatmap(self.wIn,cmap='Reds')
+#        ax.set_yticks(np.arange(0,1001,200))
+#        ax.set_yticklabels(np.arange(0,1001,200), rotation=0)
+#        ax.set_xticklabels(np.arange(1,5,1), rotation=0)
+#        ax.set_xlabel('Cue Inputs')
+#        ax.set_ylabel('PFC Neuron Index')
+#        ax.set_title('Input Weights')
+#        plt.tight_layout()
+#        import pdb;pdb.set_trace() 
         
         # ramdom init input weights
         # self.wIn = np.random.uniform(0, 1, size=(self.Nneur, self.Ncues))
@@ -479,7 +507,18 @@ class SensoryInputLayer_NoiseNeuro():
                 
         self.wIn[:,self.Ncues] = np.random.uniform(lowcue, highcue, size=self.Nneur) \
                 * self.cueFactor
-        #import pdb;pdb.set_trace() 
+        ## plot Win
+#        import seaborn as sns
+#        ax = sns.heatmap(self.wIn,cmap='Reds')
+#        ax.set_yticks(np.arange(0,1001,200))
+#        ax.set_yticklabels(np.arange(0,1001,200), rotation=0)
+#        ax.set_xticklabels(np.arange(1,6,1), rotation=0)
+#        ax.set_xlabel('Cue Inputs')
+#        ax.set_ylabel('PFC Neuron Index')
+#        ax.set_title('Input Weights')
+#        plt.tight_layout()
+#        import pdb;pdb.set_trace() 
+        
         self._use_torch = False
 
     def __call__(self, input):

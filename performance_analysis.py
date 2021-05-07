@@ -26,17 +26,17 @@ seed_setup = [1,3,5]
 MDeffect = True
 mse_md = list()
 for RNGSEED in seed_setup:
-    file = 'train_noiseW_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+    file = 'train_overlapW_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
     file = open(filename / file,'rb')
     data = pickle.load(file)
     mse_md.append(data['mse'])
     
 mse_md = np.mean(mse_md,axis=0)
-import pdb;pdb.set_trace()
+#import pdb;pdb.set_trace()
 MDeffect = False
 mse_mdoff = list()
 for RNGSEED in seed_setup:
-    file = 'train_noiseW_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+    file = 'train_overlapW_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
     file = open(filename / file,'rb')
     data = pickle.load(file)
     mse_mdoff.append(data['mse'])
