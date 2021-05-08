@@ -1,3 +1,4 @@
+'''train pfc-md model with masked recurrent weights '''
 import numpy as np
 import time
 import torch
@@ -12,7 +13,7 @@ root = os.getcwd()
 sys.path.append(root)
 sys.path.append('..')
 from task import RikhyeTask
-from model import PytorchPFCMD
+from model import PytorchPFCMDmask
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -39,7 +40,14 @@ MDeffect = True
 PFClearn = True
 noiseInput = False # additional noise input neuron 
 
-model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
+## control how much learning in recurrent weights of pfc
+mask_ratio = 0.5
+mask_list = np.zeros(shape=(n_neuron*n_neuron),dtype=np.float32)
+mask_list[:int(mask_ratio*n_neuron*n_neuron)] = 1.0
+mask_list = np.random.permutation(mask_list)
+mask = mask_list.reshape(n_neuron,n_neuron)
+
+model = PytorchPFCMDmask(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, mask=mask, num_active=num_active, num_output=n_output, \
 MDeffect=MDeffect, noiseInput = noiseInput)
 
 # Training
@@ -158,7 +166,7 @@ if  MDeffect == True:
 
 filename = Path('files')
 os.makedirs(filename, exist_ok=True)
-file_training = 'train_overlapWcontx_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+file_training = 'train_mask'+str(mask_ratio)+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
 with open(filename / file_training, 'wb') as f:
     pickle.dump(log, f)
     
