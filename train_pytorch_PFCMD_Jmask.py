@@ -1,4 +1,4 @@
-'''train pfc-md model with masked recurrent weights '''
+'''train pfc-md model with masked recurrent weights (binary mask*learbale weights+(1-mask)*fixed weights)'''
 import numpy as np
 import time
 import torch
@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Generate trainset
-RNGSEED = 3 # set random seed
+RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
