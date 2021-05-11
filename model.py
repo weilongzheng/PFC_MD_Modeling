@@ -427,19 +427,19 @@ class SensoryInputLayer():
             self.wIn += np.random.normal(size=(np.shape(self.wIn))) * noiseSD
         
         # Input weights have overlops (mix neurons)
-        if self.weightOverlap == True:
-#            ''' overlap across rules'''
-#            for cuei in np.arange(self.Ncues):
-#                self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1)+int(self.Nsub/2), cuei] = \
-#                    np.random.uniform(lowcue, highcue, size=self.Nsub+int(self.Nsub/2)) \
-#                    * self.cueFactor
-                    
-            ''' overlap across context'''
-            N_overlap = 15
-            self.wIn[400:400+N_overlap,0] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
-            self.wIn[600:600+N_overlap,1] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
-            self.wIn[0:0+N_overlap,2] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
-            self.wIn[200:200+N_overlap,3] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+#        if self.weightOverlap == True:
+##            ''' overlap across rules'''
+##            for cuei in np.arange(self.Ncues):
+##                self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1)+int(self.Nsub/2), cuei] = \
+##                    np.random.uniform(lowcue, highcue, size=self.Nsub+int(self.Nsub/2)) \
+##                    * self.cueFactor
+#                    
+#            ''' overlap across context'''
+#            N_overlap = 15
+#            self.wIn[400:400+N_overlap,0] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+#            self.wIn[600:600+N_overlap,1] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+#            self.wIn[0:0+N_overlap,2] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+#            self.wIn[200:200+N_overlap,3] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
       
         ## plot Win
 #        import seaborn as sns
@@ -1026,7 +1026,7 @@ class PytorchPFCMD(nn.Module):
             input2pfc = self.sensory2pfc(input_t)
             # try learnable input weights
             # input2pfc = self.PytorchSensory2pfc(input_t)
-            #import pdb;pdb.set_trace() 
+            
             if self.MDeffect:
                 self.md_output = self.md(pfc_output.detach().numpy())
 
@@ -1060,6 +1060,14 @@ class PytorchPFCMD(nn.Module):
 #                pfc_output = self.pfc(input2pfc).numpy()
 #                pfc_output_t = pfc_output.reshape((1, pfc_output.shape[0]))
 #                self.pfc_outputs[i, :] = torch.from_numpy(pfc_output_t)
+                
+        ## manually shut down context-irrelevant pc activity
+        #import pdb;pdb.set_trace() 
+        if input[0,0]==1 or input[200,0]==1:
+            self.pfc_outputs[:,400:] *= 0
+        else:
+            self.pfc_outputs[:,:400] *= 0
+            self.pfc_outputs[:,800:] *= 0
             
         outputs = self.pfc2out(self.pfc_outputs)
         outputs = torch.tanh(outputs)
