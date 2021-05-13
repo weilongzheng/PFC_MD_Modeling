@@ -1063,11 +1063,11 @@ class PytorchPFCMD(nn.Module):
                 
         ## manually shut down context-irrelevant pc activity
         #import pdb;pdb.set_trace() 
-        if input[0,0]==1 or input[200,0]==1:
-            self.pfc_outputs[:,400:] *= 0
-        else:
-            self.pfc_outputs[:,:400] *= 0
-            self.pfc_outputs[:,800:] *= 0
+#        if input[0,0]==1 or input[200,0]==1:
+#            self.pfc_outputs[:,400:] *= 0
+#        else:
+#            self.pfc_outputs[:,:400] *= 0
+#            self.pfc_outputs[:,800:] *= 0
             
         outputs = self.pfc2out(self.pfc_outputs)
         outputs = torch.tanh(outputs)
