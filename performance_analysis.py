@@ -21,7 +21,7 @@ filename = Path('files')
 Num_MD = 10
 Ncontexts = 2
 PFClearn = False
-seed_setup = [1,3,5]
+seed_setup = [3]
 
 MDeffect = True
 mse_md = list()
