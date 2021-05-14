@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Generate trainset
-RNGSEED = 1 # set random seed
+RNGSEED = 5 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
