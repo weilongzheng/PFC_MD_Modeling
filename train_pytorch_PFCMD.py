@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Generate trainset
-RNGSEED = 5 # set random seed
+RNGSEED = 3 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
@@ -35,7 +35,7 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 noiseSD = 1e-1
-MDeffect = True
+MDeffect = False
 PFClearn = False
 noiseInput = False # additional noise input neuron 
 
