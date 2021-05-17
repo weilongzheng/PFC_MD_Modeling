@@ -1,7 +1,3 @@
-"""Task: ContextDecisionMaking-v0
-Adapted from https://github.com/neurogym/ngym_usage/blob/master/training/auto_notebooks/supervised/ContextDecisionMaking-v0.ipynb
-"""
-
 import os
 import sys
 root = os.getcwd()

@@ -191,7 +191,6 @@ except ImportError:
 
 class SensoryInputLayer():
     def __init__(self, n_sub, n_cues, n_output):
-        # TODO: Hard-coded for now
         self.Ncues = n_cues
         self.Nsub = n_sub
         self.Nneur = n_output
