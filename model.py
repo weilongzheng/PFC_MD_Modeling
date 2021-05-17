@@ -433,7 +433,7 @@ class SensoryInputLayer():
 ##                self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1)+int(self.Nsub/2), cuei] = \
 ##                    np.random.uniform(lowcue, highcue, size=self.Nsub+int(self.Nsub/2)) \
 ##                    * self.cueFactor
-#                    
+##                    
 #            ''' overlap across context'''
 #            N_overlap = 15
 #            self.wIn[400:400+N_overlap,0] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor

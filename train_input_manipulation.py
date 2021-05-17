@@ -26,12 +26,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Generate trainset
-RNGSEED = 5 # set random seed
+RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 200            # number of training cycles for each context
-Nextra = 200            # add cycles to show if block1
+Ntrain = 100            # number of training cycles for each context
+Nextra = 100            # add cycles to show if block1
 Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
@@ -46,8 +46,8 @@ num_active = 5  # num MD active per context
 n_output = 2
 noiseSD = 1e-1
 noisePresent = True
-MDeffect = False
-PFClearn = True
+MDeffect = True
+PFClearn = False
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
 MDeffect=MDeffect, noisePresent = noisePresent)
@@ -88,7 +88,7 @@ PFCouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
 for i in range(total_step):
 
     train_time_start = time.time()
-    import pdb;pdb.set_trace()
+    #import pdb;pdb.set_trace()
     # extract data
     # noisy inputs
     #inputs, labels = dataset()
@@ -185,9 +185,9 @@ plt.tight_layout()
 plt.show()
 
 ## plot pfc2md and md2pfc weights
-if  MDeffect == True: 
-    wPFC2MD = log['wPFC2MD']
-    wMD2PFC = log['wMD2PFC']
+#if  MDeffect == True: 
+#    wPFC2MD = log['wPFC2MD']
+#    wMD2PFC = log['wMD2PFC']
 #    number = Num_MD
 #    cmap = plt.get_cmap('rainbow') 
 #    colors = [cmap(i) for i in np.linspace(0,1,number)]
@@ -207,7 +207,10 @@ if  MDeffect == True:
 #        plt.plot(wMD2PFC[:,i-1],color=color)
 #    plt.suptitle('wMD2PFC')
     
-    # Heatmap wPFC2MD
+if  MDeffect == True: 
+    ## plot pfc2md weights
+    wPFC2MD = log['wPFC2MD']
+    wMD2PFC = log['wMD2PFC']
     ax = plt.figure()
     ax = sns.heatmap(wPFC2MD, cmap='Reds')
     ax.set_xticks([0, 999])
@@ -215,7 +218,7 @@ if  MDeffect == True:
     ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
     ax.set_xlabel('PFC neuron index')
     ax.set_ylabel('MD neuron index')
-    ax.set_title('wPFC2MD')
+    ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn))
     cbar = ax.collections[0].colorbar
     cbar.set_label('connection weight')
     plt.tight_layout()
@@ -223,13 +226,13 @@ if  MDeffect == True:
     
     # Heatmap wMD2PFC
     ax = plt.figure()
-    ax = sns.heatmap(wMD2PFC, cmap='Reds')
+    ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
     ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
     ax.set_yticks([0, 999])
     ax.set_yticklabels([1, 1000], rotation=0)
     ax.set_xlabel('MD neuron index')
     ax.set_ylabel('PFC neuron index')
-    ax.set_title('wMD2PFC')
+    ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn))
     cbar = ax.collections[0].colorbar
     cbar.set_label('connection weight')
     plt.tight_layout()
