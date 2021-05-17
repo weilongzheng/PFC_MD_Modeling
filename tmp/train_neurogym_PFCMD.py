@@ -93,13 +93,14 @@ for i in range(len(block2)):
                                       seq_len=config['seq_len'])
     dataset_block2.append(dataset)
 
-# number of environments in one block
-Nevns = len(dataset_block1)
 # observation space
-ob_size = sum([dataset_block1[i].env.observation_space.shape[0] for i in range(Nevns)])
+ob_size_list = [ dataset_block1[i].env.observation_space.shape[0] for i in range(len(dataset_block1)) ] + \
+               [ dataset_block2[i].env.observation_space.shape[0] for i in range(len(dataset_block2)) ]
+ob_size = sum(ob_size_list)
 # action space
-act_size = [dataset_block1[i].env.action_space.n for i in range(Nevns)]
-assert len(np.unique(act_size)) == 1 # the action sapces in the block should be the same
+act_size = [ dataset_block1[i].env.action_space.n for i in range(len(dataset_block1)) ] + \
+           [ dataset_block2[i].env.action_space.n for i in range(len(dataset_block2)) ]
+assert len(np.unique(act_size)) == 1 # the action spaces should be the same
 act_size = np.unique(act_size)[0]
 
 # Get data from blocks
@@ -107,7 +108,7 @@ def get_data(dataset_list, ob_size, act_size, seq_len):
     Nevns = len(dataset_list)
     total_seq_len = Nevns*seq_len
 
-    # transform ob_size_list: [1,2,3] -> [0,1,3,6]
+    # transform ob_size_list: e.g. [1,2,3] -> [0,1,3,6]
     ob_size_list = [dataset_list[i].env.observation_space.shape[0] for i in range(Nevns)]
     ob_size_transformed = [0]
     for i in range(Nevns):
@@ -135,6 +136,7 @@ def get_data(dataset_list, ob_size, act_size, seq_len):
 
 # Model settings
 model_config = {
+    'input_size_per_task': ob_size_list,
     'n_neuron': 1000,
     'n_neuron_per_cue': 200,
     'Num_MD': 10,
@@ -147,7 +149,8 @@ config.update(model_config)
 
 ###--------------------------Train network--------------------------###
 
-model = PytorchPFCMD(Num_PFC=config['n_neuron'], n_neuron_per_cue=config['n_neuron_per_cue'], \
+model = PytorchPFCMD(input_size_per_task=config['input_size_per_task'], \
+                     Num_PFC=config['n_neuron'], n_neuron_per_cue=config['n_neuron_per_cue'], \
                      Num_MD=config['Num_MD'], num_active=config['num_active'], \
                      num_output=config['n_output'], MDeffect=config['MDeffect'])
 print(model, '\n')

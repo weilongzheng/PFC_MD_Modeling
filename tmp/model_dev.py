@@ -190,31 +190,38 @@ except ImportError:
 
 
 class SensoryInputLayer():
-    def __init__(self, n_sub, n_cues, n_output):
-        self.Ncues = n_cues
+    def __init__(self, input_size_per_task, n_sub, n_output):
+        self.Ntasks = len(input_size_per_task)
+        self.Ninput = sum(input_size_per_task)
+        self.input_size_per_task = input_size_per_task
+        # transform ob_size_list: e.g. [1,2,3] -> [0,1,3,6]
+        self.input_size_per_task_transformed = [0]
+        for i in range(self.Ntasks):
+            self.input_size_per_task_transformed.append(sum(self.input_size_per_task[0:i+1]))
+        
         self.Nsub = n_sub
         self.Nneur = n_output
         self.positiveRates = True
 
-        self.wIn = np.zeros((self.Nneur, self.Ncues))
+        self.wIn = np.zeros((self.Nneur, self.Ninput))
         self.cueFactor = 1.5
         if self.positiveRates:
             lowcue, highcue = 0.5, 1.
         else:
             lowcue, highcue = -1., 1.
-        for cuei in np.arange(self.Ncues):
-            self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1), cuei] = \
-                np.random.uniform(lowcue, highcue, size=self.Nsub) \
-                * self.cueFactor
-                
+        for taski in range(self.Ntasks):
+            self.wIn[self.Nsub*taski : self.Nsub*(taski+1),  \
+                     self.input_size_per_task_transformed[i] : self.input_size_per_task_transformed[i+1]] = \
+                     np.random.uniform(lowcue, highcue, size=(self.Nsub, self.input_size_per_task[i])) * self.cueFactor                    
+
         # ramdom init input weights
         # self.wIn = np.random.uniform(0, 1, size=(self.Nneur, self.Ncues))
         
         # init input weights with Gaussian Distribution
-#        self.wIn = np.zeros((self.Nneur, self.Ncues))
-#        self.wIn = np.random.normal(0, 1, size=(self.Nneur, self.Ncues))
-#        self.wIn[self.wIn<0] = 0
-            
+        # self.wIn = np.zeros((self.Nneur, self.Ncues))
+        # self.wIn = np.random.normal(0, 1, size=(self.Nneur, self.Ncues))
+        # self.wIn[self.wIn<0] = 0
+         
         self._use_torch = False
 
     def __call__(self, input):
@@ -502,7 +509,7 @@ class MD():
 
 
 class PytorchPFCMD(nn.Module):
-    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, MDeffect=True, noisePresent = False, noiseInput = False):
+    def __init__(self, input_size_per_task, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, MDeffect=True, noisePresent = False, noiseInput = False):
         super().__init__()
         """
         additional noise input neuron if noiseInput is true
@@ -510,18 +517,19 @@ class PytorchPFCMD(nn.Module):
         dt = 0.001
         if noiseInput==False:
             self.sensory2pfc = SensoryInputLayer(
+                input_size_per_task=input_size_per_task,
                 n_sub=n_neuron_per_cue,
-                n_cues=4,
                 n_output=Num_PFC)
             self.sensory2pfc.torch(use_torch=True)
             # try learnable input weights
             # self.PytorchSensory2pfc = nn.Linear(4, Num_PFC)
-        else:
-            self.sensory2pfc = SensoryInputLayer_NoiseNeuro(
-                n_sub=n_neuron_per_cue,
-                n_cues=4,
-                n_output=Num_PFC)
-            self.sensory2pfc.torch(use_torch=True)
+        # unchanged for neurogym tasks
+        # else:
+        #     self.sensory2pfc = SensoryInputLayer_NoiseNeuro(
+        #         n_sub=n_neuron_per_cue,
+        #         n_cues=4,
+        #         n_output=Num_PFC)
+        #     self.sensory2pfc.torch(use_torch=True)
 
         self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, MDeffect=MDeffect, noisePresent = noisePresent)
 
