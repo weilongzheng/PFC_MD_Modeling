@@ -51,6 +51,8 @@ from model_dev import PytorchPFCMD
 
 ###--------------------------Training configs--------------------------###
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 envid_list = ['PerceptualDecisionMaking-v0', 'ContextDecisionMaking-v0', 'DelayMatchCategory-v0', 'DualDelayMatchSample-v0']
 block1 = envid_list[0:2]
 block2 = envid_list[2:4]
@@ -104,11 +106,11 @@ assert len(np.unique(act_size)) == 1 # the action spaces should be the same
 act_size = np.unique(act_size)[0]
 
 # Get data from blocks
-def get_data(dataset_list, ob_size, act_size, seq_len):
+def get_data(dataset_list, ob_size, act_size, seq_len, blockid):
     Nevns = len(dataset_list)
     total_seq_len = Nevns*seq_len
 
-    # transform ob_size_list: e.g. [1,2,3] -> [0,1,3,6]
+    # transform ob_size_list: e.g. [3,7] -> [0,3,10]
     ob_size_list = [dataset_list[i].env.observation_space.shape[0] for i in range(Nevns)]
     ob_size_transformed = [0]
     for i in range(Nevns):
@@ -120,7 +122,8 @@ def get_data(dataset_list, ob_size, act_size, seq_len):
     # get data
     for i in range(Nevns):
         input, label = dataset_list[i]()
-        inputs[seq_len*i:seq_len*(i+1), :, ob_size_transformed[i]:ob_size_transformed[i+1]] = input
+        ### TODO Warning: hard-coded ###
+        inputs[seq_len*i:seq_len*(i+1), :, (10*(blockid-1)+ob_size_transformed[i]):(10*(blockid-1)+ob_size_transformed[i+1])] = input
         if i == 0:
             labels = label
         else:
@@ -142,10 +145,12 @@ model_config = {
     'Num_MD': 10,
     'num_active': 5, # num MD active per context
     'n_output': act_size,
-    'MDeffect': False,
+    'MDeffect': True,
     'PFClearn': False,
 }
 config.update(model_config)
+
+PFClearn = config['PFClearn']
 
 ###--------------------------Train network--------------------------###
 
@@ -162,16 +167,17 @@ training_params = list()
 for name, param in model.named_parameters():
     print(name)
     training_params.append(param)
-if config['PFClearn']==True:
+if PFClearn == True:
     print('pfc.Jrec')
     print('\n', end='')
     training_params.append(model.pfc.Jrec)
 else:
     print('\n', end='')
+optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 3000
-print_training_cycle = 50
+total_training_cycle = 150
+print_training_cycle = 10
 running_loss = 0.0
 running_train_time = 0
 losses = list()
@@ -182,24 +188,46 @@ for i in range(total_training_cycle):
     train_time_start = time.time()
 
     # inputs, labels = dataset()
-    if i < 1000:
-        inputs, labels = get_data(dataset_block1, ob_size, act_size, config['seq_len'])
-    elif i >= 1000 and i < 2000:
-        inputs, labels = get_data(dataset_block2, ob_size, act_size, config['seq_len'])
-    elif i >= 2000:
-        inputs, labels = get_data(dataset_block1, ob_size, act_size, config['seq_len'])
-    inputs = torch.from_numpy(inputs).type(torch.float).to(device)
+    if i < 50:
+        inputs, labels = get_data(dataset_block1, ob_size, act_size, config['seq_len'], blockid=1)
+    elif i >= 50 and i < 100:
+        inputs, labels = get_data(dataset_block2, ob_size, act_size, config['seq_len'], blockid=2)
+    elif i >= 100:
+        inputs, labels = get_data(dataset_block1, ob_size, act_size, config['seq_len'], blockid=1)
+    inputs = torch.from_numpy(inputs).type(torch.float).to(device)[:, 0, :] # batch_size should be 1
     labels = torch.from_numpy(labels.flatten()).type(torch.long).to(device)
 
     # zero the parameter gradients
     optimizer.zero_grad()
 
-    # forward + backward + optimize
-    outputs, _ = net(inputs)
+    # forward
+    outputs = model(inputs, labels)
 
-    loss = criterion(outputs.view(-1, act_size), labels)
+    # print(inputs.shape, outputs.shape, labels.shape)
+
+    # save PFC and MD activities
+    # PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
+    # if  MDeffect == True:
+    #     MDouts_all[i,:] = model.md_output
+    #     MDpreTraces[i,:] = model.md.MDpreTrace
+    # for itrial in range(inpsPerConext): 
+        #PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
+    # save PFC and MD activities
+    # PFCouts_all[i,:,:] = model.pfc_outputs.detach().numpy()
+    # if  MDeffect == True:
+    #     # MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+    #     MDouts_all[i,:,:] = model.md_output_t
+    #     MDpreTraces_all[i,:,:] = model.md_preTraces
+    #     MDpreTrace_threshold_all[i, :, :] = model.md_preTrace_thresholds
+
+    # backward + optimize
+    loss = criterion(outputs, labels)
     loss.backward()
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip the norm of gradients 
+    if PFClearn == True:
+        torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-6) # clip the norm of gradients; Jrec 1e-6
     optimizer.step()
+
 
     # print statistics
     losses.append(loss.item())
@@ -225,7 +253,7 @@ print('Finished Training')
 
 
 # save model
-# torch.save(net.state_dict(), modelpath / 'net.pth')
+# torch.save(model.state_dict(), modelpath / 'model.pth')
 
 # save config
 # with open(modelpath / 'config.json', 'w') as f:
@@ -240,9 +268,9 @@ plt.plot(losses)
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('CE loss', fontdict=font)
 plt.legend()
-plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
-#plt.ylim([0.0, 1.0])
-#plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+# plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
+# plt.ylim([0.0, 1.0])
+# plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 plt.tight_layout()
 plt.show()
 

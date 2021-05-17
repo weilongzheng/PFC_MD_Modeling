@@ -211,8 +211,8 @@ class SensoryInputLayer():
             lowcue, highcue = -1., 1.
         for taski in range(self.Ntasks):
             self.wIn[self.Nsub*taski : self.Nsub*(taski+1),  \
-                     self.input_size_per_task_transformed[i] : self.input_size_per_task_transformed[i+1]] = \
-                     np.random.uniform(lowcue, highcue, size=(self.Nsub, self.input_size_per_task[i])) * self.cueFactor                    
+                     self.input_size_per_task_transformed[taski] : self.input_size_per_task_transformed[taski+1]] = \
+                     np.random.uniform(lowcue, highcue, size=(self.Nsub, self.input_size_per_task[taski])) * self.cueFactor                    
 
         # ramdom init input weights
         # self.wIn = np.random.uniform(0, 1, size=(self.Nneur, self.Ncues))

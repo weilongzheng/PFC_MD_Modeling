@@ -162,7 +162,8 @@ criterion = nn.CrossEntropyLoss()
 print('training parameters:')
 training_params = list()
 for name, param in net.named_parameters():
-    if 'rnn' not in name:
+    # if 'rnn' not in name:
+    if True:
         print(name)
         training_params.append(param)
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
