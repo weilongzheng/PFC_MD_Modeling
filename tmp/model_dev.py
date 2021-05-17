@@ -311,10 +311,8 @@ class PytorchPFC(nn.Module):
             self.xinp += torch.normal(mean=0, std=self.noiseSD * np.sqrt(self.dt) / self.tau, size=(self.Nneur,))
                     
         rout = self.activation(self.xinp)
-
         self.activity = rout
         return rout
-
 
 #model = PytorchPFC(n_neuron=10, n_neuron_per_cue=1)
 #input = torch.randn(10)
@@ -456,36 +454,35 @@ class MD():
         #                    if self.MDpostTrace[0] > self.MDpostTrace[1]: MDoutTrace = np.array([1,0])
         #                    else: MDoutTrace = np.array([0,1])
         self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
+        # self.MDpreTrace_threshold = np.mean(self.MDpreTrace)+0.4*np.std(self.MDpreTrace)
         #self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:self.Nsub * self.Ncues])  # first 800 cells are cue selective
         # MDoutTrace_threshold = np.mean(MDoutTrace) #median
         MDoutTrace_threshold = 0.5  
-        wPFC2MDdelta = 10000 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
-
+        
         # update and clip the weights
         # original
-        # self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        # self.wMD2PFC = np.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
-        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0.,7. / self.G)
+        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
 
-        # only keep wPFC2MDdelta
-        # self.wPFC2MD = np.clip(1.0 * wPFC2MDdelta, 0., 1.)
-        # self.wMD2PFC = np.clip(1.0 * (wPFC2MDdelta.T), -10., 0.)
-        # self.wMD2PFCMult = np.clip(1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
-
-        # decaying PFC-MD weights
-        # self.wPFC2MD = np.clip(0.9 * self.wPFC2MD + 1.0 * wPFC2MDdelta, 0., 1.)
-        # self.wMD2PFC = np.clip(0.9 * self.wMD2PFC + 1.0 * (wPFC2MDdelta.T), -10., 0.)
-        # self.wMD2PFCMult = np.clip(0.9 * self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T), 0.,7. / self.G)
-
+        self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
+        self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
+        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0.,7. / self.G)
+        
         # slow-decaying PFC-MD weights
-        self.wPFC2MD += 1. / self.tsteps / 5. * (-1.0 * self.wPFC2MD + 1.0 * wPFC2MDdelta)
-        self.wPFC2MD = np.clip(self.wPFC2MD, 0., 1.)
+        # wPFC2MDdelta = 30000 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+        # self.wPFC2MD += 1. / self.tsteps / 5. * (-1.0 * self.wPFC2MD + 1.0 * wPFC2MDdelta)
+        # self.wPFC2MD = np.clip(self.wPFC2MD, 0., 1.)
+       
+        # self.wMD2PFC += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFC + 1.0 * (wPFC2MDdelta.T))
+        # self.wMD2PFC = np.clip(self.wMD2PFC, -10., 0.)
+     
+        # self.wMD2PFCMult += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T))
+        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult, 0.,7. / self.G)
         
-        self.wMD2PFC += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFC + 1.0 * (wPFC2MDdelta.T))
-        self.wMD2PFC = np.clip(self.wMD2PFC, -10., 0.)
-        
-        self.wMD2PFCMult += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T))
-        self.wMD2PFCMult = np.clip(self.wMD2PFCMult, 0.,7. / self.G)
+        # decaying PFC-MD weights
+        # alpha = 0 # 0.5 when shift on, 0 when shift off
+        # self.wPFC2MD = np.clip((1-alpha)* self.wPFC2MD + wPFC2MDdelta, 0., 1.)
+        # self.wMD2PFC = np.clip((1-alpha) * self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
+        # self.wMD2PFCMult = np.clip((1-alpha) * self.wMD2PFCMult + (wPFC2MDdelta.T), 0.,7. / self.G)
 
     def winner_take_all(self, MDinp):
         '''Winner take all on the MD
@@ -506,33 +503,42 @@ class MD():
 
 
 class PytorchPFCMD(nn.Module):
-    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, MDeffect=True, noisePresent = False):
+    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, MDeffect=True, noisePresent = False, noiseInput = False):
         super().__init__()
-
+        """
+        additional noise input neuron if noiseInput is true
+        """
         dt = 0.001
-
-        self.sensory2pfc = SensoryInputLayer(
-            n_sub=n_neuron_per_cue,
-            n_cues=4,
-            n_output=Num_PFC)
-        self.sensory2pfc.torch(use_torch=True)
-        # try learnable input weights
-        # self.PytorchSensory2pfc = nn.Linear(4, Num_PFC)
+        if noiseInput==False:
+            self.sensory2pfc = SensoryInputLayer(
+                n_sub=n_neuron_per_cue,
+                n_cues=4,
+                n_output=Num_PFC)
+            self.sensory2pfc.torch(use_torch=True)
+            # try learnable input weights
+            # self.PytorchSensory2pfc = nn.Linear(4, Num_PFC)
+        else:
+            self.sensory2pfc = SensoryInputLayer_NoiseNeuro(
+                n_sub=n_neuron_per_cue,
+                n_cues=4,
+                n_output=Num_PFC)
+            self.sensory2pfc.torch(use_torch=True)
 
         self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, MDeffect=MDeffect, noisePresent = noisePresent)
 
         #self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
         self.pfc2out = nn.Linear(Num_PFC, num_output)
-
+        #self.pfc_output_t = np.array([])
 
         self.MDeffect = MDeffect
         if self.MDeffect:
-            # use MD_dev here
-            self.md = MD(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active, dt=dt)
+            self.md = MD(Nneur=Num_PFC, Num_MD=Num_MD, num_active=num_active,
+                         dt=dt)
             self.md_output = np.zeros(Num_MD)
             index = np.random.permutation(Num_MD)
             self.md_output[index[:num_active]] = 1 # randomly set part of md_output to 1
             self.md_output_t = np.array([])
+        
 
         self.num_output = num_output
 
@@ -547,11 +553,10 @@ class PytorchPFCMD(nn.Module):
         n_time = input.shape[0]
         tsteps = 200
 
-        # initialize RNN and MD activities
-        self.pfc.init_activity()
+        self.pfc.init_activity()  # Reinit PFC activity
         pfc_output = self.pfc.activity
         if self.MDeffect:
-            self.md.init_activity()
+            self.md.init_activity()  # Reinit MD activity
 
         #output = torch.zeros((n_time, target.shape[-1]))
         #self.pfc_output_t *= 0
@@ -560,11 +565,9 @@ class PytorchPFCMD(nn.Module):
         self.pfc_outputs = torch.zeros((n_time, self.pfc.Nneur))
         self.md_preTraces = np.zeros(shape=(n_time, self.pfc.Nneur))
         self.md_preTrace_thresholds = np.zeros(shape=(n_time, 1))
+        
         if self.MDeffect:
             self.md_output_t *= 0
-            # reinitialize pretrace every cycle
-            # self.md.MDpreTrace = np.zeros(shape=(self.pfc.Nneur))
-
 
         for i in range(n_time):
             input_t = input[i]
@@ -578,7 +581,8 @@ class PytorchPFCMD(nn.Module):
 
             input2pfc = self.sensory2pfc(input_t)
             # try learnable input weights
-            # input2pfc = self.PytorchSensory2pfc(input_t) 
+            # input2pfc = self.PytorchSensory2pfc(input_t)
+            
             if self.MDeffect:
                 self.md_output = self.md(pfc_output.detach().numpy())
 
@@ -587,25 +591,40 @@ class PytorchPFCMD(nn.Module):
                 md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.num_output))
                 md2pfc = md2pfc_weights * rec_inp  
                 md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.num_output), self.md_output)
+                #pfc_output = self.pfc(torch.from_numpy(input2pfc), torch.from_numpy(md2pfc)).numpy()
                 
                 pfc_output = self.pfc(input2pfc,torch.from_numpy(md2pfc))
-
+                
                 # save important network activities
                 pfc_output_t = pfc_output.view(1,pfc_output.shape[0])
                 self.pfc_outputs[i, :] = pfc_output_t
                 self.md_preTraces[i, :] = self.md.MDpreTrace
                 self.md_preTrace_thresholds[i, :] = self.md.MDpreTrace_threshold
+                
+#                pfc_output = self.pfc(input2pfc, torch.from_numpy(md2pfc)).detach().numpy()
+#                pfc_output_t = pfc_output.reshape((1, pfc_output.shape[0]))
+#                self.pfc_outputs[i, :] = torch.from_numpy(pfc_output_t)
 
                 if i==0:
                     self.md_output_t = self.md_output.reshape((1,self.md_output.shape[0]))
                 else:
                     self.md_output_t = np.concatenate((self.md_output_t, self.md_output.reshape((1,self.md_output.shape[0]))),axis=0)
-            
             else:
                 pfc_output = self.pfc(input2pfc)
                 pfc_output_t = pfc_output.view(1,pfc_output.shape[0])
                 self.pfc_outputs[i, :] = pfc_output_t
-        
+#                pfc_output = self.pfc(input2pfc).numpy()
+#                pfc_output_t = pfc_output.reshape((1, pfc_output.shape[0]))
+#                self.pfc_outputs[i, :] = torch.from_numpy(pfc_output_t)
+                
+        ## manually shut down context-irrelevant pc activity
+        #import pdb;pdb.set_trace() 
+#        if input[0,0]==1 or input[200,0]==1:
+#            self.pfc_outputs[:,400:] *= 0
+#        else:
+#            self.pfc_outputs[:,:400] *= 0
+#            self.pfc_outputs[:,800:] *= 0
+            
         outputs = self.pfc2out(self.pfc_outputs)
         outputs = torch.tanh(outputs)
             

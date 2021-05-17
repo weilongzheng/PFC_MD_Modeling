@@ -56,6 +56,7 @@ block1 = envid_list[0:2]
 block2 = envid_list[2:4]
 
 config = {
+    'RNGSEED': 5,
     'dt': 100,
     'hidden_size': 64,
     'lr': 1e-2,
@@ -67,7 +68,12 @@ config = {
 env_kwargs = {'dt': config['dt']}
 config['env_kwargs'] = env_kwargs
 
-# Save config
+# set random seed
+RNGSEED = config['RNGSEED']
+np.random.seed([RNGSEED])
+torch.manual_seed(RNGSEED)
+
+# save config
 # with open(modelpath / 'config.json', 'w') as f:
 #     json.dump(config, f)
 
@@ -153,13 +159,22 @@ net = Net(input_size=ob_size,
           hidden_size=config['hidden_size'],
           output_size=act_size)
 net = net.to(device)
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(net.parameters(), lr=config['lr'])
-
 print(net, '\n')
+
+criterion = nn.CrossEntropyLoss()
+
+print('training parameters:')
+training_params = list()
+for name, param in net.named_parameters():
+    if 'rnn' not in name:
+        print(name)
+        training_params.append(param)
+optimizer = torch.optim.Adam(training_params, lr=config['lr'])
+
 print('Training task block1', block1)
 print('Training task block2', block2)
 print('Training paradigm: block1 -> block2 -> block1', '\n')
+
 
 total_training_cycle = 3000
 print_training_cycle = 50
