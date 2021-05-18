@@ -20,154 +20,113 @@ from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
 
 
+# def get_modelpath(envid):
+#     # Make local file directories
+#     path = Path('.') / 'files'
+#     os.makedirs(path, exist_ok=True)
+#     path = path / envid
+#     os.makedirs(path, exist_ok=True)
+#     return path
 
-# task names in the Yang19 collection
-#   ngym.get_collection('yang19') is defined in neurogym\envs\collections\__init__.py
-#   'yang19.go-v0',         'yang19.rtgo-v0',   'yang19.dlygo-v0',  'yang19.anti-v0',      'yang19.rtanti-v0',
-#   'yang19.dlyanti-v0',    'yang19.dm1-v0',    'yang19.dm2-v0',    'yang19.ctxdm1-v0',    'yang19.ctxdm2-v0',
-#   'yang19.multidm-v0',    'yang19.dlydm1-v0', 'yang19.dlydm2-v0', 'yang19.ctxdlydm1-v0', 'yang19.ctxdlydm2-v0',
-#   'yang19.multidlydm-v0', 'yang19.dms-v0',    'yang19.dnms-v0',   'yang19.dmc-v0',       'yang19.dnmc-v0'
+# modelpath = get_modelpath(envid)
 
+# print("input size: ", env.observation_space.shape)
+# print("output size: ", env.action_space.n)
+# print("inputs.shape: ", inputs.shape)
+# print("labels.shape: ", labels.shape)
+# print("outputs.shape: ", outputs.shape)
 
-# why gym.make can make Yang19 tasks?
-#   because all tasks in the collection is registered in neurogym\envs\registration.py
-#   once tasks are registered, gym.make works
-
-
-# what task should we test in the next trial?
-#   RandomSchedule helps us randomly choose a task
-#   RandomSchedule is defined in neurogym\utils\scheduler.py
-
-
-# final dimensions 
-#   input size:  (53,)
-#   output size:  17
-#   inputs.shape:  torch.Size([200, 1, 53])
-#   labels.shape:  torch.Size([200])
-#   outputs.shape:  torch.Size([200, 1, 17])
-
-
-# input dimensions
-#   original input size is (33,) and action size is 17
-#   ScheduleEnvs adds rule inputs to the observation and choose a task for the next trial based on the schedule
-#   ScheduleEnvs is defined in neurogym\neurogym\wrappers\block.py
-# meanings of input dimensions
-#   index 0 is fixation input;
-#   index 1-16 is the first input modality;
-#   index 17-32 is the second input modality;
-#   index 33-52 is the rule inputs indicating current environment
-# tasks have either one or two input modality(modalities)
-#   one input modality: 
-#     yang19.go-v0
-#     yang19.rtgo-v0
-#     yang19.dlygo-v0
-#     yang19.anti-v0
-#     yang19.rtanti-v0
-#     yang19.dlyanti-v0
-#     yang19.dms-v0
-#     yang19.dnms-v0
-#     yang19.dmc-v0
-#     yang19.dnmc-v0
-#   two input modalities
-#     yang19.dm1-v0
-#     yang19.dm2-v0
-#     yang19.ctxdm1-v0
-#     yang19.ctxdm2-v0
-#     yang19.multidm-v0
-#     yang19.dlydm1-v0
-#     yang19.dlydm2-v0
-#     yang19.ctxdlydm1-v0
-#     yang19.ctxdlydm2-v0
-#     yang19.multidlydm-v0
-#  for tasks that have only one input modality, the second input modality (index 17-32) of inputs are zero.
-#  for tasks that have two input modalities, the econd input modality (index 17-32) of inputs are non-zero.
-
-
-# meanings of output dimensions
-#   index 0 is fixation output;
-#   index 1-16 is the output modality (only one modality);
-# when period == fixation, label = 0, only fixation output is expected to be activated
-# when period == choice, label = ground truth, only the ground truth neuron is expected to be activated
-
-
-# in neurogym\envs\collections\yang19.py
-#   20 tasks/environments in the collection are defined 
-#   env.observation_space.name of different environments is defined
-#   env.action_space.name of different environments is defined
-#   this file tells how we get observation and groundtruth.
-# in neurogym\core.py.
-#   TrialEnv class is defined
-#   TrialEnv.add_ob is how we update observation in a new trial.
-
+# 'PerceptualDecisionMaking-v0' input 3 output 3
+# 'DelayMatchCategory-v0' input 3 output 3
+# 'DelayMatchSample-v0' input 3 output 3
+# 'MultiSensoryIntegration-v0' input 5 output 3
+# 'DelayComparison-v0' input 2 output 3
+# 'ContextDecisionMaking-v0' input 7 output 3
+# 'DualDelayMatchSample-v0' input 7 output 3
 
 
 ###--------------------------Training configs--------------------------###
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print("device:", device, '\n')
 
 env_kwargs = {'dt': 100}
+
 config = {
     'RNGSEED': 5,
     'env_kwargs': env_kwargs,
-    'hidden_size': 256,
-    'lr': 1e-3,
+    'hidden_size': 64,
+    'lr': 1e-2,
     'batch_size': 1,
     'seq_len': 200,
+    'envid_list': envid_list,
 }
+
 
 # set random seed
 RNGSEED = config['RNGSEED']
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
+# save config
+# with open(modelpath / 'config.json', 'w') as f:
+#     json.dump(config, f)
+
 
 ###--------------------------Generate dataset--------------------------###
 
-tasks = ngym.get_collection('yang19')
-# check task names
-# print(tasks)
+# Supervised dataset list
+dataset_block1 = []
+for i in range(len(block1)):
+    dataset = ngym.Dataset(block1[i], env_kwargs=env_kwargs, \
+                                      batch_size=config['batch_size'], \
+                                      seq_len=config['seq_len'])
+    dataset_block1.append(dataset)
+dataset_block2 = []
+for i in range(len(block2)):
+    dataset = ngym.Dataset(block2[i], env_kwargs=env_kwargs, \
+                                      batch_size=config['batch_size'], \
+                                      seq_len=config['seq_len'])
+    dataset_block2.append(dataset)
 
-envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
-# check original input and output shapes
-# for i in range(len(envs)):
-#     print(envs[i].observation_space.shape)
-#     print(envs[i].action_space.n)
-# ob_size are all (33,)
-# act_size are all 17
+# number of environments in one block
+Nevns = len(dataset_block1)
+# observation space
+ob_size = sum([dataset_block1[i].env.observation_space.shape[0] for i in range(Nevns)])
+# action space
+act_size = [dataset_block1[i].env.action_space.n for i in range(Nevns)]
+assert len(np.unique(act_size)) == 1 # the action sapces in the block should be the same
+act_size = np.unique(act_size)[0]
 
-# check input modalities
-# for i in range(len(envs)):
-#     print(tasks[i])
-#     print(envs[i].observation_space.name['fixation'])
-#     if 'stimulus' in envs[i].observation_space.name.keys():
-#         print(envs[i].observation_space.name['stimulus'])
-#     else:
-#         print(envs[i].observation_space.name['stimulus_mod1'])
-#         print(envs[i].observation_space.name['stimulus_mod2'])
+# Get data from blocks
+def get_data(dataset_list, ob_size, act_size, seq_len):
+    Nevns = len(dataset_list)
+    total_seq_len = Nevns*seq_len
 
-# check output modalities
-# for i in range(len(envs)):
-#     print(tasks[i])
-#     print(envs[i].action_space.name['fixation'])
-#     print(envs[i].action_space.name['choice'])
+    # transform ob_size_list: [1,2,3] -> [0,1,3,6]
+    ob_size_list = [dataset_list[i].env.observation_space.shape[0] for i in range(Nevns)]
+    ob_size_transformed = [0]
+    for i in range(Nevns):
+        ob_size_transformed.append(sum(ob_size_list[0:i+1]))
+    
+    # allocate memory
+    inputs = np.zeros(shape=(total_seq_len, config['batch_size'], ob_size))
 
-schedule = RandomSchedule(len(envs))
-# check how RandomSchedule works
-# for _ in range(20):
-#     print(schedule(), end=' ')
-# output: 3 2 18 4 10 19 2 11 4 14 13 5 16 11 15 3 8 15 6 19
+    # get data
+    for i in range(Nevns):
+        input, label = dataset_list[i]()
+        inputs[seq_len*i:seq_len*(i+1), :, ob_size_transformed[i]:ob_size_transformed[i+1]] = input
+        if i == 0:
+            labels = label
+        else:
+            labels = np.concatenate((labels, label))
 
-env = ScheduleEnvs(envs, schedule=schedule, env_input=True)
+    return inputs, labels
+    # return input, label, inputs, labels
 
-dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
-env = dataset.env
-
-ob_size = env.observation_space.shape[0]
-act_size = env.action_space.n
+# input, label, inputs, labels = get_data(dataset_list, ob_size, act_size, config['seq_len'])
 
 
-###--------------------------Define model--------------------------###
+###--------------------------Define network--------------------------###
 
 class Net(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
@@ -182,17 +141,6 @@ class Net(nn.Module):
         x = self.linear(out)
         return x, out
 
-
-###--------------------------Model configs--------------------------###
-
-# Model settings
-model_config = {
-    'input_size': ob_size,
-    'output_size': act_size
-}
-config.update(model_config)
-
-
 ###--------------------------Train network--------------------------###
 
 """Supervised training networks.
@@ -201,9 +149,9 @@ Args:
     envid: str, environment ID.
 """
 
-net = Net(input_size  = config['input_size' ],
-          hidden_size = config['hidden_size'],
-          output_size = config['output_size'])
+net = Net(input_size=ob_size,
+          hidden_size=config['hidden_size'],
+          output_size=act_size)
 net = net.to(device)
 print(net, '\n')
 
@@ -216,12 +164,15 @@ for name, param in net.named_parameters():
     if True:
         print(name)
         training_params.append(param)
-print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
+print('Training task block1', block1)
+print('Training task block2', block2)
+print('Training paradigm: block1 -> block2 -> block1', '\n')
 
-total_training_cycle = 40000
-print_training_cycle = 100
+
+total_training_cycle = 3000
+print_training_cycle = 50
 running_loss = 0.0
 running_train_time = 0
 losses = list()
@@ -231,32 +182,21 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    inputs, labels = dataset()
-    # check the task we are testing
-    # print(tasks[dataset.env.i_env])
-    # check the meaning of labels
     # inputs, labels = dataset()
-    # print(inputs.shape, labels.shape)
-    # print(tasks[dataset.env.i_env])
-    # for i in range(20):
-    #     print(inputs[i, 0, :], labels[i])
-
+    if i < 1000:
+        inputs, labels = get_data(dataset_block1, ob_size, act_size, config['seq_len'])
+    elif i >= 1000 and i < 2000:
+        inputs, labels = get_data(dataset_block2, ob_size, act_size, config['seq_len'])
+    elif i >= 2000:
+        inputs, labels = get_data(dataset_block1, ob_size, act_size, config['seq_len'])
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)
     labels = torch.from_numpy(labels.flatten()).type(torch.long).to(device)
-    break
 
     # zero the parameter gradients
     optimizer.zero_grad()
 
     # forward + backward + optimize
     outputs, _ = net(inputs)
-
-    # check data dimensions
-    # print("input size: ", env.observation_space.shape)
-    # print("output size: ", env.action_space.n)
-    # print("inputs.shape: ", inputs.shape)
-    # print("labels.shape: ", labels.shape)
-    # print("outputs.shape: ", outputs.shape)
 
     loss = criterion(outputs.view(-1, act_size), labels)
     loss.backward()
@@ -281,25 +221,10 @@ for i in range(total_training_cycle):
             end='\n\n')
         running_train_time = 0
 
+        # save model
+        # torch.save(net.state_dict(), modelpath / 'net.pth')
+
 print('Finished Training')
-
-
-# def get_modelpath(envid):
-#     # Make local file directories
-#     path = Path('.') / 'files'
-#     os.makedirs(path, exist_ok=True)
-#     path = path / envid
-#     os.makedirs(path, exist_ok=True)
-#     return path
-
-# modelpath = get_modelpath(envid)
-
-# save config
-# with open(modelpath / 'config.json', 'w') as f:
-#     json.dump(config, f)
-
-# save model
-# torch.save(net.state_dict(), modelpath / 'net.pth')
 
 
 ###--------------------------Make some plots--------------------------###
@@ -310,9 +235,9 @@ plt.plot(losses)
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('CE loss', fontdict=font)
 plt.legend()
-# plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
-# plt.ylim([0.0, 1.0])
-# plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
+#plt.ylim([0.0, 1.0])
+#plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 plt.tight_layout()
 plt.show()
 
