@@ -7,12 +7,6 @@ sys.path.append('D:\\DESKTOP\\Lab\\Projects\\Yang Lab\\neurogym') # directory of
 from pathlib import Path
 import json
 import time
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-import imageio
-from pygifsicle import optimize
-
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
@@ -21,6 +15,11 @@ import torch.nn as nn
 import gym
 import neurogym as ngym
 from model_dev import PytorchPFCMD
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import imageio
+from pygifsicle import optimize
 
 
 

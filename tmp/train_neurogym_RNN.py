@@ -302,7 +302,7 @@ print('Finished Training')
 # torch.save(net.state_dict(), modelpath / 'net.pth')
 
 
-###--------------------------Make some plots--------------------------###
+###--------------------------Analysis--------------------------###
 
 # Cross Entropy loss
 font = {'family':'Times New Roman','weight':'normal', 'size':30}
@@ -315,6 +315,22 @@ plt.legend()
 # plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 plt.tight_layout()
 plt.show()
+
+# def get_performance(net, env, num_trial=1000, device='cpu'):
+#     perf = 0
+#     for i in range(num_trial):
+#         env.new_trial()
+#         ob, gt = env.ob, env.gt
+#         ob = ob[:, np.newaxis, :]  # Add batch axis
+#         inputs = torch.from_numpy(ob).type(torch.float).to(device)
+
+#         action_pred, _ = net(inputs)
+#         action_pred = action_pred.detach().cpu().numpy()
+#         action_pred = np.argmax(action_pred, axis=-1)
+#         perf += gt[-1] == action_pred[-1, 0]
+
+#     perf /= num_trial
+#     return perf
 
 ###--------------------------Run network after training for analysis--------------------------###
 
