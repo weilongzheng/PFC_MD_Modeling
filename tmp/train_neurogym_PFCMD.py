@@ -53,24 +53,22 @@ from model_dev import PytorchPFCMD
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-envid_list = ['PerceptualDecisionMaking-v0', 'ContextDecisionMaking-v0', 'DelayMatchCategory-v0', 'DualDelayMatchSample-v0']
-block1 = envid_list[0:2]
-block2 = envid_list[2:4]
-print('Training paradigm: block1 -> block2 -> block1')
-print('Training task block1', block1)
-print('Training task block2', block2, '\n')
 
 config = {
     'RNGSEED': 5,
-    'dt': 100,
     'hidden_size': 64,
     'lr': 1e-2,
     'batch_size': 1,
     'seq_len': 200,
-    'envid_list': envid_list,
+    'tasks': ['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
 }
 
-env_kwargs = {'dt': config['dt']}
+tasks = config['tasks']
+print('Training paradigm: task1 -> task2 -> task1')
+print('Training task1', tasks[0])
+print('Training task2', tasks[1], '\n')
+
+env_kwargs = {'dt': 100}
 config['env_kwargs'] = env_kwargs
 
 # set random seed
@@ -81,67 +79,50 @@ torch.manual_seed(RNGSEED)
 
 ###--------------------------Generate dataset--------------------------###
 
+envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
+
 # Supervised dataset list
-dataset_block1 = []
-for i in range(len(block1)):
-    dataset = ngym.Dataset(block1[i], env_kwargs=env_kwargs, \
-                                      batch_size=config['batch_size'], \
-                                      seq_len=config['seq_len'])
-    dataset_block1.append(dataset)
-dataset_block2 = []
-for i in range(len(block2)):
-    dataset = ngym.Dataset(block2[i], env_kwargs=env_kwargs, \
-                                      batch_size=config['batch_size'], \
-                                      seq_len=config['seq_len'])
-    dataset_block2.append(dataset)
+datasets = []
+for i in range(len(envs)):
+    dataset = ngym.Dataset(envs[i], env_kwargs=env_kwargs, \
+                                    batch_size=config['batch_size'], \
+                                    seq_len=config['seq_len'])
+    datasets.append(dataset)
 
 # observation space
-ob_size_list = [ dataset_block1[i].env.observation_space.shape[0] for i in range(len(dataset_block1)) ] + \
-               [ dataset_block2[i].env.observation_space.shape[0] for i in range(len(dataset_block2)) ]
-ob_size = sum(ob_size_list)
+# ob_size_list = [ datasets[i].env.observation_space.shape[0] for i in range(len(datasets)) ]
+# ob_size = sum(ob_size_list)
+ob_size_per_task = 33
+ob_size = 33 * len(datasets)
+
 # action space
-act_size = [ dataset_block1[i].env.action_space.n for i in range(len(dataset_block1)) ] + \
-           [ dataset_block2[i].env.action_space.n for i in range(len(dataset_block2)) ]
-assert len(np.unique(act_size)) == 1 # the action spaces should be the same
-act_size = np.unique(act_size)[0]
+# act_size = [ datasets[i].env.action_space.n for i in range(len(datasets)) ]
+# assert len(np.unique(act_size)) == 1 # the action spaces should be the same
+# act_size = np.unique(act_size)[0]
+act_size = 17
 
-# Get data from blocks
-def get_data(dataset_list, ob_size, act_size, seq_len, blockid):
-    Nevns = len(dataset_list)
-    total_seq_len = Nevns*seq_len
-
-    # transform ob_size_list: e.g. [3,7] -> [0,3,10]
-    ob_size_list = [dataset_list[i].env.observation_space.shape[0] for i in range(Nevns)]
-    ob_size_transformed = [0]
-    for i in range(Nevns):
-        ob_size_transformed.append(sum(ob_size_list[0:i+1]))
-    
-    # allocate memory
-    inputs = np.zeros(shape=(total_seq_len, config['batch_size'], ob_size))
-
-    # get data
-    for i in range(Nevns):
-        input, label = dataset_list[i]()
-        ### TODO Warning: hard-coded ###
-        inputs[seq_len*i:seq_len*(i+1), :, (10*(blockid-1)+ob_size_transformed[i]):(10*(blockid-1)+ob_size_transformed[i+1])] = input
-        if i == 0:
-            labels = label
-        else:
-            labels = np.concatenate((labels, label))
+# Get data of a trial
+def get_data(datasets, ob_size_per_task, ob_size, act_size, seq_len, envid):
+    Nevns = len(datasets)
+    inputs = np.zeros(shape=(seq_len, config['batch_size'], ob_size))
+    inputs[:, :, ob_size_per_task*envid:ob_size_per_task*(envid+1)], labels = datasets[envid]()
 
     return inputs, labels
-    # return input, label, inputs, labels
 
-# input, label, inputs, labels = get_data(dataset_list, ob_size, act_size, config['seq_len'])
-
+# check shapes
+# inputs, labels = get_data(datasets=datasets, ob_size_per_task=ob_size_per_task,\
+#                           ob_size=ob_size, act_size=act_size,\
+#                           seq_len=config['seq_len'], envid=0)
+# print(inputs.shape, labels.shape)
 
 ###--------------------------Model configs--------------------------###
 
 # Model settings
 model_config = {
-    'input_size_per_task': ob_size_list,
+    'Ntasks': len(tasks),
+    'input_size_per_task': ob_size_per_task,
     'n_neuron': 1000,
-    'n_neuron_per_cue': 200,
+    'n_neuron_per_cue': 400,
     'Num_MD': 10,
     'num_active': 5, # num MD active per context
     'n_output': act_size,
@@ -154,11 +135,27 @@ PFClearn = config['PFClearn']
 
 ###--------------------------Train network--------------------------###
 
-model = PytorchPFCMD(input_size_per_task=config['input_size_per_task'], \
+model = PytorchPFCMD(Ntasks=config['Ntasks'], input_size_per_task=config['input_size_per_task'], \
                      Num_PFC=config['n_neuron'], n_neuron_per_cue=config['n_neuron_per_cue'], \
                      Num_MD=config['Num_MD'], num_active=config['num_active'], \
                      num_output=config['n_output'], MDeffect=config['MDeffect'])
 print(model, '\n')
+
+# check senory input layer
+# font = {'family':'Times New Roman','weight':'normal', 'size':20}
+# plt.figure(figsize=(15, 10))
+# ax = sns.heatmap(model.sensory2pfc.wIn, cmap='Reds')
+# ax.set_xlabel('Input unit index', fontdict=font)
+# ax.set_ylabel('PFC neuron index', fontdict=font)
+# ax.set_title('$ W_{input} $', fontdict=font)
+# ax.set_xticks([0, 65])
+# ax.set_xticklabels([1, 66], rotation=0)
+# ax.set_yticks([0, 399, 799, 999])
+# ax.set_yticklabels([1, 400, 800, 1000], rotation=0)
+# cbar = ax.collections[0].colorbar
+# cbar.set_label('connection weight', fontdict=font)
+# plt.tight_layout()
+# plt.show()
 
 criterion = nn.CrossEntropyLoss()
 
@@ -180,20 +177,25 @@ total_training_cycle = 150
 print_training_cycle = 10
 running_loss = 0.0
 running_train_time = 0
-losses = list()
+log = {
+    'losses': []
+}
 
 
 for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    # inputs, labels = dataset()
     if i < 50:
-        inputs, labels = get_data(dataset_block1, ob_size, act_size, config['seq_len'], blockid=1)
+        envid = 0
     elif i >= 50 and i < 100:
-        inputs, labels = get_data(dataset_block2, ob_size, act_size, config['seq_len'], blockid=2)
+        envid = 1
     elif i >= 100:
-        inputs, labels = get_data(dataset_block1, ob_size, act_size, config['seq_len'], blockid=1)
+        envid = 0
+
+    inputs, labels = get_data(datasets=datasets, ob_size_per_task=ob_size_per_task,\
+                              ob_size=ob_size, act_size=act_size,\
+                              seq_len=config['seq_len'], envid=envid)
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)[:, 0, :] # batch_size should be 1
     labels = torch.from_numpy(labels.flatten()).type(torch.long).to(device)
 
@@ -230,7 +232,7 @@ for i in range(total_training_cycle):
 
 
     # print statistics
-    losses.append(loss.item())
+    log['losses'].append(loss.item())
     running_loss += loss.item()
     running_train_time += time.time() - train_time_start
     if i % print_training_cycle == (print_training_cycle - 1):
@@ -264,7 +266,7 @@ print('Finished Training')
 
 # Cross Entropy loss
 font = {'family':'Times New Roman','weight':'normal', 'size':30}
-plt.plot(losses)
+plt.plot(log['losses'])
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('CE loss', fontdict=font)
 plt.legend()
