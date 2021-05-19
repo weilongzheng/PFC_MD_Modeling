@@ -30,7 +30,6 @@ from pygifsicle import optimize
 #     path = path / envid
 #     os.makedirs(path, exist_ok=True)
 #     return path
-
 # modelpath = get_modelpath(envid)
 
 # CTRNN model
