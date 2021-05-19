@@ -1,7 +1,3 @@
-'''
-Use heatmap to visualize connection weights
-'''
-
 import numpy as np
 from collections import defaultdict
 from pathlib import Path
@@ -72,7 +68,7 @@ plt.show()
 
 # Heatmap wPFC2MD
 ax = plt.figure(figsize=(15, 10))
-ax = sns.heatmap(wPFC2MD, cmap='bwr')
+ax = sns.heatmap(wPFC2MD, cmap='Reds')
 ax.set_xticks([0, 999])
 ax.set_xticklabels([1, 1000], rotation=0)
 ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
@@ -86,7 +82,7 @@ plt.show()
 
 # Heatmap wMD2PFC
 ax = plt.figure(figsize=(15, 10))
-ax = sns.heatmap(wMD2PFC, cmap='bwr')
+ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
 ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
 ax.set_yticks([0, 999])
 ax.set_yticklabels([1, 1000], rotation=0)

@@ -130,7 +130,6 @@ model_config = {
 }
 config.update(model_config)
 
-PFClearn = config['PFClearn']
 
 ###--------------------------Train network--------------------------###
 
@@ -163,7 +162,7 @@ training_params = list()
 for name, param in model.named_parameters():
     print(name)
     training_params.append(param)
-if PFClearn == True:
+if config['PFClearn'] == True:
     print('pfc.Jrec')
     print('\n', end='')
     training_params.append(model.pfc.Jrec)
@@ -177,8 +176,14 @@ print_training_cycle = 10
 running_loss = 0.0
 running_train_time = 0
 log = {
-    'losses': []
+    'losses': [],
+    'MDouts_all': np.zeros(shape=(total_training_cycle, config['seq_len'], config['Num_MD'])),
+    'MDpreTraces_all': np.zeros(shape=(total_training_cycle, config['seq_len'], config['n_neuron'])),
+    'MDpreTrace_threshold_all': np.zeros(shape=(total_training_cycle, config['seq_len'], 1)),
+    'PFCouts_all': np.zeros(shape=(total_training_cycle, config['seq_len'], config['n_neuron']))
 }
+
+
 
 
 for i in range(total_training_cycle):
@@ -206,7 +211,7 @@ for i in range(total_training_cycle):
 
     # print(inputs.shape, outputs.shape, labels.shape)
 
-    # save PFC and MD activities
+    # save PFC and MD activities - deprecated
     # PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
     # if  MDeffect == True:
     #     MDouts_all[i,:] = model.md_output
@@ -214,18 +219,17 @@ for i in range(total_training_cycle):
     # for itrial in range(inpsPerConext): 
         #PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
     # save PFC and MD activities
-    # PFCouts_all[i,:,:] = model.pfc_outputs.detach().numpy()
-    # if  MDeffect == True:
-    #     # MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
-    #     MDouts_all[i,:,:] = model.md_output_t
-    #     MDpreTraces_all[i,:,:] = model.md_preTraces
-    #     MDpreTrace_threshold_all[i, :, :] = model.md_preTrace_thresholds
+    log['PFCouts_all'][i,:,:] = model.pfc_outputs.detach().numpy()
+    if config['MDeffect'] == True:
+        log['MDouts_all'][i,:,:] = model.md_output_t
+        log['MDpreTraces_all'][i,:,:] = model.md_preTraces
+        log['MDpreTrace_threshold_all'][i, :, :] = model.md_preTrace_thresholds
 
     # backward + optimize
     loss = criterion(outputs, labels)
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip the norm of gradients 
-    if PFClearn == True:
+    if config['PFClearn'] == True:
         torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-6) # clip the norm of gradients; Jrec 1e-6
     optimizer.step()
 
@@ -261,7 +265,7 @@ print('Finished Training')
 #     json.dump(config, f)
 
 
-###--------------------------Make some plots--------------------------###
+###--------------------------Plot utils--------------------------###
 
 # Cross Entropy loss
 font = {'family':'Times New Roman','weight':'normal', 'size':30}
@@ -273,7 +277,9 @@ plt.legend()
 # plt.ylim([0.0, 1.0])
 # plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 plt.tight_layout()
+plt.savefig('./animation/'+'CEloss.png')
 plt.show()
+
 
 ###--------------------------Run network after training for analysis--------------------------###
 
