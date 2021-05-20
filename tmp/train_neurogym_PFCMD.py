@@ -30,22 +30,28 @@ from pygifsicle import optimize
 #     path = path / envid
 #     os.makedirs(path, exist_ok=True)
 #     return path
-
 # modelpath = get_modelpath(envid)
 
-# print("input size: ", env.observation_space.shape)
-# print("output size: ", env.action_space.n)
-# print("inputs.shape: ", inputs.shape)
-# print("labels.shape: ", labels.shape)
-# print("outputs.shape: ", outputs.shape)
+# CTRNN model
+# neurogym\dev\yang19\models.py
+# origin https://github.com/neurogym/ngym_usage/tree/master/yang19
 
-# 'PerceptualDecisionMaking-v0' input 3 output 3
-# 'DelayMatchCategory-v0' input 3 output 3
-# 'DelayMatchSample-v0' input 3 output 3
-# 'MultiSensoryIntegration-v0' input 5 output 3
-# 'DelayComparison-v0' input 2 output 3
-# 'ContextDecisionMaking-v0' input 7 output 3
-# 'DualDelayMatchSample-v0' input 7 output 3
+# get task performance
+# neurogym\dev\yang19\models.py
+# origin https://github.com/neurogym/ngym_usage/tree/master/yang19
+# def get_performance(net, env, num_trial=1000, device='cpu'):
+#     perf = 0
+#     for i in range(num_trial):
+#         env.new_trial()
+#         ob, gt = env.ob, env.gt
+#         ob = ob[:, np.newaxis, :]  # Add batch axis
+#         inputs = torch.from_numpy(ob).type(torch.float).to(device)
+#         action_pred, _ = net(inputs)
+#         action_pred = action_pred.detach().cpu().numpy()
+#         action_pred = np.argmax(action_pred, axis=-1)
+#         perf += gt[-1] == action_pred[-1, 0]
+#     perf /= num_trial
+#     return perf
 
 
 ###--------------------------Training configs--------------------------###
@@ -208,8 +214,12 @@ for i in range(total_training_cycle):
 
     # forward
     outputs = model(inputs, labels)
-
-    # print(inputs.shape, outputs.shape, labels.shape)
+    # check shapes
+    # print("input size: ", env.observation_space.shape)
+    # print("output size: ", env.action_space.n)
+    # print("inputs.shape: ", inputs.shape)
+    # print("labels.shape: ", labels.shape)
+    # print("outputs.shape: ", outputs.shape)
 
     # save PFC and MD activities - deprecated
     # PFCouts_all[i,:] = model.pfc.activity.detach().numpy()

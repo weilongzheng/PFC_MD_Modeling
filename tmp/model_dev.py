@@ -305,7 +305,7 @@ class PytorchPFC(nn.Module):
             input_x = torch.zeros(input.shape)
 
         xadd = torch.matmul(self.Jrec, self.activity)
-        xadd += input_x + input  # MD inputs
+        xadd += input_x + input  # input: MD inputs
         self.xinp += self.dt / self.tau * (-self.xinp + xadd)
         
         if self.noisePresent:
