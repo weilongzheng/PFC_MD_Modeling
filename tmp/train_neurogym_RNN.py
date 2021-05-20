@@ -307,13 +307,15 @@ Args:
     envid: str, environment ID.
 """
 
-net = Net(input_size  = config['input_size' ],
-          hidden_size = config['hidden_size'],
-          output_size = config['output_size'])
-# net = RNNNet(input_size  = config['input_size' ],
-#              hidden_size = config['hidden_size'],
-#              output_size = config['output_size'],
-#              dt=env.dt).to(device)
+# Elman or LSTM
+# net = Net(input_size  = config['input_size' ],
+#           hidden_size = config['hidden_size'],
+#           output_size = config['output_size'])
+# CTRNN
+net = RNNNet(input_size  = config['input_size' ],
+             hidden_size = config['hidden_size'],
+             output_size = config['output_size'],
+             dt=env.dt).to(device)
 net = net.to(device)
 print(net, '\n')
 

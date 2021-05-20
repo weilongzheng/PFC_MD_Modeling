@@ -201,6 +201,7 @@ class SensoryInputLayer():
         self.positiveRates = True
         self.wIn = np.zeros((self.Nneur, self.input_size))
         self.cueFactor = 1.5
+
         if self.positiveRates:
             lowcue, highcue = 0.5, 1.
         else:
@@ -233,7 +234,6 @@ class SensoryInputLayer():
         output = np.dot(self.wIn, input)
 
         if self._use_torch:
-            #output = torch.from_numpy(output, dtype=torch.float).astype(torch.float)
             output = torch.from_numpy(output).type(torch.float)
 
         return output
@@ -259,8 +259,8 @@ class PytorchPFC(nn.Module):
         self.noiseSD = 1e-2  # 1e-3
         self.tau = 0.02
         self.dt = 0.001
-
         self.positiveRates = positiveRates
+
         if self.positiveRates:
             # only +ve rates
             self.activation = lambda inp: torch.clip(torch.tanh(inp), 0, None)
@@ -279,7 +279,8 @@ class PytorchPFC(nn.Module):
         self.activity = self.activation(self.xinp)
 
     def init_weights(self):
-        self.Jrec = torch.normal(mean=0, std=self.G / np.sqrt(self.Nsub * 2),
+        self.Jrec = torch.normal(mean=0,
+                                 std=self.G / np.sqrt(self.Nsub * 2),
                                  size=(self.Nneur, self.Nneur))
         # make mean input to each row zero,
         #  helps to avoid saturation (both sides) for positive-only rates.
