@@ -3,7 +3,7 @@ import sys
 root = os.getcwd()
 sys.path.append(root)
 sys.path.append('..')
-sys.path.append('D:\\DESKTOP\\Lab\\Projects\\Yang Lab\\neurogym') # directory of local neurogym module
+sys.path.append('./neurogym') # directory of local neurogym module
 from pathlib import Path
 
 import json
