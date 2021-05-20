@@ -48,7 +48,7 @@ a neural network with reinforcement learning algorithms using the
 Contributing new tasks should be easy. You can contribute tasks using the regular OpenAI gym format. If your task has a trial/period structure,
 this [template](https://github.com/gyyang/neurogym/blob/master/examples/template.py) provides the basic structure that we recommend a task to have:
 
-```
+```python
 from gym import spaces
 import neurogym as ngym
 

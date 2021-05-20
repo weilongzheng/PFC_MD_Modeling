@@ -13,6 +13,7 @@ slurm*
 tmp/models/
 tmp/animation/
 tmp/.ipynb_checkpoints
+tmp/neurogym/dev
 
 auto_gitpull.py
 auto_gitpush.py
