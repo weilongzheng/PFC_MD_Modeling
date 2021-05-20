@@ -239,10 +239,10 @@ for i in range(total_training_cycle):
     # print("labels.shape: ", labels.shape)
     # print("outputs.shape: ", outputs.shape)
     # check values
-    action_pred = outputs.detach().cpu().numpy()
-    action_pred = np.argmax(action_pred, axis=-1)
-    print(labels)
-    print(action_pred)
+    # action_pred = outputs.detach().cpu().numpy()
+    # action_pred = np.argmax(action_pred, axis=-1)
+    # print(labels)
+    # print(action_pred)
 
     # deprecated - save PFC and MD activities
     # PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
