@@ -202,20 +202,20 @@ class SensoryInputLayer():
         self.wIn = np.zeros((self.Nneur, self.input_size))
         self.cueFactor = 1.5
 
-        # if self.positiveRates:
-        #     lowcue, highcue = 0.5, 1.
-        # else:
-        #     lowcue, highcue = -1., 1.
-        # for taski in range(self.Ntasks):
-        #     self.wIn[self.Nsub*taski : self.Nsub*(taski+1),  \
-        #              self.input_size_per_task*taski :  self.input_size_per_task*(taski+1)] = \
-        #              np.random.uniform(lowcue, highcue, size=(self.Nsub, self.input_size_per_task)) * self.cueFactor
+        if self.positiveRates:
+            lowcue, highcue = 0.5, 1.
+        else:
+            lowcue, highcue = -1., 1.
+        for taski in range(self.Ntasks):
+            self.wIn[self.Nsub*taski : self.Nsub*(taski+1),  \
+                     self.input_size_per_task*taski :  self.input_size_per_task*(taski+1)] = \
+                     np.random.uniform(lowcue, highcue, size=(self.Nsub, self.input_size_per_task)) * self.cueFactor
 
         # init input weights as in pytorch linear layer
-        k = np.sqrt(self.input_size_per_task)
-        self.wIn[self.Nsub*taski : self.Nsub*(taski+1),  \
-                 self.input_size_per_task*taski : self.input_size_per_task*(taski+1)] = \
-                 np.random.uniform(-k, k, size=(self.Nsub, self.input_size_per_task))
+        # k = np.sqrt(self.input_size_per_task)
+        # self.wIn[self.Nsub*taski : self.Nsub*(taski+1),  \
+        #          self.input_size_per_task*taski : self.input_size_per_task*(taski+1)] = \
+        #          np.random.uniform(-k, k, size=(self.Nsub, self.input_size_per_task))
 
         # ramdom init input weights
         # self.wIn = np.random.uniform(0, 1, size=(self.Nneur, self.Ncues))

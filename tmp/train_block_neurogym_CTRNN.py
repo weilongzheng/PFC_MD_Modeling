@@ -51,7 +51,7 @@ def get_performance(net, envs, envid, num_trial=100, device='cpu'):
         labels = torch.from_numpy(gt.flatten()).type(torch.long).to(device)
         
         # action_pred = model(inputs, labels)
-        action_pred, _ = model(inputs)
+        action_pred, _ = model(inputs) # for CTRNN model
         action_pred = action_pred.detach().cpu().numpy()
         action_pred = np.argmax(action_pred, axis=-1)
 
@@ -208,6 +208,7 @@ for i in range(total_training_cycle):
 
     # forward
     outputs, _ = model(inputs)
+    outputs = outputs[:, 0, :]
     # check shapes
     # print("input size: ", env.observation_space.shape)
     # print("output size: ", env.action_space.n)
@@ -221,7 +222,7 @@ for i in range(total_training_cycle):
     # print(action_pred)
 
     # backward + optimize
-    loss = criterion(outputs.view(-1, act_size), labels)
+    loss = criterion(outputs, labels)
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip the norm of gradients 
     optimizer.step()
@@ -241,11 +242,11 @@ for i in range(total_training_cycle):
 
         # task performance
         test_time_start = time.time()
-        perf = get_performance(model, envs, envid, num_trial=100, device=device)
+        # perf = get_performance(model, envs, envid, num_trial=100, device=device)
         running_test_time = time.time() - test_time_start
-        log['stamp'].append(i+1)
-        log['perf'].append(perf)
-        print('task performance at {:d} cycle: {:0.2f}'.format(i+1, perf))
+        # log['stamp'].append(i+1)
+        # log['perf'].append(perf)
+        # print('task performance at {:d} cycle: {:0.2f}'.format(i+1, perf))
 
         # training time
         print('Train time: {:0.1f} s/cycle'.format(running_train_time / print_training_cycle))
