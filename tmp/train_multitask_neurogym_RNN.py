@@ -158,6 +158,7 @@ tasks = ngym.get_collection('yang19')
 # print(tasks)
 
 envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
+# envs = [gym.make(tasks[0], **config['env_kwargs'])] # only one task
 # check original input and output shapes
 # for i in range(len(envs)):
 #     print(envs[i].observation_space.shape)
@@ -276,8 +277,8 @@ for i in range(total_training_cycle):
     # print("input size: ", env.observation_space.shape)
     # print("output size: ", env.action_space.n)
     # print("inputs.shape: ", inputs.shape)
-    print("labels.shape: ", labels.shape)
-    print("outputs.shape: ", outputs.shape)
+    # print("labels.shape: ", labels.shape)
+    # print("outputs.shape: ", outputs.shape)
     # check values
     # action_pred = outputs.detach().cpu().numpy()
     # action_pred = np.argmax(action_pred, axis=-1)

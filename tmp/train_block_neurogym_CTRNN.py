@@ -80,13 +80,14 @@ config = {
     'lr': 1e-2,
     'batch_size': 1,
     'seq_len': 200,
-    'tasks': ['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
+    'tasks': ['yang19.dm1-v0'] # ['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
 }
 
 tasks = config['tasks']
 print('Training paradigm: task1 -> task2 -> task1')
-print('Training task1', tasks[0])
-print('Training task2', tasks[1], '\n')
+for i in range(len(tasks)):
+    print('Training task '+f'{i+1}', tasks[i])
+print()
 
 env_kwargs = {'dt': 100}
 config['env_kwargs'] = env_kwargs
@@ -190,12 +191,13 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    if i < 50:
-        envid = 0
-    elif i >= 50 and i < 100:
-        envid = 1
-    elif i >= 100:
-        envid = 0
+    # if i < 50:
+    #     envid = 0
+    # elif i >= 50 and i < 100:
+    #     envid = 1
+    # elif i >= 100:
+    #     envid = 0
+    envid = 0
 
     inputs, labels = get_data(datasets=datasets, ob_size_per_task=ob_size_per_task,\
                               ob_size=ob_size, act_size=act_size,\

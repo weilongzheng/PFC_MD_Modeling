@@ -635,7 +635,7 @@ class PytorchPFCMD(nn.Module):
 #            self.pfc_outputs[:,800:] *= 0
             
         outputs = self.pfc2out(self.pfc_outputs)
-        outputs = torch.tanh(outputs)
+        # outputs = torch.tanh(outputs)
             
         return outputs
 
