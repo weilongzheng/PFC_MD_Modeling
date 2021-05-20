@@ -21,36 +21,56 @@ import imageio
 from pygifsicle import optimize
 
 
-
-# def get_modelpath(envid):
-#     # Make local file directories
-#     path = Path('.') / 'files'
-#     os.makedirs(path, exist_ok=True)
-#     path = path / envid
-#     os.makedirs(path, exist_ok=True)
-#     return path
-# modelpath = get_modelpath(envid)
-
 # CTRNN model
 # neurogym\dev\yang19\models.py
 # origin https://github.com/neurogym/ngym_usage/tree/master/yang19
 
+
+###--------------------------Helper functions--------------------------###
+
+# get model path to save model
+def get_modelpath(envid):
+    # Make local file directories
+    path = Path('.') / 'files'
+    os.makedirs(path, exist_ok=True)
+    path = path / envid
+    os.makedirs(path, exist_ok=True)
+    return path
+
 # get task performance
-# neurogym\dev\yang19\models.py
-# origin https://github.com/neurogym/ngym_usage/tree/master/yang19
-# def get_performance(net, env, num_trial=1000, device='cpu'):
-#     perf = 0
-#     for i in range(num_trial):
-#         env.new_trial()
-#         ob, gt = env.ob, env.gt
-#         ob = ob[:, np.newaxis, :]  # Add batch axis
-#         inputs = torch.from_numpy(ob).type(torch.float).to(device)
-#         action_pred, _ = net(inputs)
-#         action_pred = action_pred.detach().cpu().numpy()
-#         action_pred = np.argmax(action_pred, axis=-1)
-#         perf += gt[-1] == action_pred[-1, 0]
-#     perf /= num_trial
-#     return perf
+def get_performance(net, envs, envid, num_trial=100, device='cpu'):
+    perf = 0
+    for i in range(num_trial):
+        env = envs[envid]
+        env.new_trial()
+        ob, gt = env.ob, env.gt
+
+        # expand ob_size for PFCMD model
+        seq_len = ob.shape[0]
+        ob_size_per_task = ob.shape[1]
+        ob_size = len(envs)*ob_size_per_task
+
+        inputs = np.zeros(shape=(seq_len, ob_size))
+        inputs[:, ob_size_per_task*envid:ob_size_per_task*(envid+1)] = ob
+        inputs = torch.from_numpy(inputs).type(torch.float).to(device)
+        labels = torch.from_numpy(gt.flatten()).type(torch.long).to(device)
+        
+        action_pred = model(inputs, labels)
+        action_pred = action_pred.detach().cpu().numpy()
+        action_pred = np.argmax(action_pred, axis=-1)
+
+        perf += (gt[-1] == action_pred[-1])
+
+        # check shapes
+        # print(ob.shape, gt.shape)
+        # print(inputs.shape, labels.shape)
+        # print(action_pred.shape)
+        # check values
+        # print(gt)
+        # print(action_pred)
+        
+    perf /= num_trial
+    return perf
 
 
 ###--------------------------Training configs--------------------------###
@@ -59,7 +79,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 config = {
-    'RNGSEED': 5,
+    'RNGSEED': 6,
     'hidden_size': 64,
     'lr': 1e-2,
     'batch_size': 1,
@@ -179,16 +199,16 @@ optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 total_training_cycle = 150
 print_training_cycle = 10
 running_loss = 0.0
-running_train_time = 0
+running_train_time = 0.0
 log = {
     'losses': [],
+    'stamp': [],
+    'perf': [],
     'MDouts_all': np.zeros(shape=(total_training_cycle, config['seq_len'], config['Num_MD'])),
     'MDpreTraces_all': np.zeros(shape=(total_training_cycle, config['seq_len'], config['n_neuron'])),
     'MDpreTrace_threshold_all': np.zeros(shape=(total_training_cycle, config['seq_len'], 1)),
     'PFCouts_all': np.zeros(shape=(total_training_cycle, config['seq_len'], config['n_neuron']))
 }
-
-
 
 
 for i in range(total_training_cycle):
@@ -219,8 +239,13 @@ for i in range(total_training_cycle):
     # print("inputs.shape: ", inputs.shape)
     # print("labels.shape: ", labels.shape)
     # print("outputs.shape: ", outputs.shape)
+    # check values
+    # action_pred = outputs.detach().cpu().numpy()
+    # action_pred = np.argmax(action_pred, axis=-1)
+    # print(labels)
+    # print(action_pred)
 
-    # save PFC and MD activities - deprecated
+    # deprecated - save PFC and MD activities
     # PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
     # if  MDeffect == True:
     #     MDouts_all[i,:] = model.md_output
@@ -256,15 +281,27 @@ for i in range(total_training_cycle):
         print('Cross entropy loss: {:0.5f}'.format(running_loss / print_training_cycle))
         running_loss = 0.0
 
+        # task performance
+        test_time_start = time.time()
+        perf = get_performance(model, envs, envid, num_trial=100, device=device)
+        running_test_time = time.time() - test_time_start
+        log['stamp'].append(i+1)
+        log['perf'].append(perf)
+        print('perf at {:d} cycle: {:0.2f}'.format(i+1, perf))
+
         # training time
+        print('Train time: {:0.1f} s/cycle'.format(running_train_time / print_training_cycle))
+        print('Test time: {:0.1f} s'.format(running_test_time / print_training_cycle))
         print('Predicted left training time: {:0.0f} s'.format(
-            (running_train_time) * (total_training_cycle - i - 1) / print_training_cycle),
-            end='\n\n')
+             (running_train_time + running_test_time) * (total_training_cycle - i - 1) / print_training_cycle),
+              end='\n\n')
         running_train_time = 0
 
 
 print('Finished Training')
 
+
+# modelpath = get_modelpath(envid)
 
 # save model
 # torch.save(model.state_dict(), modelpath / 'model.pth')
@@ -281,12 +318,23 @@ font = {'family':'Times New Roman','weight':'normal', 'size':30}
 plt.plot(log['losses'])
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('CE loss', fontdict=font)
-plt.legend()
 # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
 # plt.ylim([0.0, 1.0])
 # plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 plt.tight_layout()
-plt.savefig('./animation/'+'CEloss.png')
+# plt.savefig('./animation/'+'CEloss.png')
+plt.show()
+
+# Task performance during training
+font = {'family':'Times New Roman','weight':'normal', 'size':30}
+plt.plot(log['stamp'], log['perf'])
+plt.xlabel('Training Cycles', fontdict=font)
+plt.ylabel('Performance', fontdict=font)
+# plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
+# plt.ylim([0.0, 1.0])
+# plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+plt.tight_layout()
+# plt.savefig('./animation/'+'performance.png')
 plt.show()
 
 

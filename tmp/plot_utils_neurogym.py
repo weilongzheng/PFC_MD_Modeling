@@ -3,7 +3,6 @@ import sys
 root = os.getcwd()
 sys.path.append(root)
 sys.path.append('..')
-sys.path.append('D:\\DESKTOP\\Lab\\Projects\\Yang Lab\\neurogym') # directory of local neurogym module
 from pathlib import Path
 import json
 import time
@@ -27,7 +26,6 @@ font = {'family':'Times New Roman','weight':'normal', 'size':30}
 plt.plot(log['losses'])
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('CE loss', fontdict=font)
-plt.legend()
 # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
 # plt.ylim([0.0, 1.0])
 # plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])

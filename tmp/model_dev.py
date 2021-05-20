@@ -8,6 +8,7 @@ import sys, shelve
 
 try:
     import torch
+    from torch import nn
 except ImportError:
     print('Torch not available')
 
@@ -241,9 +242,6 @@ class SensoryInputLayer():
         '''
         self.wIn = np.roll(self.wIn, shift=shift, axis=0)
 
-
-import torch
-from torch import nn
 
 class PytorchPFC(nn.Module):
     def __init__(self, n_neuron, n_neuron_per_cue, positiveRates=True, MDeffect=True, noisePresent = False):
