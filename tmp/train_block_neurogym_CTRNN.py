@@ -4,107 +4,26 @@ root = os.getcwd()
 sys.path.append(root)
 sys.path.append('..')
 from pathlib import Path
-
 import json
 import time
-import math
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-from torch.nn import init
-from torch.nn import functional as F
 import gym
 import neurogym as ngym
-from neurogym.wrappers import ScheduleEnvs
-from neurogym.utils.scheduler import RandomSchedule
-from model_dev import Net, RNNNet
+from model_dev import RNNNet
 
-
-
-# task names in the Yang19 collection
-#   ngym.get_collection('yang19') is defined in neurogym\envs\collections\__init__.py
-#   'yang19.go-v0',         'yang19.rtgo-v0',   'yang19.dlygo-v0',  'yang19.anti-v0',      'yang19.rtanti-v0',
-#   'yang19.dlyanti-v0',    'yang19.dm1-v0',    'yang19.dm2-v0',    'yang19.ctxdm1-v0',    'yang19.ctxdm2-v0',
-#   'yang19.multidm-v0',    'yang19.dlydm1-v0', 'yang19.dlydm2-v0', 'yang19.ctxdlydm1-v0', 'yang19.ctxdlydm2-v0',
-#   'yang19.multidlydm-v0', 'yang19.dms-v0',    'yang19.dnms-v0',   'yang19.dmc-v0',       'yang19.dnmc-v0'
-
-
-# why gym.make can make Yang19 tasks?
-#   because all tasks in the collection is registered in neurogym\envs\registration.py
-#   once tasks are registered, gym.make works
-
-
-# what task should we test in the next trial?
-#   RandomSchedule helps us randomly choose a task
-#   RandomSchedule is defined in neurogym\utils\scheduler.py
-
-
-# final dimensions 
-#   input size:  (53,)
-#   output size:  17
-#   inputs.shape:  torch.Size([200, 1, 53])
-#   labels.shape:  torch.Size([200])
-#   outputs.shape:  torch.Size([200, 1, 17])
-
-
-# input dimensions
-#   original input size is (33,) and action size is 17
-#   ScheduleEnvs adds rule inputs to the observation and choose a task for the next trial based on the schedule
-#   ScheduleEnvs is defined in neurogym\neurogym\wrappers\block.py
-# meanings of input dimensions
-#   index 0 is fixation input;
-#   index 1-16 is the first input modality;
-#   index 17-32 is the second input modality;
-#   index 33-52 is the rule inputs indicating current environment
-# tasks have either one or two input modality(modalities)
-#   one input modality: 
-#     yang19.go-v0
-#     yang19.rtgo-v0
-#     yang19.dlygo-v0
-#     yang19.anti-v0
-#     yang19.rtanti-v0
-#     yang19.dlyanti-v0
-#     yang19.dms-v0
-#     yang19.dnms-v0
-#     yang19.dmc-v0
-#     yang19.dnmc-v0
-#   two input modalities
-#     yang19.dm1-v0
-#     yang19.dm2-v0
-#     yang19.ctxdm1-v0
-#     yang19.ctxdm2-v0
-#     yang19.multidm-v0
-#     yang19.dlydm1-v0
-#     yang19.dlydm2-v0
-#     yang19.ctxdlydm1-v0
-#     yang19.ctxdlydm2-v0
-#     yang19.multidlydm-v0
-#  for tasks that have only one input modality, the second input modality (index 17-32) of inputs are zero.
-#  for tasks that have two input modalities, the econd input modality (index 17-32) of inputs are non-zero.
-
-
-# meanings of output dimensions
-#   index 0 is fixation output;
-#   index 1-16 is the output modality (only one modality);
-# when period == fixation, label = 0, only fixation output is expected to be activated
-# when period == choice, label = ground truth, only the ground truth neuron is expected to be activated
-
-
-# in neurogym\envs\collections\yang19.py
-#   20 tasks/environments in the collection are defined 
-#   env.observation_space.name of different environments is defined
-#   env.action_space.name of different environments is defined
-#   this file tells how we get observation and groundtruth.
-# in neurogym\core.py.
-#   TrialEnv class is defined
-#   TrialEnv.add_ob is how we update observation in a new trial.
+import matplotlib.pyplot as plt
+import seaborn as sns
+import imageio
+from pygifsicle import optimize
 
 
 ###--------------------------Helper functions--------------------------###
 
+# get model path to save model
 def get_modelpath(envid):
     # Make local file directories
     path = Path('.') / 'files'
@@ -113,19 +32,39 @@ def get_modelpath(envid):
     os.makedirs(path, exist_ok=True)
     return path
 
-def get_performance(net, env, num_trial=1000, device='cpu'):
+# get task performance
+def get_performance(net, envs, envid, num_trial=100, device='cpu'):
     perf = 0
     for i in range(num_trial):
+        env = envs[envid]
         env.new_trial()
         ob, gt = env.ob, env.gt
-        ob = ob[:, np.newaxis, :]  # Add batch axis
-        inputs = torch.from_numpy(ob).type(torch.float).to(device)
 
-        action_pred, _ = net(inputs)
+        # expand ob_size for PFCMD model
+        seq_len = ob.shape[0]
+        ob_size_per_task = ob.shape[1]
+        ob_size = len(envs)*ob_size_per_task
+
+        inputs = np.zeros(shape=(seq_len, ob_size))
+        inputs[:, ob_size_per_task*envid:ob_size_per_task*(envid+1)] = ob
+        inputs = torch.from_numpy(inputs).type(torch.float).to(device)
+        labels = torch.from_numpy(gt.flatten()).type(torch.long).to(device)
+        
+        # action_pred = model(inputs, labels)
+        action_pred, _ = model(inputs)
         action_pred = action_pred.detach().cpu().numpy()
         action_pred = np.argmax(action_pred, axis=-1)
-        perf += gt[-1] == action_pred[-1, 0]
 
+        perf += (gt[-1] == action_pred[-1])
+
+        # check shapes
+        # print(ob.shape, gt.shape)
+        # print(inputs.shape, labels.shape)
+        # print(action_pred.shape)
+        # check values
+        # print(gt)
+        # print(action_pred)
+        
     perf /= num_trial
     return perf
 
@@ -133,17 +72,24 @@ def get_performance(net, env, num_trial=1000, device='cpu'):
 ###--------------------------Training configs--------------------------###
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print("device:", device, '\n')
 
-env_kwargs = {'dt': 100}
+
 config = {
-    'RNGSEED': 5,
-    'env_kwargs': env_kwargs,
+    'RNGSEED': 6,
     'hidden_size': 256,
-    'lr': 1e-3,
+    'lr': 1e-2,
     'batch_size': 1,
     'seq_len': 200,
+    'tasks': ['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
 }
+
+tasks = config['tasks']
+print('Training paradigm: task1 -> task2 -> task1')
+print('Training task1', tasks[0])
+print('Training task2', tasks[1], '\n')
+
+env_kwargs = {'dt': 100}
+config['env_kwargs'] = env_kwargs
 
 # set random seed
 RNGSEED = config['RNGSEED']
@@ -153,96 +99,86 @@ torch.manual_seed(RNGSEED)
 
 ###--------------------------Generate dataset--------------------------###
 
-tasks = ngym.get_collection('yang19')
-# check task names
-# print(tasks)
-
 envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
-# check original input and output shapes
-# for i in range(len(envs)):
-#     print(envs[i].observation_space.shape)
-#     print(envs[i].action_space.n)
-# ob_size are all (33,)
-# act_size are all 17
+# check env.dt
+# for env in envs:
+#     print(env.dt)
 
-# check input modalities
-# for i in range(len(envs)):
-#     print(tasks[i])
-#     print(envs[i].observation_space.name['fixation'])
-#     if 'stimulus' in envs[i].observation_space.name.keys():
-#         print(envs[i].observation_space.name['stimulus'])
-#     else:
-#         print(envs[i].observation_space.name['stimulus_mod1'])
-#         print(envs[i].observation_space.name['stimulus_mod2'])
+# Supervised dataset list
+datasets = []
+for i in range(len(envs)):
+    dataset = ngym.Dataset(envs[i], env_kwargs=env_kwargs, \
+                                    batch_size=config['batch_size'], \
+                                    seq_len=config['seq_len'])
+    datasets.append(dataset)
 
-# check output modalities
-# for i in range(len(envs)):
-#     print(tasks[i])
-#     print(envs[i].action_space.name['fixation'])
-#     print(envs[i].action_space.name['choice'])
+# observation space
+# ob_size_list = [ datasets[i].env.observation_space.shape[0] for i in range(len(datasets)) ]
+# ob_size = sum(ob_size_list)
+ob_size_per_task = 33
+ob_size = 33 * len(datasets)
 
-schedule = RandomSchedule(len(envs))
-# check how RandomSchedule works
-# for _ in range(20):
-#     print(schedule(), end=' ')
-# output: 3 2 18 4 10 19 2 11 4 14 13 5 16 11 15 3 8 15 6 19
+# action space
+# act_size = [ datasets[i].env.action_space.n for i in range(len(datasets)) ]
+# assert len(np.unique(act_size)) == 1 # the action spaces should be the same
+# act_size = np.unique(act_size)[0]
+act_size = 17
 
-env = ScheduleEnvs(envs, schedule=schedule, env_input=True)
+# Get data of a trial
+def get_data(datasets, ob_size_per_task, ob_size, act_size, seq_len, envid):
+    Nevns = len(datasets)
+    inputs = np.zeros(shape=(seq_len, config['batch_size'], ob_size))
+    inputs[:, :, ob_size_per_task*envid:ob_size_per_task*(envid+1)], labels = datasets[envid]()
 
-dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
-env = dataset.env
+    return inputs, labels
 
-ob_size = env.observation_space.shape[0]
-act_size = env.action_space.n
-
+# check shapes
+# inputs, labels = get_data(datasets=datasets, ob_size_per_task=ob_size_per_task,\
+#                           ob_size=ob_size, act_size=act_size,\
+#                           seq_len=config['seq_len'], envid=0)
+# print(inputs.shape, labels.shape)
 
 ###--------------------------Model configs--------------------------###
 
 # Model settings
 model_config = {
-    'input_size': ob_size,
-    'output_size': act_size
+    'Ntasks': len(tasks),
+    'input_size_per_task': ob_size_per_task,
+    'n_neuron': 1000,
+    'n_neuron_per_cue': 400,
+    'Num_MD': 10,
+    'num_active': 5, # num MD active per context
+    'output_size': act_size,
+    'MDeffect': True,
+    'PFClearn': False,
 }
 config.update(model_config)
 
 
 ###--------------------------Train network--------------------------###
+model = RNNNet(input_size  = config['Ntasks']*config['input_size_per_task'],
+               hidden_size = config['hidden_size'],
+               output_size = config['output_size'],
+               dt=100).to(device) # env.dt = 100
 
-"""Supervised training networks.
-Save network in a path determined by environment ID.
-Args:
-    envid: str, environment ID.
-"""
-
-# Elman or LSTM
-# net = Net(input_size  = config['input_size' ],
-#           hidden_size = config['hidden_size'],
-#           output_size = config['output_size'])
-# CTRNN
-net = RNNNet(input_size  = config['input_size' ],
-             hidden_size = config['hidden_size'],
-             output_size = config['output_size'],
-             dt=env.dt).to(device)
-net = net.to(device)
-print(net, '\n')
+model = model.to(device)
+print(model, '\n')
 
 criterion = nn.CrossEntropyLoss()
 
 print('training parameters:')
 training_params = list()
-for name, param in net.named_parameters():
-    # if 'rnn' not in name:
-    if True:
-        print(name)
-        training_params.append(param)
-print()
+for name, param in model.named_parameters():
+    print(name)
+    training_params.append(param)
+print('\n', end='')
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 40000
-print_training_cycle = 100
+total_training_cycle = 150
+print_training_cycle = 10
 running_loss = 0.0
-running_train_time = 0
+running_train_time = 0.0
 log = {
     'losses': [],
     'stamp': [],
@@ -254,24 +190,24 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    inputs, labels = dataset()
-    # check the task we are testing
-    # print(tasks[dataset.env.i_env])
-    # check the meaning of labels
-    # inputs, labels = dataset()
-    # print(inputs.shape, labels.shape)
-    # print(tasks[dataset.env.i_env])
-    # for i in range(20):
-    #     print(inputs[i, 0, :], labels[i])
+    if i < 50:
+        envid = 0
+    elif i >= 50 and i < 100:
+        envid = 1
+    elif i >= 100:
+        envid = 0
 
+    inputs, labels = get_data(datasets=datasets, ob_size_per_task=ob_size_per_task,\
+                              ob_size=ob_size, act_size=act_size,\
+                              seq_len=config['seq_len'], envid=envid)
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)
     labels = torch.from_numpy(labels.flatten()).type(torch.long).to(device)
 
     # zero the parameter gradients
     optimizer.zero_grad()
 
-    # forward + backward + optimize
-    outputs, _ = net(inputs)
+    # forward
+    outputs, _ = model(inputs)
     # check shapes
     # print("input size: ", env.observation_space.shape)
     # print("output size: ", env.action_space.n)
@@ -284,8 +220,10 @@ for i in range(total_training_cycle):
     # print(labels)
     # print(action_pred)
 
+    # backward + optimize
     loss = criterion(outputs.view(-1, act_size), labels)
     loss.backward()
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip the norm of gradients 
     optimizer.step()
 
     # print statistics
@@ -300,35 +238,38 @@ for i in range(total_training_cycle):
         # loss
         print('Cross entropy loss: {:0.5f}'.format(running_loss / print_training_cycle))
         running_loss = 0.0
-        
+
         # task performance
         test_time_start = time.time()
-        perf = get_performance(net, env, num_trial=200, device=device)
+        perf = get_performance(model, envs, envid, num_trial=100, device=device)
         running_test_time = time.time() - test_time_start
         log['stamp'].append(i+1)
         log['perf'].append(perf)
         print('task performance at {:d} cycle: {:0.2f}'.format(i+1, perf))
 
         # training time
+        print('Train time: {:0.1f} s/cycle'.format(running_train_time / print_training_cycle))
+        print('Test time: {:0.1f} s'.format(running_test_time / print_training_cycle))
         print('Predicted left training time: {:0.0f} s'.format(
              (running_train_time + running_test_time) * (total_training_cycle - i - 1) / print_training_cycle),
-             end='\n\n')
+              end='\n\n')
         running_train_time = 0
+
 
 print('Finished Training')
 
 
 # modelpath = get_modelpath(envid)
 
+# save model
+# torch.save(model.state_dict(), modelpath / 'model.pth')
+
 # save config
 # with open(modelpath / 'config.json', 'w') as f:
 #     json.dump(config, f)
 
-# save model
-# torch.save(net.state_dict(), modelpath / 'net.pth')
 
-
-###--------------------------Analysis--------------------------###
+###--------------------------Plot utils--------------------------###
 
 # Cross Entropy loss
 font = {'family':'Times New Roman','weight':'normal', 'size':30}
@@ -348,27 +289,12 @@ plt.plot(log['stamp'], log['perf'])
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('Performance', fontdict=font)
 # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
-plt.ylim([0.0, 1.0])
-plt.yticks([0.1*i for i in range(11)])
+# plt.ylim([0.0, 1.0])
+# plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 plt.tight_layout()
 # plt.savefig('./animation/'+'performance.png')
 plt.show()
 
-# def get_performance(net, env, num_trial=1000, device='cpu'):
-#     perf = 0
-#     for i in range(num_trial):
-#         env.new_trial()
-#         ob, gt = env.ob, env.gt
-#         ob = ob[:, np.newaxis, :]  # Add batch axis
-#         inputs = torch.from_numpy(ob).type(torch.float).to(device)
-
-#         action_pred, _ = net(inputs)
-#         action_pred = action_pred.detach().cpu().numpy()
-#         action_pred = np.argmax(action_pred, axis=-1)
-#         perf += gt[-1] == action_pred[-1, 0]
-
-#     perf /= num_trial
-#     return perf
 
 ###--------------------------Run network after training for analysis--------------------------###
 

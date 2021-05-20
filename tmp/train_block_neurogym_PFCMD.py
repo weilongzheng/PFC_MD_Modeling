@@ -14,6 +14,7 @@ import torch.nn as nn
 import gym
 import neurogym as ngym
 from model_dev import PytorchPFCMD
+from model_dev import RNNNet
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -99,6 +100,9 @@ torch.manual_seed(RNGSEED)
 ###--------------------------Generate dataset--------------------------###
 
 envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
+# check env.dt
+# for env in envs:
+#     print(env.dt)
 
 # Supervised dataset list
 datasets = []
