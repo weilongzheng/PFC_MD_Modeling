@@ -146,7 +146,7 @@ model_config = {
     'num_active': 5, # num MD active per context
     'n_output': act_size,
     'MDeffect': True,
-    'PFClearn': False,
+    'PFClearn': True,
 }
 config.update(model_config)
 
@@ -259,7 +259,8 @@ for i in range(total_training_cycle):
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip the norm of gradients 
     if config['PFClearn'] == True:
-        torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-6) # clip the norm of gradients; Jrec 1e-6
+        # torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-6) # clip the norm of gradients; Jrec 1e-6
+        torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1.0)
     optimizer.step()
 
 
