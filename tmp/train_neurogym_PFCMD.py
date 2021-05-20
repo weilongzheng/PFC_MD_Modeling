@@ -21,11 +21,6 @@ import imageio
 from pygifsicle import optimize
 
 
-# CTRNN model
-# neurogym\dev\yang19\models.py
-# origin https://github.com/neurogym/ngym_usage/tree/master/yang19
-
-
 ###--------------------------Helper functions--------------------------###
 
 # get model path to save model
@@ -287,7 +282,7 @@ for i in range(total_training_cycle):
         running_test_time = time.time() - test_time_start
         log['stamp'].append(i+1)
         log['perf'].append(perf)
-        print('perf at {:d} cycle: {:0.2f}'.format(i+1, perf))
+        print('task performance at {:d} cycle: {:0.2f}'.format(i+1, perf))
 
         # training time
         print('Train time: {:0.1f} s/cycle'.format(running_train_time / print_training_cycle))

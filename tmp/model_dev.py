@@ -208,7 +208,13 @@ class SensoryInputLayer():
         for taski in range(self.Ntasks):
             self.wIn[self.Nsub*taski : self.Nsub*(taski+1),  \
                      self.input_size_per_task*taski :  self.input_size_per_task*(taski+1)] = \
-                     np.random.uniform(lowcue, highcue, size=(self.Nsub, self.input_size_per_task)) * self.cueFactor                    
+                     np.random.uniform(lowcue, highcue, size=(self.Nsub, self.input_size_per_task)) * self.cueFactor
+
+        # init input weights as in pytorch linear layer
+        # k = np.sqrt(self.input_size_per_task)
+        # self.wIn[self.Nsub*taski : self.Nsub*(taski+1),  \
+        #          self.input_size_per_task*taski :  self.input_size_per_task*(taski+1)] = \
+        #          np.random.uniform(-k, k, size=(self.Nsub, self.input_size_per_task))
 
         # ramdom init input weights
         # self.wIn = np.random.uniform(0, 1, size=(self.Nneur, self.Ncues))
