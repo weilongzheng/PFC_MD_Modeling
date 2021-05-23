@@ -55,14 +55,14 @@ def get_performance(net, env, num_trial=1000, device='cpu'):
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print("device:", device, '\n')
 
-env_kwargs = {'dt': 100}
 config = {
     'RNGSEED': 5,
-    'env_kwargs': env_kwargs,
+    'env_kwargs': {'dt': 100},
     'hidden_size': 256,
     'lr': 1e-3,
     'batch_size': 1,
     'seq_len': 200,
+    'tasks': ngym.get_collection('yang19') # ['yang19.go-v0', 'yang19.dm1-v0'] 
 }
 
 # set random seed
@@ -73,27 +73,35 @@ torch.manual_seed(RNGSEED)
 
 ###--------------------------Generate dataset--------------------------###
 
-tasks = ['yang19.go-v0', 'yang19.dm1-v0']
+tasks = config['tasks']
 
-datasets = []
-for task in tasks:
-    schedule = RandomSchedule(1)
-    env = ScheduleEnvs([gym.make(task, **config['env_kwargs'])], schedule=schedule, env_input=False)
-    datasets.append(ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len']))
+# Block training
+# datasets = []
+# for task in tasks:
+#     schedule = RandomSchedule(1)
+#     env = ScheduleEnvs([gym.make(task, **config['env_kwargs'])], schedule=schedule, env_input=False)
+#     datasets.append(ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len']))
+# # for test
+# envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
+# schedule = RandomSchedule(len(envs))
+# test_env = ScheduleEnvs(envs, schedule=schedule, env_input=False)
+# test_dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
+# test_env = test_dataset.env
 
-
-# for test
+# Yang19 collection
 envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
 schedule = RandomSchedule(len(envs))
-test_env = ScheduleEnvs(envs, schedule=schedule, env_input=False)
-test_dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
-test_env = test_dataset.env
+env = ScheduleEnvs(envs, schedule=schedule, env_input=False)
+dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
+env = dataset.env
+test_env = env
 
+# only for tasks in Yang19 collection
 ob_size = 33
 act_size = 17
 
 
-###--------------------------Model configs--------------------------###
+###--------------------------Generate model--------------------------###
 
 # Model settings
 model_config = {
@@ -102,16 +110,7 @@ model_config = {
 }
 config.update(model_config)
 
-
-###--------------------------Train network--------------------------###
-
-"""Supervised training networks.
-Save network in a path determined by environment ID.
-Args:
-    envid: str, environment ID.
-"""
-
-# CTRNN
+# CTRNN model
 net = RNNNet(input_size  = config['input_size' ],
              hidden_size = config['hidden_size'],
              output_size = config['output_size'],
@@ -119,7 +118,9 @@ net = RNNNet(input_size  = config['input_size' ],
 net = net.to(device)
 print(net, '\n')
 
-# criterion = nn.CrossEntropyLoss()
+
+###--------------------------Train network--------------------------###
+
 criterion = nn.MSELoss()
 
 print('training parameters:')
@@ -147,20 +148,18 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    if i < 2000:
-        task_id = 0
-    elif i > 2000 and i < 4000:
-        task_id = 1
-    else:
-        task_id = 0
+    # if i < 2000:
+    #     dataset = datasets[0]
+    # elif i > 2000 and i < 4000:
+    #     dataset = datasets[1]
+    # else:
+    #     dataset = datasets[0]
 
-    inputs, labels = datasets[task_id]()
+    inputs, labels = dataset()
+
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)
-    labels = torch.from_numpy(labels).type(torch.long).to(device)
-    labels = (F.one_hot(labels, num_classes=act_size)).float()
-
-    # inputs = torch.from_numpy(inputs).type(torch.float).to(device)
-    # labels = torch.from_numpy(labels.flatten()).type(torch.long).to(device)
+    labels = torch.from_numpy(labels).type(torch.long).to(device) # numpy -> torch
+    labels = (F.one_hot(labels, num_classes=act_size)).float() # index -> one-hot vector
 
     # zero the parameter gradients
     optimizer.zero_grad()
@@ -172,7 +171,6 @@ for i in range(total_training_cycle):
     # print("labels.shape: ", labels.shape)
     # print("outputs.shape: ", outputs.shape)
 
-    # loss = criterion(outputs.view(-1, act_size), labels)
     loss = criterion(outputs, labels)
     loss.backward()
     optimizer.step()
@@ -187,7 +185,7 @@ for i in range(total_training_cycle):
         print('Training sample index: {:d}-{:d}'.format(i+1-print_training_cycle, i+1))
 
         # loss
-        print('Cross entropy loss: {:0.8f}'.format(running_loss / print_training_cycle))
+        print('Cross entropy loss: {:0.9f}'.format(running_loss / print_training_cycle))
         running_loss = 0.0
         
         # task performance
@@ -212,7 +210,6 @@ print('Finished Training')
 # save config
 # with open(modelpath / 'config.json', 'w') as f:
 #     json.dump(config, f)
-
 # save model
 # torch.save(net.state_dict(), modelpath / 'net.pth')
 
@@ -221,9 +218,9 @@ print('Finished Training')
 
 # Cross Entropy loss
 font = {'family':'Times New Roman','weight':'normal', 'size':30}
-plt.plot(np.array(log['losses'])*1e3)
+plt.plot(np.array(log['losses']))
 plt.xlabel('Training Cycles', fontdict=font)
-plt.ylabel('MSE loss * $10^{-3}$', fontdict=font)
+plt.ylabel('MSE loss', fontdict=font)
 # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
 # plt.ylim([0.0, 1.0])
 # plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
@@ -242,19 +239,3 @@ plt.yticks([0.1*i for i in range(11)])
 plt.tight_layout()
 # plt.savefig('./animation/'+'performance.png')
 plt.show()
-
-# def get_performance(net, env, num_trial=1000, device='cpu'):
-#     perf = 0
-#     for i in range(num_trial):
-#         env.new_trial()
-#         ob, gt = env.ob, env.gt
-#         ob = ob[:, np.newaxis, :]  # Add batch axis
-#         inputs = torch.from_numpy(ob).type(torch.float).to(device)
-
-#         action_pred, _ = net(inputs)
-#         action_pred = action_pred.detach().cpu().numpy()
-#         action_pred = np.argmax(action_pred, axis=-1)
-#         perf += gt[-1] == action_pred[-1, 0]
-
-#     perf /= num_trial
-#     return perf

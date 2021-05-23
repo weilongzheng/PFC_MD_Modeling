@@ -1,3 +1,7 @@
+'''
+Train Yang19 collections with CTRNN, RNN or LSTM
+'''
+
 import os
 import sys
 root = os.getcwd()
