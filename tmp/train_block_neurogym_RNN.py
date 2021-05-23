@@ -66,8 +66,10 @@ def get_full_performance(net, env, num_trial=1000, device='cpu'):
 
         fix_len = sum(gt == 0)
         act_len = len(gt) - fix_len
+        assert all(gt[:fix_len] == 0)
         fix_perf += sum(action_pred[:fix_len, 0] == 0)/fix_len
         if act_len != 0:
+            assert all(gt[fix_len:] == gt[-1])
             act_perf += sum(action_pred[fix_len:, 0] == gt[-1])/act_len
         else: # no action in this trial
             num_no_act_trial += 1
@@ -108,7 +110,8 @@ config = {
     'lr': 1e-4,
     'batch_size': 1,
     'seq_len': 100,
-    'tasks': ngym.get_collection('yang19') # ['yang19.go-v0', 'yang19.dm1-v0']
+    'tasks': ngym.get_collection('yang19')
+    # 'tasks': ['yang19.go-v0', 'yang19.dm1-v0']
 }
 
 # set random seed
@@ -184,7 +187,7 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 3000
+total_training_cycle = 40000
 print_training_cycle = 100
 running_loss = 0.0
 running_train_time = 0
@@ -202,9 +205,9 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    # if i < 2000:
+    # if i < 3000:
     #     dataset = datasets[0]
-    # elif i > 2000 and i < 4000:
+    # elif i > 3000 and i < 6000:
     #     dataset = datasets[1]
     # else:
     #     dataset = datasets[0]
