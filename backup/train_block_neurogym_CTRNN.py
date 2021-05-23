@@ -1,3 +1,9 @@
+'''
+deprecated file
+
+CTRNN with expanded obeservation
+'''
+
 import os
 import sys
 root = os.getcwd()
@@ -45,8 +51,8 @@ def get_performance(net, envs, envid, num_trial=100, device='cpu'):
         ob_size_per_task = ob.shape[1]
         ob_size = len(envs)*ob_size_per_task
 
-        inputs = np.zeros(shape=(seq_len, ob_size))
-        inputs[:, ob_size_per_task*envid:ob_size_per_task*(envid+1)] = ob
+        inputs = np.zeros(shape=(seq_len, 1, ob_size))
+        inputs[:, 0, ob_size_per_task*envid:ob_size_per_task*(envid+1)] = ob
         inputs = torch.from_numpy(inputs).type(torch.float).to(device)
         labels = torch.from_numpy(gt.flatten()).type(torch.long).to(device)
         
@@ -55,7 +61,7 @@ def get_performance(net, envs, envid, num_trial=100, device='cpu'):
         action_pred = action_pred.detach().cpu().numpy()
         action_pred = np.argmax(action_pred, axis=-1)
 
-        perf += (gt[-1] == action_pred[-1])
+        perf += (gt[-1] == action_pred[-1, 0])
 
         # check shapes
         # print(ob.shape, gt.shape)
@@ -64,6 +70,9 @@ def get_performance(net, envs, envid, num_trial=100, device='cpu'):
         # check values
         # print(gt)
         # print(action_pred)
+        # print(perf)
+
+
         
     perf /= num_trial
     return perf
@@ -77,7 +86,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 config = {
     'RNGSEED': 6,
     'hidden_size': 256,
-    'lr': 1e-2,
+    'lr': 1e-3,
     'batch_size': 1,
     'seq_len': 200,
     'tasks': ['yang19.dm1-v0'] # ['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
@@ -244,11 +253,11 @@ for i in range(total_training_cycle):
 
         # task performance
         test_time_start = time.time()
-        # perf = get_performance(model, envs, envid, num_trial=100, device=device)
+        perf = get_performance(model, envs, envid, num_trial=100, device=device)
         running_test_time = time.time() - test_time_start
-        # log['stamp'].append(i+1)
-        # log['perf'].append(perf)
-        # print('task performance at {:d} cycle: {:0.2f}'.format(i+1, perf))
+        log['stamp'].append(i+1)
+        log['perf'].append(perf)
+        print('task performance at {:d} cycle: {:0.2f}'.format(i+1, perf))
 
         # training time
         print('Train time: {:0.1f} s/cycle'.format(running_train_time / print_training_cycle))
