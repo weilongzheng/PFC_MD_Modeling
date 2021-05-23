@@ -265,7 +265,7 @@ for i in range(total_training_cycle):
         test_time_start = time.time()
         log['stamps'].append(i+1)
         #   fixation & action performance
-        fix_perf, act_perf = get_full_performance(net, test_env, task_id, len(tasks), num_trial=50, device=device)
+        fix_perf, act_perf = get_full_performance(net, test_env, task_id, len(tasks), num_trial=500, device=device) # set large enough num_trial to get good statistics
         log['fix_perfs'].append(fix_perf)
         log['act_perfs'].append(act_perf)
         print('fixation performance at {:d} cycle: {:0.2f}'.format(i+1, fix_perf))
@@ -317,6 +317,8 @@ font = {'family':'Times New Roman','weight':'normal', 'size':30}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
 plt.plot(log['stamps'], log['fix_perfs'], label='fixation performance')
 plt.plot(log['stamps'], log['act_perfs'], label='action performance')
+# plt.axvline(x=5000, c="r", ls="--", lw=1)
+# plt.axvline(x=10000, c="r", ls="--", lw=1)
 plt.legend(prop=legend_font)
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('Performance', fontdict=font)
