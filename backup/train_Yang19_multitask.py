@@ -158,7 +158,7 @@ tasks = ngym.get_collection('yang19')
 # print(tasks)
 
 envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
-# envs = [gym.make(tasks[0], **config['env_kwargs'])] # only one task
+
 # check original input and output shapes
 # for i in range(len(envs)):
 #     print(envs[i].observation_space.shape)

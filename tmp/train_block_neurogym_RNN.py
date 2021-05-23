@@ -81,6 +81,7 @@ for task in tasks:
     env = ScheduleEnvs([gym.make(task, **config['env_kwargs'])], schedule=schedule, env_input=False)
     datasets.append(ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len']))
 
+
 # for test
 envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
 schedule = RandomSchedule(len(envs))
@@ -118,7 +119,8 @@ net = RNNNet(input_size  = config['input_size' ],
 net = net.to(device)
 print(net, '\n')
 
-criterion = nn.CrossEntropyLoss()
+# criterion = nn.CrossEntropyLoss()
+criterion = nn.MSELoss()
 
 print('training parameters:')
 training_params = list()
@@ -154,7 +156,11 @@ for i in range(total_training_cycle):
 
     inputs, labels = datasets[task_id]()
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)
-    labels = torch.from_numpy(labels.flatten()).type(torch.long).to(device)
+    labels = torch.from_numpy(labels).type(torch.long).to(device)
+    labels = (F.one_hot(labels, num_classes=act_size)).float()
+
+    # inputs = torch.from_numpy(inputs).type(torch.float).to(device)
+    # labels = torch.from_numpy(labels.flatten()).type(torch.long).to(device)
 
     # zero the parameter gradients
     optimizer.zero_grad()
@@ -162,18 +168,12 @@ for i in range(total_training_cycle):
     # forward + backward + optimize
     outputs, _ = net(inputs)
     # check shapes
-    # print("input size: ", env.observation_space.shape)
-    # print("output size: ", env.action_space.n)
     # print("inputs.shape: ", inputs.shape)
     # print("labels.shape: ", labels.shape)
     # print("outputs.shape: ", outputs.shape)
-    # check values
-    # action_pred = outputs.detach().cpu().numpy()
-    # action_pred = np.argmax(action_pred, axis=-1)
-    # print(labels)
-    # print(action_pred)
 
-    loss = criterion(outputs.view(-1, act_size), labels)
+    # loss = criterion(outputs.view(-1, act_size), labels)
+    loss = criterion(outputs, labels)
     loss.backward()
     optimizer.step()
 
@@ -187,7 +187,7 @@ for i in range(total_training_cycle):
         print('Training sample index: {:d}-{:d}'.format(i+1-print_training_cycle, i+1))
 
         # loss
-        print('Cross entropy loss: {:0.5f}'.format(running_loss / print_training_cycle))
+        print('Cross entropy loss: {:0.8f}'.format(running_loss / print_training_cycle))
         running_loss = 0.0
         
         # task performance
@@ -221,9 +221,9 @@ print('Finished Training')
 
 # Cross Entropy loss
 font = {'family':'Times New Roman','weight':'normal', 'size':30}
-plt.plot(log['losses'])
+plt.plot(np.array(log['losses'])*1e3)
 plt.xlabel('Training Cycles', fontdict=font)
-plt.ylabel('CE loss', fontdict=font)
+plt.ylabel('MSE loss * $10^{-3}$', fontdict=font)
 # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
 # plt.ylim([0.0, 1.0])
 # plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
