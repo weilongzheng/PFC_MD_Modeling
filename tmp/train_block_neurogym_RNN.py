@@ -59,10 +59,10 @@ config = {
     'RNGSEED': 5,
     'env_kwargs': {'dt': 100},
     'hidden_size': 256,
-    'lr': 1e-3,
+    'lr': 1e-4,
     'batch_size': 1,
-    'seq_len': 200,
-    'tasks': ngym.get_collection('yang19') # ['yang19.go-v0', 'yang19.dm1-v0'] 
+    'seq_len': 100,
+    'tasks': ngym.get_collection('yang19') # ['yang19.go-v0', 'yang19.dm1-v0']
 }
 
 # set random seed
@@ -74,8 +74,9 @@ torch.manual_seed(RNGSEED)
 ###--------------------------Generate dataset--------------------------###
 
 tasks = config['tasks']
+print(tasks)
 
-# Block training
+# Block training - 2 tasks
 # datasets = []
 # for task in tasks:
 #     schedule = RandomSchedule(1)
@@ -88,7 +89,7 @@ tasks = config['tasks']
 # test_dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
 # test_env = test_dataset.env
 
-# Yang19 collection
+# Interleaved training - 20 tasks
 envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
 schedule = RandomSchedule(len(envs))
 env = ScheduleEnvs(envs, schedule=schedule, env_input=False)
@@ -110,6 +111,10 @@ model_config = {
 }
 config.update(model_config)
 
+# Elman or LSTM
+# net = Net(input_size  = config['input_size' ],
+#           hidden_size = config['hidden_size'],
+#           output_size = config['output_size'])
 # CTRNN model
 net = RNNNet(input_size  = config['input_size' ],
              hidden_size = config['hidden_size'],
@@ -133,7 +138,7 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 6000
+total_training_cycle = 40000
 print_training_cycle = 100
 running_loss = 0.0
 running_train_time = 0
@@ -156,8 +161,10 @@ for i in range(total_training_cycle):
     #     dataset = datasets[0]
 
     inputs, labels = dataset()
+    assert not np.any(np.isnan(inputs))
 
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)
+    # inputs = inputs / (abs(inputs).max() + 1e-15) # normalize inputs
     labels = torch.from_numpy(labels).type(torch.long).to(device) # numpy -> torch
     labels = (F.one_hot(labels, num_classes=act_size)).float() # index -> one-hot vector
 
@@ -166,6 +173,7 @@ for i in range(total_training_cycle):
 
     # forward + backward + optimize
     outputs, _ = net(inputs)
+    
     # check shapes
     # print("inputs.shape: ", inputs.shape)
     # print("labels.shape: ", labels.shape)
@@ -173,6 +181,7 @@ for i in range(total_training_cycle):
 
     loss = criterion(outputs, labels)
     loss.backward()
+    # torch.nn.utils.clip_grad_norm_(training_params, 1.0) # clip the norm of gradients
     optimizer.step()
 
     # print statistics
@@ -185,7 +194,7 @@ for i in range(total_training_cycle):
         print('Training sample index: {:d}-{:d}'.format(i+1-print_training_cycle, i+1))
 
         # loss
-        print('Cross entropy loss: {:0.9f}'.format(running_loss / print_training_cycle))
+        print('MSE loss: {:0.9f}'.format(running_loss / print_training_cycle))
         running_loss = 0.0
         
         # task performance
