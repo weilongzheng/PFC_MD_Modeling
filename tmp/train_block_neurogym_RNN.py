@@ -49,6 +49,26 @@ def get_performance(net, env, num_trial=1000, device='cpu'):
     perf /= num_trial
     return perf
 
+def get_test_loss(net, env, criterion, num_trial=1000, device='cpu'):
+    test_loss = 0.0
+    for i in range(num_trial):
+        env.new_trial()
+        ob, gt = env.ob, env.gt
+
+        ob = ob[:, np.newaxis, :]  # Add batch axis
+        ob = torch.from_numpy(ob).type(torch.float).to(device)
+
+        gt = gt[:, np.newaxis]  # Add batch axis
+        gt = torch.from_numpy(gt).type(torch.long).to(device) # numpy -> torch
+        gt = (F.one_hot(gt, num_classes=act_size)).float() # index -> one-hot vector
+
+        action_pred, _ = net(ob)
+        test_loss += criterion(action_pred, gt).item()
+
+    test_loss /= num_trial
+    return test_loss
+
+
 
 ###--------------------------Training configs--------------------------###
 
@@ -146,6 +166,7 @@ log = {
     'losses': [],
     'stamp': [],
     'perf': [],
+    'test_losses': []
 }
 
 
@@ -193,17 +214,22 @@ for i in range(total_training_cycle):
         print('Total step: {:d}'.format(total_training_cycle))
         print('Training sample index: {:d}-{:d}'.format(i+1-print_training_cycle, i+1))
 
-        # loss
+        # train loss
         print('MSE loss: {:0.9f}'.format(running_loss / print_training_cycle))
         running_loss = 0.0
         
-        # task performance
+        # test
         test_time_start = time.time()
-        perf = get_performance(net, test_env, num_trial=200, device=device)
-        running_test_time = time.time() - test_time_start
         log['stamp'].append(i+1)
+        #   task performance
+        perf = get_performance(net, test_env, num_trial=50, device=device)
         log['perf'].append(perf)
         print('task performance at {:d} cycle: {:0.2f}'.format(i+1, perf))
+        #   test loss
+        test_loss = get_test_loss(net, test_env, criterion=criterion, num_trial=50, device=device)
+        log['test_losses'].append(test_loss)
+        print('test MSE loss at {:d} cycle: {:0.9f}'.format(i+1, test_loss))
+        running_test_time = time.time() - test_time_start
 
         # training time
         print('Predicted left training time: {:0.0f} s'.format(
@@ -229,7 +255,7 @@ print('Finished Training')
 font = {'family':'Times New Roman','weight':'normal', 'size':30}
 plt.plot(np.array(log['losses']))
 plt.xlabel('Training Cycles', fontdict=font)
-plt.ylabel('MSE loss', fontdict=font)
+plt.ylabel('Training MSE loss', fontdict=font)
 # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
 # plt.ylim([0.0, 1.0])
 # plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
@@ -247,4 +273,12 @@ plt.ylim([0.0, 1.0])
 plt.yticks([0.1*i for i in range(11)])
 plt.tight_layout()
 # plt.savefig('./animation/'+'performance.png')
+plt.show()
+
+# Test loss during training
+font = {'family':'Times New Roman','weight':'normal', 'size':30}
+plt.plot(log['stamp'], log['test_losses'])
+plt.xlabel('Training Cycles', fontdict=font)
+plt.ylabel('Test MSE loss', fontdict=font)
+plt.tight_layout()
 plt.show()
