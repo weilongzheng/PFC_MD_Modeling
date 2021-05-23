@@ -44,10 +44,37 @@ def get_performance(net, env, num_trial=1000, device='cpu'):
         action_pred, _ = net(inputs)
         action_pred = action_pred.detach().cpu().numpy()
         action_pred = np.argmax(action_pred, axis=-1)
+
         perf += gt[-1] == action_pred[-1, 0]
 
     perf /= num_trial
     return perf
+
+def get_full_performance(net, env, num_trial=1000, device='cpu'):
+    fix_perf = 0.
+    act_perf = 0.
+    num_no_act_trial = 0
+    for i in range(num_trial):
+        env.new_trial()
+        ob, gt = env.ob, env.gt
+        ob = ob[:, np.newaxis, :]  # Add batch axis
+        inputs = torch.from_numpy(ob).type(torch.float).to(device)
+
+        action_pred, _ = net(inputs)
+        action_pred = action_pred.detach().cpu().numpy()
+        action_pred = np.argmax(action_pred, axis=-1)
+
+        fix_len = sum(gt == 0)
+        act_len = len(gt) - fix_len
+        fix_perf += sum(action_pred[:fix_len, 0] == 0)/fix_len
+        if act_len != 0:
+            act_perf += sum(action_pred[fix_len:, 0] == gt[-1])/act_len
+        else: # no action in this trial
+            num_no_act_trial += 1
+
+    fix_perf /= num_trial
+    act_perf /= num_trial - num_no_act_trial
+    return fix_perf, act_perf
 
 def get_test_loss(net, env, criterion, num_trial=1000, device='cpu'):
     test_loss = 0.0
@@ -67,7 +94,6 @@ def get_test_loss(net, env, criterion, num_trial=1000, device='cpu'):
 
     test_loss /= num_trial
     return test_loss
-
 
 
 ###--------------------------Training configs--------------------------###
@@ -158,14 +184,16 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 40000
+total_training_cycle = 3000
 print_training_cycle = 100
 running_loss = 0.0
 running_train_time = 0
 log = {
     'losses': [],
-    'stamp': [],
-    'perf': [],
+    'stamps': [],
+    'perfs': [],
+    'fix_perfs': [],
+    'act_perfs': [],
     'test_losses': []
 }
 
@@ -218,20 +246,26 @@ for i in range(total_training_cycle):
         print('MSE loss: {:0.9f}'.format(running_loss / print_training_cycle))
         running_loss = 0.0
         
-        # test
+        # test during training
         test_time_start = time.time()
-        log['stamp'].append(i+1)
+        log['stamps'].append(i+1)
+        #   fixation & action performance
+        fix_perf, act_perf = get_full_performance(net, test_env, num_trial=50, device=device)
+        log['fix_perfs'].append(fix_perf)
+        log['act_perfs'].append(act_perf)
+        print('fixation performance at {:d} cycle: {:0.2f}'.format(i+1, fix_perf))
+        print('action performance at {:d} cycle: {:0.2f}'.format(i+1, act_perf))
         #   task performance
-        perf = get_performance(net, test_env, num_trial=50, device=device)
-        log['perf'].append(perf)
-        print('task performance at {:d} cycle: {:0.2f}'.format(i+1, perf))
+        # perf = get_performance(net, test_env, num_trial=50, device=device)
+        # log['perfs'].append(perf)
+        # print('task performance at {:d} cycle: {:0.2f}'.format(i+1, perf))
         #   test loss
-        test_loss = get_test_loss(net, test_env, criterion=criterion, num_trial=50, device=device)
-        log['test_losses'].append(test_loss)
-        print('test MSE loss at {:d} cycle: {:0.9f}'.format(i+1, test_loss))
+        # test_loss = get_test_loss(net, test_env, criterion=criterion, num_trial=50, device=device)
+        # log['test_losses'].append(test_loss)
+        # print('test MSE loss at {:d} cycle: {:0.9f}'.format(i+1, test_loss))
         running_test_time = time.time() - test_time_start
 
-        # training time
+        # left training time
         print('Predicted left training time: {:0.0f} s'.format(
              (running_train_time + running_test_time) * (total_training_cycle - i - 1) / print_training_cycle),
              end='\n\n')
@@ -265,20 +299,23 @@ plt.show()
 
 # Task performance during training
 font = {'family':'Times New Roman','weight':'normal', 'size':30}
-plt.plot(log['stamp'], log['perf'])
+legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
+plt.plot(log['stamps'], log['fix_perfs'], label='fixation performance')
+plt.plot(log['stamps'], log['act_perfs'], label='action performance')
+plt.legend(prop=legend_font)
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('Performance', fontdict=font)
 # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
-plt.ylim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
 plt.yticks([0.1*i for i in range(11)])
 plt.tight_layout()
 # plt.savefig('./animation/'+'performance.png')
 plt.show()
 
 # Test loss during training
-font = {'family':'Times New Roman','weight':'normal', 'size':30}
-plt.plot(log['stamp'], log['test_losses'])
-plt.xlabel('Training Cycles', fontdict=font)
-plt.ylabel('Test MSE loss', fontdict=font)
-plt.tight_layout()
-plt.show()
+# font = {'family':'Times New Roman','weight':'normal', 'size':30}
+# plt.plot(log['stamps'], log['test_losses'])
+# plt.xlabel('Training Cycles', fontdict=font)
+# plt.ylabel('Test MSE loss', fontdict=font)
+# plt.tight_layout()
+# plt.show()
