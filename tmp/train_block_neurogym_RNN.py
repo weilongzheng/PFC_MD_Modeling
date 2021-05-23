@@ -50,7 +50,7 @@ def get_performance(net, env, num_trial=1000, device='cpu'):
     perf /= num_trial
     return perf
 
-def get_full_performance(net, env, num_trial=1000, device='cpu'):
+def get_full_performance(net, env, task_id, num_tasks, num_trial=1000, device='cpu'):
     fix_perf = 0.
     act_perf = 0.
     num_no_act_trial = 0
@@ -58,6 +58,7 @@ def get_full_performance(net, env, num_trial=1000, device='cpu'):
         env.new_trial()
         ob, gt = env.ob, env.gt
         ob = ob[:, np.newaxis, :]  # Add batch axis
+        ob = add_env_input(ob, task_id, num_tasks)
         inputs = torch.from_numpy(ob).type(torch.float).to(device)
 
         action_pred, _ = net(inputs)
@@ -97,6 +98,15 @@ def get_test_loss(net, env, criterion, num_trial=1000, device='cpu'):
     test_loss /= num_trial
     return test_loss
 
+def add_env_input(inputs, task_id, num_tasks):
+    '''
+    add rule inputs in block training setting
+    '''
+    env_inputs = np.zeros((inputs.shape[0], inputs.shape[1], num_tasks), dtype=inputs.dtype)
+    env_inputs[:, :, task_id] = 1.
+    inputs = np.concatenate((inputs, env_inputs), axis=-1)
+    return inputs
+
 
 ###--------------------------Training configs--------------------------###
 
@@ -107,11 +117,11 @@ config = {
     'RNGSEED': 5,
     'env_kwargs': {'dt': 100},
     'hidden_size': 256,
-    'lr': 1e-4,
+    'lr': 1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
     'batch_size': 1,
     'seq_len': 100,
-    'tasks': ngym.get_collection('yang19')
-    # 'tasks': ['yang19.go-v0', 'yang19.dm1-v0']
+    # 'tasks': ngym.get_collection('yang19')
+    'tasks': ['yang19.go-v0', 'yang19.dm1-v0']
 }
 
 # set random seed
@@ -125,29 +135,29 @@ torch.manual_seed(RNGSEED)
 tasks = config['tasks']
 print(tasks)
 
-# Block training - 2 tasks
-# datasets = []
-# for task in tasks:
-#     schedule = RandomSchedule(1)
-#     env = ScheduleEnvs([gym.make(task, **config['env_kwargs'])], schedule=schedule, env_input=False)
-#     datasets.append(ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len']))
-# # for test
-# envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
-# schedule = RandomSchedule(len(envs))
-# test_env = ScheduleEnvs(envs, schedule=schedule, env_input=False)
-# test_dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
-# test_env = test_dataset.env
-
-# Interleaved training - 20 tasks
+# block training - 2 tasks
+datasets = []
+for task in tasks:
+    schedule = RandomSchedule(1)
+    env = ScheduleEnvs([gym.make(task, **config['env_kwargs'])], schedule=schedule, env_input=False)
+    datasets.append(ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len']))
+# get env for test
 envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
 schedule = RandomSchedule(len(envs))
-env = ScheduleEnvs(envs, schedule=schedule, env_input=False)
-dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
-env = dataset.env
-test_env = env
+test_env = ScheduleEnvs(envs, schedule=schedule, env_input=False)
+test_dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
+test_env = test_dataset.env
+
+# interleaved training - 20 tasks
+# envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
+# schedule = RandomSchedule(len(envs))
+# env = ScheduleEnvs(envs, schedule=schedule, env_input=True) # env_input should be true
+# dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
+# env = dataset.env
+# test_env = env
 
 # only for tasks in Yang19 collection
-ob_size = 33
+ob_size = 33 + len(tasks)
 act_size = 17
 
 
@@ -205,14 +215,16 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    # if i < 3000:
-    #     dataset = datasets[0]
-    # elif i > 3000 and i < 6000:
-    #     dataset = datasets[1]
-    # else:
-    #     dataset = datasets[0]
-
+    if i < 5000:
+        task_id = 0 
+    elif i > 5000 and i < 10000:
+        task_id = 1
+    else:
+        task_id = 0
+    
+    dataset = datasets[task_id]
     inputs, labels = dataset()
+    inputs = add_env_input(inputs, task_id, len(tasks))
     assert not np.any(np.isnan(inputs))
 
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)
@@ -253,7 +265,7 @@ for i in range(total_training_cycle):
         test_time_start = time.time()
         log['stamps'].append(i+1)
         #   fixation & action performance
-        fix_perf, act_perf = get_full_performance(net, test_env, num_trial=50, device=device)
+        fix_perf, act_perf = get_full_performance(net, test_env, task_id, len(tasks), num_trial=50, device=device)
         log['fix_perfs'].append(fix_perf)
         log['act_perfs'].append(act_perf)
         print('fixation performance at {:d} cycle: {:0.2f}'.format(i+1, fix_perf))
