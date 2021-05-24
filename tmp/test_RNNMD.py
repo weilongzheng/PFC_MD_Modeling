@@ -20,35 +20,10 @@ import gym
 import neurogym as ngym
 from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
-from model_dev import Net, RNNNet
+from model_dev import RNN_MD
 
 
 ###--------------------------Helper functions--------------------------###
-
-def get_modelpath(envid):
-    # Make local file directories
-    path = Path('.') / 'files'
-    os.makedirs(path, exist_ok=True)
-    path = path / envid
-    os.makedirs(path, exist_ok=True)
-    return path
-
-def get_performance(net, env, num_trial=1000, device='cpu'):
-    perf = 0
-    for i in range(num_trial):
-        env.new_trial()
-        ob, gt = env.ob, env.gt
-        ob = ob[:, np.newaxis, :]  # Add batch axis
-        inputs = torch.from_numpy(ob).type(torch.float).to(device)
-
-        action_pred, _ = net(inputs)
-        action_pred = action_pred.detach().cpu().numpy()
-        action_pred = np.argmax(action_pred, axis=-1)
-
-        perf += gt[-1] == action_pred[-1, 0]
-
-    perf /= num_trial
-    return perf
 
 def get_full_performance(net, env, task_id, num_task, num_trial=1000, device='cpu'):
     fix_perf = 0.
@@ -58,10 +33,9 @@ def get_full_performance(net, env, task_id, num_task, num_trial=1000, device='cp
         env.new_trial()
         ob, gt = env.ob, env.gt
         ob = ob[:, np.newaxis, :]  # Add batch axis
-        ob = add_env_input(ob, task_id, num_task)
         inputs = torch.from_numpy(ob).type(torch.float).to(device)
 
-        action_pred, _ = net(inputs)
+        action_pred, _ = net(inputs, sub_id=task_id)
         action_pred = action_pred.detach().cpu().numpy()
         action_pred = np.argmax(action_pred, axis=-1)
 
@@ -79,34 +53,6 @@ def get_full_performance(net, env, task_id, num_task, num_trial=1000, device='cp
     act_perf /= num_trial - num_no_act_trial
     return fix_perf, act_perf
 
-def get_test_loss(net, env, criterion, num_trial=1000, device='cpu'):
-    test_loss = 0.0
-    for i in range(num_trial):
-        env.new_trial()
-        ob, gt = env.ob, env.gt
-
-        ob = ob[:, np.newaxis, :]  # Add batch axis
-        ob = torch.from_numpy(ob).type(torch.float).to(device)
-
-        gt = gt[:, np.newaxis]  # Add batch axis
-        gt = torch.from_numpy(gt).type(torch.long).to(device) # numpy -> torch
-        gt = (F.one_hot(gt, num_classes=act_size)).float() # index -> one-hot vector
-
-        action_pred, _ = net(ob)
-        test_loss += criterion(action_pred, gt).item()
-
-    test_loss /= num_trial
-    return test_loss
-
-def add_env_input(inputs, task_id, num_task):
-    '''
-    add rule inputs in block training setting
-    '''
-    env_inputs = np.zeros((inputs.shape[0], inputs.shape[1], num_task), dtype=inputs.dtype)
-    env_inputs[:, :, task_id] = 1.
-    inputs = np.concatenate((inputs, env_inputs), axis=-1)
-    return inputs
-
 
 ###--------------------------Training configs--------------------------###
 
@@ -116,7 +62,6 @@ print("device:", device, '\n')
 config = {
     'RNGSEED': 5,
     'env_kwargs': {'dt': 100},
-    'hidden_size': 256,
     'lr': 1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
     'batch_size': 1,
     'seq_len': 100,
@@ -148,16 +93,8 @@ test_env = ScheduleEnvs(envs, schedule=schedule, env_input=False)
 test_dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
 test_env = test_dataset.env
 
-# interleaved training - 20 tasks
-# envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
-# schedule = RandomSchedule(len(envs))
-# env = ScheduleEnvs(envs, schedule=schedule, env_input=True) # env_input should be true
-# dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
-# env = dataset.env
-# test_env = env
-
 # only for tasks in Yang19 collection
-ob_size = 33 + len(tasks)
+ob_size = 33
 act_size = 17
 
 
@@ -166,17 +103,16 @@ act_size = 17
 # Model settings
 model_config = {
     'input_size': ob_size,
+    'hidden_size': 256,
+    'sub_size': 128,
     'output_size': act_size
 }
 config.update(model_config)
 
-# Elman or LSTM
-# net = Net(input_size  = config['input_size' ],
-#           hidden_size = config['hidden_size'],
-#           output_size = config['output_size'])
-# CTRNN model
-net = RNNNet(input_size  = config['input_size' ],
+# RNN_MD model
+net = RNN_MD(input_size  = config['input_size' ],
              hidden_size = config['hidden_size'],
+             sub_size    = config['sub_size'],
              output_size = config['output_size'],
              dt=env.dt).to(device)
 net = net.to(device)
@@ -204,10 +140,8 @@ running_train_time = 0
 log = {
     'losses': [],
     'stamps': [],
-    'perfs': [],
     'fix_perfs': [],
-    'act_perfs': [],
-    'test_losses': []
+    'act_perfs': []
 }
 
 
@@ -215,16 +149,15 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    if i < 8000:
+    if i < 2000:
         task_id = 0 
-    elif i > 8000 and i < 16000:
+    elif i > 2000 and i < 4000:
         task_id = 1
     else:
         task_id = 0
     
     dataset = datasets[task_id]
     inputs, labels = dataset()
-    inputs = add_env_input(inputs, task_id, len(tasks))
     assert not np.any(np.isnan(inputs))
 
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)
@@ -236,7 +169,7 @@ for i in range(total_training_cycle):
     optimizer.zero_grad()
 
     # forward + backward + optimize
-    outputs, _ = net(inputs)
+    outputs, _ = net(inputs, sub_id=task_id)
     
     # check shapes
     # print("inputs.shape: ", inputs.shape)
@@ -270,14 +203,6 @@ for i in range(total_training_cycle):
         log['act_perfs'].append(act_perf)
         print('fixation performance at {:d} cycle: {:0.2f}'.format(i+1, fix_perf))
         print('action performance at {:d} cycle: {:0.2f}'.format(i+1, act_perf))
-        #   task performance
-        # perf = get_performance(net, test_env, num_trial=50, device=device)
-        # log['perfs'].append(perf)
-        # print('task performance at {:d} cycle: {:0.2f}'.format(i+1, perf))
-        #   test loss
-        # test_loss = get_test_loss(net, test_env, criterion=criterion, num_trial=50, device=device)
-        # log['test_losses'].append(test_loss)
-        # print('test MSE loss at {:d} cycle: {:0.9f}'.format(i+1, test_loss))
         running_test_time = time.time() - test_time_start
 
         # left training time
@@ -287,15 +212,6 @@ for i in range(total_training_cycle):
         running_train_time = 0
 
 print('Finished Training')
-
-
-# modelpath = get_modelpath(envid)
-
-# save config
-# with open(modelpath / 'config.json', 'w') as f:
-#     json.dump(config, f)
-# save model
-# torch.save(net.state_dict(), modelpath / 'net.pth')
 
 
 ###--------------------------Analysis--------------------------###
@@ -328,11 +244,3 @@ plt.yticks([0.1*i for i in range(11)])
 plt.tight_layout()
 # plt.savefig('./animation/'+'performance.png')
 plt.show()
-
-# Test loss during training
-# font = {'family':'Times New Roman','weight':'normal', 'size':30}
-# plt.plot(log['stamps'], log['test_losses'])
-# plt.xlabel('Training Cycles', fontdict=font)
-# plt.ylabel('Test MSE loss', fontdict=font)
-# plt.tight_layout()
-# plt.show()
