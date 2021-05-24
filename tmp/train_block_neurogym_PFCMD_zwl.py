@@ -13,8 +13,8 @@ import torch
 import torch.nn as nn
 import gym
 import neurogym as ngym
-from model_dev import PytorchPFCMD
-from model_dev import RNNNet
+from model_dev_zwl import PytorchPFCMD
+from model_dev_zwl import RNNNet
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -80,7 +80,7 @@ config = {
     'lr': 1e-2,
     'batch_size': 1,
     'seq_len': 200,
-    'tasks': ['yang19.dm1-v0'] # ['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
+    'tasks': ['yang19.ctxdm1-v0'] #['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
 }
 
 tasks = config['tasks']
@@ -114,8 +114,9 @@ for i in range(len(envs)):
     datasets.append(dataset)
 
 # observation space
-# ob_size_list = [ datasets[i].env.observation_space.shape[0] for i in range(len(datasets)) ]
-# ob_size = sum(ob_size_list)
+#ob_size_list = [ datasets[i].env.observation_space.shape[0] for i in range(len(datasets)) ]
+#ob_size = sum(ob_size_list)
+#import pdb;pdb.set_trace()
 ob_size_per_task = 33
 ob_size = 33 * len(datasets)
 
@@ -228,7 +229,7 @@ for i in range(total_training_cycle):
                               seq_len=config['seq_len'], envid=envid)
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)[:, 0, :] # batch_size should be 1
     labels = torch.from_numpy(labels.flatten()).type(torch.long).to(device)
-
+    import pdb;pdb.set_trace()
     # zero the parameter gradients
     optimizer.zero_grad()
 
