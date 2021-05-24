@@ -149,9 +149,9 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    if i < 2000:
+    if i < 1000:
         task_id = 0 
-    elif i > 2000 and i < 4000:
+    elif i > 1000 and i < 2000:
         task_id = 1
     else:
         task_id = 0
@@ -169,8 +169,11 @@ for i in range(total_training_cycle):
     optimizer.zero_grad()
 
     # forward + backward + optimize
-    outputs, _ = net(inputs, sub_id=task_id)
-    
+    outputs, rnn_activity = net(inputs, sub_id=task_id)
+    # check PFC activities
+    # if i % 100 == 99:
+    #     plt.plot(rnn_activity[-1, 0, :].detach().numpy())
+    #     plt.show()
     # check shapes
     # print("inputs.shape: ", inputs.shape)
     # print("labels.shape: ", labels.shape)
