@@ -50,7 +50,7 @@ def get_performance(net, env, num_trial=1000, device='cpu'):
     perf /= num_trial
     return perf
 
-def get_full_performance(net, env, task_id, num_tasks, num_trial=1000, device='cpu'):
+def get_full_performance(net, env, task_id, num_task, num_trial=1000, device='cpu'):
     fix_perf = 0.
     act_perf = 0.
     num_no_act_trial = 0
@@ -58,7 +58,7 @@ def get_full_performance(net, env, task_id, num_tasks, num_trial=1000, device='c
         env.new_trial()
         ob, gt = env.ob, env.gt
         ob = ob[:, np.newaxis, :]  # Add batch axis
-        ob = add_env_input(ob, task_id, num_tasks)
+        ob = add_env_input(ob, task_id, num_task)
         inputs = torch.from_numpy(ob).type(torch.float).to(device)
 
         action_pred, _ = net(inputs)
@@ -98,11 +98,11 @@ def get_test_loss(net, env, criterion, num_trial=1000, device='cpu'):
     test_loss /= num_trial
     return test_loss
 
-def add_env_input(inputs, task_id, num_tasks):
+def add_env_input(inputs, task_id, num_task):
     '''
     add rule inputs in block training setting
     '''
-    env_inputs = np.zeros((inputs.shape[0], inputs.shape[1], num_tasks), dtype=inputs.dtype)
+    env_inputs = np.zeros((inputs.shape[0], inputs.shape[1], num_task), dtype=inputs.dtype)
     env_inputs[:, :, task_id] = 1.
     inputs = np.concatenate((inputs, env_inputs), axis=-1)
     return inputs
@@ -265,7 +265,7 @@ for i in range(total_training_cycle):
         test_time_start = time.time()
         log['stamps'].append(i+1)
         #   fixation & action performance
-        fix_perf, act_perf = get_full_performance(net, test_env, task_id, len(tasks), num_trial=500, device=device) # set large enough num_trial to get good statistics
+        fix_perf, act_perf = get_full_performance(net, test_env, task_id=task_id, num_task=len(tasks), num_trial=500, device=device) # set large enough num_trial to get good statistics
         log['fix_perfs'].append(fix_perf)
         log['act_perfs'].append(act_perf)
         print('fixation performance at {:d} cycle: {:0.2f}'.format(i+1, fix_perf))
