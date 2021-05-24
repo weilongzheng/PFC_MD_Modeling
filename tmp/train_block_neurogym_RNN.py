@@ -190,7 +190,7 @@ criterion = nn.MSELoss()
 print('training parameters:')
 training_params = list()
 for name, param in net.named_parameters():
-    if True: # 'rnn' not in name:
+    if 'rnn.input2h' not in name:
         print(name)
         training_params.append(param)
 print()
@@ -215,9 +215,9 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    if i < 5000:
+    if i < 8000:
         task_id = 0 
-    elif i > 5000 and i < 10000:
+    elif i > 8000 and i < 16000:
         task_id = 1
     else:
         task_id = 0
@@ -317,8 +317,8 @@ font = {'family':'Times New Roman','weight':'normal', 'size':30}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
 plt.plot(log['stamps'], log['fix_perfs'], label='fixation performance')
 plt.plot(log['stamps'], log['act_perfs'], label='action performance')
-# plt.axvline(x=5000, c="r", ls="--", lw=1)
-# plt.axvline(x=10000, c="r", ls="--", lw=1)
+# plt.axvline(x=5000, c="k", ls="--", lw=1)
+# plt.axvline(x=10000, c="k", ls="--", lw=1)
 plt.legend(prop=legend_font)
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('Performance', fontdict=font)

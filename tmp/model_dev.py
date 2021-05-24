@@ -902,8 +902,14 @@ class CTRNN(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
+        # initialized as an identity matrix*0.5
         nn.init.eye_(self.h2h.weight)
         self.h2h.weight.data *= 0.5
+
+        # the same as pytorch built-in RNN module
+        # k = (1./self.hidden_size)**0.5
+        # nn.init.uniform_(self.h2h.weight, a=-k, b=k)
+        # nn.init.uniform_(self.h2h.bias, a=-k, b=k)
 
     def init_hidden(self, input):
         batch_size = input.shape[1]
