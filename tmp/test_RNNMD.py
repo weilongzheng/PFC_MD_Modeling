@@ -171,9 +171,9 @@ for i in range(total_training_cycle):
     # forward + backward + optimize
     outputs, rnn_activity = net(inputs, sub_id=task_id)
     # check PFC activities
-    # if i % 100 == 99:
-    #     plt.plot(rnn_activity[-1, 0, :].detach().numpy())
-    #     plt.show()
+    if i % 100 == 99:
+        plt.plot(rnn_activity[-1, 0, :].detach().numpy())
+        plt.show()
     # check shapes
     # print("inputs.shape: ", inputs.shape)
     # print("labels.shape: ", labels.shape)
