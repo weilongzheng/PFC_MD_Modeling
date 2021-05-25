@@ -902,8 +902,14 @@ class CTRNN(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
+        # initialized as an identity matrix*0.5
         nn.init.eye_(self.h2h.weight)
         self.h2h.weight.data *= 0.5
+
+        # the same as pytorch built-in RNN module
+        # k = (1./self.hidden_size)**0.5
+        # nn.init.uniform_(self.h2h.weight, a=-k, b=k)
+        # nn.init.uniform_(self.h2h.bias, a=-k, b=k)
 
     def init_hidden(self, input):
         batch_size = input.shape[1]
@@ -949,5 +955,96 @@ class RNNNet(nn.Module):
 
     def forward(self, x):
         rnn_activity, _ = self.rnn(x)
+        out = self.fc(rnn_activity)
+        return out, rnn_activity
+
+
+class CTRNN_MD(nn.Module):
+    """Continuous-time RNN that can take MD inputs.
+    Args:
+        input_size: Number of input neurons
+        hidden_size: Number of hidden neurons
+        sub_size: Number of subpopulation neurons
+    Inputs:
+        input: (seq_len, batch, input_size), network input
+        hidden: (batch, hidden_size), initial hidden activity
+    """
+
+    def __init__(self, input_size, hidden_size, sub_size, dt=None, **kwargs):
+        super().__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.sub_size = sub_size
+        self.tau = 100
+        if dt is None:
+            alpha = 1
+        else:
+            alpha = dt / self.tau
+        self.alpha = alpha
+        self.oneminusalpha = 1 - alpha
+
+        self.input2h = nn.Linear(input_size, sub_size)
+        self.h2h = nn.Linear(hidden_size, hidden_size)
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        # initialized as an identity matrix*0.5
+        nn.init.eye_(self.h2h.weight)
+        self.h2h.weight.data *= 0.5
+
+        # the same as pytorch built-in RNN module
+        # k = (1./self.hidden_size)**0.5
+        # nn.init.uniform_(self.h2h.weight, a=-k, b=k)
+        # nn.init.uniform_(self.h2h.bias, a=-k, b=k)
+
+    def init_hidden(self, input):
+        batch_size = input.shape[1]
+        return torch.zeros(batch_size, self.hidden_size).to(input.device)
+
+    def recurrence(self, input, sub_id, hidden):
+        """Recurrence helper."""
+        ext_input = self.input2h(input)
+        rec_input = self.h2h(hidden)
+        # expand inputs
+        ext_input_expanded = torch.zeros_like(rec_input)
+        ext_input_expanded[:, sub_id*self.sub_size:(sub_id+1)*self.sub_size] = ext_input
+        pre_activation = ext_input_expanded + rec_input
+        h_new = torch.relu(hidden * self.oneminusalpha +
+                           pre_activation * self.alpha)
+        return h_new
+
+    def forward(self, input, sub_id, hidden=None):
+        """Propogate input through the network."""
+        if hidden is None:
+            hidden = self.init_hidden(input)
+
+        output = []
+        steps = range(input.size(0))
+        for i in steps:
+            hidden = self.recurrence(input[i], sub_id, hidden)
+            output.append(hidden)
+
+        output = torch.stack(output, dim=0)
+        return output, hidden
+
+class RNN_MD(nn.Module):
+    """Recurrent network model.
+    Args:
+        input_size: int, input size
+        hidden_size: int, hidden size
+        sub_size: int, subpopulation size
+        output_size: int, output size
+        rnn: str, type of RNN, lstm, rnn, ctrnn, or eirnn
+    """
+
+    def __init__(self, input_size, hidden_size, sub_size, output_size, **kwargs):
+        super().__init__()
+
+        # Continuous time RNN
+        self.rnn = CTRNN_MD(input_size, hidden_size, sub_size, **kwargs)
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x, sub_id):
+        rnn_activity, _ = self.rnn(x, sub_id)
         out = self.fc(rnn_activity)
         return out, rnn_activity
