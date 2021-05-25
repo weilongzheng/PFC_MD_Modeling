@@ -80,7 +80,7 @@ config = {
     'lr': 1e-2,
     'batch_size': 1,
     'seq_len': 200,
-    'tasks': ['yang19.ctxdm1-v0'] #['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
+    'tasks': ['yang19.dm1-v0'] #['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
 }
 
 tasks = config['tasks']
