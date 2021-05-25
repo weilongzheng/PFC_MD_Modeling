@@ -194,7 +194,7 @@ optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
 total_training_cycle = 40000
-print_training_cycle = 100
+print_training_cycle = 50
 running_loss = 0.0
 running_train_time = 0
 log = {
@@ -211,6 +211,7 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
+    # control training paradigm
     if i < 6000:
         task_id = 0 
     elif i > 6000 and i < 12000:
@@ -315,14 +316,14 @@ label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
 title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
 for env_id in range(len(datasets)):
-    plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fixation performance')
-    plt.plot(log['stamps'], log['act_perfs'][env_id], label='action performance')
+    plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
+    plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
     # plt.axvline(x=5000, c="k", ls="--", lw=1)
     # plt.axvline(x=10000, c="k", ls="--", lw=1)
     plt.legend(prop=legend_font)
     plt.xlabel('Training Cycles', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
-    plt.title(tasks[env_id], fontdict=title_font)
+    plt.title('Task{:d}: '.format(env_id+1)+tasks[env_id], fontdict=title_font)
     # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
     plt.ylim([0.0, 1.05])
     plt.yticks([0.1*i for i in range(11)])

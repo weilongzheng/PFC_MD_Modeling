@@ -86,12 +86,8 @@ for task in tasks:
     schedule = RandomSchedule(1)
     env = ScheduleEnvs([gym.make(task, **config['env_kwargs'])], schedule=schedule, env_input=False)
     datasets.append(ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len']))
-# get env for test
-envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
-schedule = RandomSchedule(len(envs))
-test_env = ScheduleEnvs(envs, schedule=schedule, env_input=False)
-test_dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
-test_env = test_dataset.env
+# get envs for test
+test_envs = [datasets[env_id].env for env_id in range(len(datasets))]
 
 # only for tasks in Yang19 collection
 ob_size = 33
@@ -134,14 +130,14 @@ optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
 total_training_cycle = 40000
-print_training_cycle = 100
+print_training_cycle = 50
 running_loss = 0.0
 running_train_time = 0
 log = {
     'losses': [],
     'stamps': [],
-    'fix_perfs': [],
-    'act_perfs': []
+    'fix_perfs': [[], []],
+    'act_perfs': [[], []]
 }
 
 
@@ -171,9 +167,9 @@ for i in range(total_training_cycle):
     # forward + backward + optimize
     outputs, rnn_activity = net(inputs, sub_id=task_id)
     # check PFC activities
-    if i % 100 == 99:
-        plt.plot(rnn_activity[-1, 0, :].detach().numpy())
-        plt.show()
+    # if i % 100 == 99:
+    #     plt.plot(rnn_activity[-1, 0, :].detach().numpy())
+    #     plt.show()
     # check shapes
     # print("inputs.shape: ", inputs.shape)
     # print("labels.shape: ", labels.shape)
@@ -201,11 +197,13 @@ for i in range(total_training_cycle):
         test_time_start = time.time()
         log['stamps'].append(i+1)
         #   fixation & action performance
-        fix_perf, act_perf = get_full_performance(net, test_env, task_id=task_id, num_task=len(tasks), num_trial=500, device=device) # set large enough num_trial to get good statistics
-        log['fix_perfs'].append(fix_perf)
-        log['act_perfs'].append(act_perf)
-        print('fixation performance at {:d} cycle: {:0.2f}'.format(i+1, fix_perf))
-        print('action performance at {:d} cycle: {:0.2f}'.format(i+1, act_perf))
+        print('Performance')
+        for env_id in range(len(datasets)):
+            fix_perf, act_perf = get_full_performance(net, test_envs[env_id], task_id=task_id, num_task=len(tasks), num_trial=200, device=device) # set large enough num_trial to get good statistics
+            log['fix_perfs'][env_id].append(fix_perf)
+            log['act_perfs'][env_id].append(act_perf)
+            print('  fix performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, fix_perf))
+            print('  act performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, act_perf))
         running_test_time = time.time() - test_time_start
 
         # left training time
@@ -232,18 +230,21 @@ plt.tight_layout()
 plt.show()
 
 # Task performance during training
-font = {'family':'Times New Roman','weight':'normal', 'size':30}
+label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
-plt.plot(log['stamps'], log['fix_perfs'], label='fixation performance')
-plt.plot(log['stamps'], log['act_perfs'], label='action performance')
-# plt.axvline(x=5000, c="k", ls="--", lw=1)
-# plt.axvline(x=10000, c="k", ls="--", lw=1)
-plt.legend(prop=legend_font)
-plt.xlabel('Training Cycles', fontdict=font)
-plt.ylabel('Performance', fontdict=font)
-# plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
-plt.ylim([0.0, 1.05])
-plt.yticks([0.1*i for i in range(11)])
-plt.tight_layout()
-# plt.savefig('./animation/'+'performance.png')
-plt.show()
+for env_id in range(len(datasets)):
+    plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
+    plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
+    # plt.axvline(x=5000, c="k", ls="--", lw=1)
+    # plt.axvline(x=10000, c="k", ls="--", lw=1)
+    plt.legend(prop=legend_font)
+    plt.xlabel('Training Cycles', fontdict=label_font)
+    plt.ylabel('Performance', fontdict=label_font)
+    plt.title('Task{:d}: '.format(env_id+1)+tasks[env_id], fontdict=title_font)
+    # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
+    plt.ylim([0.0, 1.05])
+    plt.yticks([0.1*i for i in range(11)])
+    plt.tight_layout()
+    # plt.savefig('./animation/'+'performance.png')
+    plt.show()
