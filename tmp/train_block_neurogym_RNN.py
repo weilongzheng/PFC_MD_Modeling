@@ -25,11 +25,11 @@ from model_dev import Net, RNNNet
 
 ###--------------------------Helper functions--------------------------###
 
-def get_modelpath(envid):
+def get_modelpath(env_id):
     # Make local file directories
     path = Path('.') / 'files'
     os.makedirs(path, exist_ok=True)
-    path = path / envid
+    path = path / env_id
     os.makedirs(path, exist_ok=True)
     return path
 
@@ -141,12 +141,8 @@ for task in tasks:
     schedule = RandomSchedule(1)
     env = ScheduleEnvs([gym.make(task, **config['env_kwargs'])], schedule=schedule, env_input=False)
     datasets.append(ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len']))
-# get env for test
-envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
-schedule = RandomSchedule(len(envs))
-test_env = ScheduleEnvs(envs, schedule=schedule, env_input=False)
-test_dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
-test_env = test_dataset.env
+# get envs for test
+test_envs = [datasets[env_id].env for env_id in range(len(datasets))]
 
 # interleaved training - 20 tasks
 # envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
@@ -205,8 +201,8 @@ log = {
     'losses': [],
     'stamps': [],
     'perfs': [],
-    'fix_perfs': [],
-    'act_perfs': [],
+    'fix_perfs': [[], []],
+    'act_perfs': [[], []],
     'test_losses': []
 }
 
@@ -215,9 +211,9 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    if i < 8000:
+    if i < 5000:
         task_id = 0 
-    elif i > 8000 and i < 16000:
+    elif i > 5000 and i < 10000:
         task_id = 1
     else:
         task_id = 0
@@ -265,11 +261,13 @@ for i in range(total_training_cycle):
         test_time_start = time.time()
         log['stamps'].append(i+1)
         #   fixation & action performance
-        fix_perf, act_perf = get_full_performance(net, test_env, task_id=task_id, num_task=len(tasks), num_trial=500, device=device) # set large enough num_trial to get good statistics
-        log['fix_perfs'].append(fix_perf)
-        log['act_perfs'].append(act_perf)
-        print('fixation performance at {:d} cycle: {:0.2f}'.format(i+1, fix_perf))
-        print('action performance at {:d} cycle: {:0.2f}'.format(i+1, act_perf))
+        print('performance')
+        for env_id in range(len(datasets)):
+            fix_perf, act_perf = get_full_performance(net, test_envs[env_id], task_id=task_id, num_task=len(tasks), num_trial=200, device=device) # set large enough num_trial to get good statistics
+            log['fix_perfs'][env_id].append(fix_perf)
+            log['act_perfs'][env_id].append(act_perf)
+            print('  fix performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, fix_perf))
+            print('  act performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, act_perf))
         #   task performance
         # perf = get_performance(net, test_env, num_trial=50, device=device)
         # log['perfs'].append(perf)
@@ -289,7 +287,7 @@ for i in range(total_training_cycle):
 print('Finished Training')
 
 
-# modelpath = get_modelpath(envid)
+# modelpath = get_modelpath(env_id)
 
 # save config
 # with open(modelpath / 'config.json', 'w') as f:
@@ -301,7 +299,7 @@ print('Finished Training')
 ###--------------------------Analysis--------------------------###
 
 # Cross Entropy loss
-font = {'family':'Times New Roman','weight':'normal', 'size':30}
+font = {'family':'Times New Roman','weight':'normal', 'size':25}
 plt.plot(np.array(log['losses']))
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('Training MSE loss', fontdict=font)
@@ -313,21 +311,24 @@ plt.tight_layout()
 plt.show()
 
 # Task performance during training
-font = {'family':'Times New Roman','weight':'normal', 'size':30}
+label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
-plt.plot(log['stamps'], log['fix_perfs'], label='fixation performance')
-plt.plot(log['stamps'], log['act_perfs'], label='action performance')
-# plt.axvline(x=5000, c="k", ls="--", lw=1)
-# plt.axvline(x=10000, c="k", ls="--", lw=1)
-plt.legend(prop=legend_font)
-plt.xlabel('Training Cycles', fontdict=font)
-plt.ylabel('Performance', fontdict=font)
-# plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
-plt.ylim([0.0, 1.05])
-plt.yticks([0.1*i for i in range(11)])
-plt.tight_layout()
-# plt.savefig('./animation/'+'performance.png')
-plt.show()
+for env_id in range(len(datasets)):
+    plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fixation performance')
+    plt.plot(log['stamps'], log['act_perfs'][env_id], label='action performance')
+    # plt.axvline(x=5000, c="k", ls="--", lw=1)
+    # plt.axvline(x=10000, c="k", ls="--", lw=1)
+    plt.legend(prop=legend_font)
+    plt.xlabel('Training Cycles', fontdict=label_font)
+    plt.ylabel('Performance', fontdict=label_font)
+    plt.title(tasks[env_id], fontdict=title_font)
+    # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
+    plt.ylim([0.0, 1.05])
+    plt.yticks([0.1*i for i in range(11)])
+    plt.tight_layout()
+    # plt.savefig('./animation/'+'performance.png')
+    plt.show()
 
 # Test loss during training
 # font = {'family':'Times New Roman','weight':'normal', 'size':30}
@@ -336,3 +337,77 @@ plt.show()
 # plt.ylabel('Test MSE loss', fontdict=font)
 # plt.tight_layout()
 # plt.show()
+
+
+
+###--------------------------Test helper function--------------------------###
+# def test_get_full_performance(net, env, task_id, num_task, num_trial=1000, device='cpu'):
+#     fix_perf = 0.
+#     act_perf = 0.
+#     num_no_act_trial = 0
+#     for i in range(num_trial):
+#         env.new_trial()
+#         ob, gt = env.ob, env.gt
+#         ob = ob[:, np.newaxis, :]  # Add batch axis
+#         ob = add_env_input(ob, task_id, num_task)
+#         inputs = torch.from_numpy(ob).type(torch.float).to(device)
+
+#         action_pred, _ = net(inputs)
+#         action_pred = action_pred.detach().cpu().numpy()
+#         action_pred = np.argmax(action_pred, axis=-1)
+#         print(gt.squeeze())
+#         print(action_pred.squeeze())
+
+#         fix_len = sum(gt == 0)
+#         act_len = len(gt) - fix_len
+#         print(fix_len, act_len)
+#         assert all(gt[:fix_len] == 0)
+#         fix_perf += sum(action_pred[:fix_len, 0] == 0)/fix_len
+#         if act_len != 0:
+#             assert all(gt[fix_len:] == gt[-1])
+#             act_perf += sum(action_pred[fix_len:, 0] == gt[-1])/act_len
+#         else: # no action in this trial
+#             num_no_act_trial += 1
+
+#     fix_perf /= num_trial
+#     act_perf /= num_trial - num_no_act_trial
+#     return fix_perf, act_perf
+# fix_perf, act_perf = test_get_full_performance(net, test_envs[env_id], task_id=task_id, num_task=len(tasks), num_trial=10, device=device)
+# print(fix_perf, act_perf)
+
+# works as expected; see example output below
+# ground truth
+# action prediction
+# fixation length of the trial; action length of the trial
+# [0 0 0 0 0 0 0 8 8]
+# [0 0 0 0 0 0 0 7 7]
+# 7 2
+# [0 0 0 0 0 0 0 5 5]
+# [0 0 0 0 0 0 0 6 6]
+# 7 2
+# [ 0  0  0  0  0  0  0  0 14 14]
+# [ 0  0  0  0  0  0  0  0 14 14]
+# 8 2
+# [0 0 0 0 0 0 0 0 0 5 5]
+# [0 0 0 0 0 0 0 0 0 5 5]
+# 9 2
+# [0 0 0 0 0 0 0 0 0 1 1]
+# [0 0 0 0 0 0 0 0 0 1 1]
+# 9 2
+# [0 0 0 0 0 0 0 0 1 1]
+# [0 0 0 0 0 0 0 0 1 1]
+# 8 2
+# [0 0 0 0 0 0 0 7 7]
+# [0 0 0 0 0 0 0 2 7]
+# 7 2
+# [ 0  0  0  0  0  0  0  0  0 14 14]
+# [ 0  0  0  0  0  0  0  0  0 14 14]
+# 9 2
+# [ 0  0  0  0  0  0  0  0  0 15 15]
+# [ 0  0  0  0  0  0  0  0  0 15 15]
+# 9 2
+# [ 0  0  0  0  0  0  0 10 10]
+# [0 0 0 0 0 0 0 9 9]
+# 7 2
+# fixation performance; action performance
+# 1.0 0.65
