@@ -211,9 +211,9 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    if i < 5000:
+    if i < 6000:
         task_id = 0 
-    elif i > 5000 and i < 10000:
+    elif i > 6000 and i < 12000:
         task_id = 1
     else:
         task_id = 0
@@ -261,7 +261,7 @@ for i in range(total_training_cycle):
         test_time_start = time.time()
         log['stamps'].append(i+1)
         #   fixation & action performance
-        print('performance')
+        print('Performance')
         for env_id in range(len(datasets)):
             fix_perf, act_perf = get_full_performance(net, test_envs[env_id], task_id=task_id, num_task=len(tasks), num_trial=200, device=device) # set large enough num_trial to get good statistics
             log['fix_perfs'][env_id].append(fix_perf)
