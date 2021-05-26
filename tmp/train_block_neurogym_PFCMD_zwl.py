@@ -6,15 +6,20 @@ sys.path.append('..')
 from pathlib import Path
 import json
 import time
+import math
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
+from torch.nn import init
+from torch.nn import functional as F
 import gym
 import neurogym as ngym
+from neurogym.wrappers import ScheduleEnvs
+from neurogym.utils.scheduler import RandomSchedule
 from model_dev_zwl import PytorchPFCMD
-from model_dev_zwl import RNNNet
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -68,7 +73,33 @@ def get_performance(net, envs, envid, num_trial=100, device='cpu'):
     perf /= num_trial
     return perf
 
+def get_full_performance(net, env, task_id, num_task, num_trial=1000, device='cpu'):
+    fix_perf = 0.
+    act_perf = 0.
+    num_no_act_trial = 0
+    for i in range(num_trial):
+        env.new_trial()
+        ob, gt = env.ob, env.gt
+        ob = ob[:, np.newaxis, :]  # Add batch axis
+        inputs = torch.from_numpy(ob).type(torch.float).to(device)
 
+        action_pred = model(inputs, labels)
+        action_pred = action_pred.detach().cpu().numpy()
+        action_pred = np.argmax(action_pred, axis=-1)
+
+        fix_len = sum(gt == 0)
+        act_len = len(gt) - fix_len
+        assert all(gt[:fix_len] == 0)
+        fix_perf += sum(action_pred[:fix_len, 0] == 0)/fix_len
+        if act_len != 0:
+            assert all(gt[fix_len:] == gt[-1])
+            act_perf += sum(action_pred[fix_len:, 0] == gt[-1])/act_len
+        else: # no action in this trial
+            num_no_act_trial += 1
+
+    fix_perf /= num_trial
+    act_perf /= num_trial - num_no_act_trial
+    return fix_perf, act_perf
 ###--------------------------Training configs--------------------------###
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -101,18 +132,18 @@ torch.manual_seed(RNGSEED)
 ###--------------------------Generate dataset--------------------------###
 
 envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
-# check env.dt
-# for env in envs:
-#     print(env.dt)
 
-# Supervised dataset list
 datasets = []
-for i in range(len(envs)):
-    dataset = ngym.Dataset(envs[i], env_kwargs=env_kwargs, \
-                                    batch_size=config['batch_size'], \
-                                    seq_len=config['seq_len'])
-    datasets.append(dataset)
-
+for task in tasks:
+    schedule = RandomSchedule(1)
+    env = ScheduleEnvs([gym.make(task, **config['env_kwargs'])], schedule=schedule, env_input=False)
+    datasets.append(ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len']))
+# get env for test
+envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
+schedule = RandomSchedule(len(envs))
+test_env = ScheduleEnvs(envs, schedule=schedule, env_input=False)
+test_dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
+test_env = test_dataset.env
 # observation space
 #ob_size_list = [ datasets[i].env.observation_space.shape[0] for i in range(len(datasets)) ]
 #ob_size = sum(ob_size_list)
@@ -134,14 +165,6 @@ def get_data(datasets, ob_size_per_task, ob_size, act_size, seq_len, envid):
 
     return inputs, labels
 
-# check shapes
-# inputs, labels = get_data(datasets=datasets, ob_size_per_task=ob_size_per_task,\
-#                           ob_size=ob_size, act_size=act_size,\
-#                           seq_len=config['seq_len'], envid=0)
-# print(inputs.shape, labels.shape)
-
-###--------------------------Model configs--------------------------###
-
 # Model settings
 model_config = {
     'Ntasks': len(tasks),
@@ -152,7 +175,7 @@ model_config = {
     'num_active': 5, # num MD active per context
     'n_output': act_size,
     'MDeffect': False,
-    'PFClearn': False,
+    'PFClearn': True,
 }
 config.update(model_config)
 
@@ -165,24 +188,8 @@ model = PytorchPFCMD(Ntasks=config['Ntasks'], input_size_per_task=config['input_
                      num_output=config['n_output'], MDeffect=config['MDeffect'])
 print(model, '\n')
 
-# check senory input layer
-# font = {'family':'Times New Roman','weight':'normal', 'size':20}
-# plt.figure(figsize=(15, 10))
-# ax = sns.heatmap(model.sensory2pfc.wIn, cmap='Reds')
-# ax.set_xlabel('Input unit index', fontdict=font)
-# ax.set_ylabel('PFC neuron index', fontdict=font)
-# ax.set_title('$ W_{input} $', fontdict=font)
-# ax.set_xticks([0, 65])
-# ax.set_xticklabels([1, 66], rotation=0)
-# ax.set_yticks([0, 399, 799, 999])
-# ax.set_yticklabels([1, 400, 800, 1000], rotation=0)
-# cbar = ax.collections[0].colorbar
-# cbar.set_label('connection weight', fontdict=font)
-# plt.tight_layout()
-# plt.show()
-
-criterion = nn.CrossEntropyLoss()
-
+#criterion = nn.CrossEntropyLoss()
+criterion = nn.MSELoss()
 print('training parameters:')
 training_params = list()
 for name, param in model.named_parameters():
@@ -203,7 +210,7 @@ running_loss = 0.0
 running_train_time = 0.0
 log = {
     'losses': [],
-    'stamp': [],
+    'stamps': [],
     'perf': [],
     'MDouts_all': np.zeros(shape=(total_training_cycle, config['seq_len'], config['Num_MD'])),
     'MDpreTraces_all': np.zeros(shape=(total_training_cycle, config['seq_len'], config['n_neuron'])),
@@ -217,18 +224,19 @@ for i in range(total_training_cycle):
     train_time_start = time.time()
 
     # if i < 50:
-    #     envid = 0
+    #     task_id = 0
     # elif i >= 50 and i < 100:
-    #     envid = 1
+    #     task_id = 1
     # elif i >= 100:
-    #     envid = 0
-    envid = 0
+    #     task_id = 0
+    task_id = 0
 
-    inputs, labels = get_data(datasets=datasets, ob_size_per_task=ob_size_per_task,\
-                              ob_size=ob_size, act_size=act_size,\
-                              seq_len=config['seq_len'], envid=envid)
+    dataset = datasets[task_id]
+    inputs, labels = dataset()
+    assert not np.any(np.isnan(inputs))
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)[:, 0, :] # batch_size should be 1
     labels = torch.from_numpy(labels.flatten()).type(torch.long).to(device)
+    labels = (F.one_hot(labels, num_classes=act_size)).float() # index -> one-hot vector
     import pdb;pdb.set_trace()
     # zero the parameter gradients
     optimizer.zero_grad()
@@ -270,7 +278,6 @@ for i in range(total_training_cycle):
         torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1.0)
     optimizer.step()
 
-
     # print statistics
     log['losses'].append(loss.item())
     running_loss += loss.item()
@@ -280,47 +287,37 @@ for i in range(total_training_cycle):
         print('Total step: {:d}'.format(total_training_cycle))
         print('Training sample index: {:d}-{:d}'.format(i+1-print_training_cycle, i+1))
 
-        # loss
-        print('Cross entropy loss: {:0.5f}'.format(running_loss / print_training_cycle))
+        # train loss
+        print('MSE loss: {:0.9f}'.format(running_loss / print_training_cycle))
         running_loss = 0.0
-
-        # task performance
+        
+        # test during training
         test_time_start = time.time()
-        perf = get_performance(model, envs, envid, num_trial=100, device=device)
+        log['stamps'].append(i+1)
+        #   fixation & action performance
+        fix_perf, act_perf = get_full_performance(model, test_env, task_id=task_id, num_task=len(tasks), num_trial=100, device=device) # set large enough num_trial to get good statistics
+        log['fix_perfs'].append(fix_perf)
+        log['act_perfs'].append(act_perf)
+        print('fixation performance at {:d} cycle: {:0.2f}'.format(i+1, fix_perf))
+        print('action performance at {:d} cycle: {:0.2f}'.format(i+1, act_perf))
         running_test_time = time.time() - test_time_start
-        log['stamp'].append(i+1)
-        log['perf'].append(perf)
-        print('task performance at {:d} cycle: {:0.2f}'.format(i+1, perf))
 
-        # training time
-        print('Train time: {:0.1f} s/cycle'.format(running_train_time / print_training_cycle))
-        print('Test time: {:0.1f} s'.format(running_test_time / print_training_cycle))
+        # left training time
         print('Predicted left training time: {:0.0f} s'.format(
              (running_train_time + running_test_time) * (total_training_cycle - i - 1) / print_training_cycle),
-              end='\n\n')
+             end='\n\n')
         running_train_time = 0
-
 
 print('Finished Training')
 
 
-# modelpath = get_modelpath(envid)
-
-# save model
-# torch.save(model.state_dict(), modelpath / 'model.pth')
-
-# save config
-# with open(modelpath / 'config.json', 'w') as f:
-#     json.dump(config, f)
-
-
-###--------------------------Plot utils--------------------------###
+###--------------------------Analysis--------------------------###
 
 # Cross Entropy loss
 font = {'family':'Times New Roman','weight':'normal', 'size':30}
-plt.plot(log['losses'])
+plt.plot(np.array(log['losses']))
 plt.xlabel('Training Cycles', fontdict=font)
-plt.ylabel('CE loss', fontdict=font)
+plt.ylabel('Training MSE loss', fontdict=font)
 # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
 # plt.ylim([0.0, 1.0])
 # plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
@@ -330,12 +327,17 @@ plt.show()
 
 # Task performance during training
 font = {'family':'Times New Roman','weight':'normal', 'size':30}
-plt.plot(log['stamp'], log['perf'])
+legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
+plt.plot(log['stamps'], log['fix_perfs'], label='fixation performance')
+plt.plot(log['stamps'], log['act_perfs'], label='action performance')
+# plt.axvline(x=5000, c="k", ls="--", lw=1)
+# plt.axvline(x=10000, c="k", ls="--", lw=1)
+plt.legend(prop=legend_font)
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('Performance', fontdict=font)
 # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
-# plt.ylim([0.0, 1.0])
-# plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+plt.ylim([0.0, 1.05])
+plt.yticks([0.1*i for i in range(11)])
 plt.tight_layout()
 # plt.savefig('./animation/'+'performance.png')
 plt.show()
