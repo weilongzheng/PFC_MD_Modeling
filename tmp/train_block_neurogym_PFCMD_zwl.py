@@ -223,13 +223,13 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-    # if i < 50:
-    #     task_id = 0
-    # elif i >= 50 and i < 100:
-    #     task_id = 1
-    # elif i >= 100:
-    #     task_id = 0
-    task_id = 0
+     if i < 50:
+         task_id = 0
+     elif i >= 50 and i < 100:
+         task_id = 1
+     elif i >= 100:
+         task_id = 0
+#    task_id = 0
 
     dataset = datasets[task_id]
     inputs, labels = dataset()
