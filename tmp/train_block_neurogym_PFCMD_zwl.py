@@ -37,7 +37,13 @@ def get_modelpath(envid):
     path = path / envid
     os.makedirs(path, exist_ok=True)
     return path
+# Get data of a trial
+def get_data(datasets, ob_size_per_task, ob_size, act_size, seq_len, envid):
+    Nevns = len(datasets)
+    inputs = np.zeros(shape=(seq_len, config['batch_size'], ob_size))
+    inputs[:, :, ob_size_per_task*envid:ob_size_per_task*(envid+1)], labels = datasets[envid]()
 
+    return inputs, labels
 # get task performance
 def get_performance(net, envs, envid, num_trial=100, device='cpu'):
     perf = 0
@@ -114,12 +120,6 @@ config = {
     'tasks': ['yang19.dm1-v0'] #['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
 }
 
-tasks = config['tasks']
-print('Training paradigm: task1 -> task2 -> task1')
-for i in range(len(tasks)):
-    print('Training task '+f'{i+1}', tasks[i])
-print()
-
 env_kwargs = {'dt': 100}
 config['env_kwargs'] = env_kwargs
 
@@ -128,49 +128,32 @@ RNGSEED = config['RNGSEED']
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-
-###--------------------------Generate dataset--------------------------###
-
-envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
-
+tasks = config['tasks']
 datasets = []
 for task in tasks:
     schedule = RandomSchedule(1)
     env = ScheduleEnvs([gym.make(task, **config['env_kwargs'])], schedule=schedule, env_input=False)
     datasets.append(ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len']))
 # get env for test
-envs = [gym.make(task, **config['env_kwargs']) for task in tasks]
-schedule = RandomSchedule(len(envs))
-test_env = ScheduleEnvs(envs, schedule=schedule, env_input=False)
-test_dataset = ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len'])
-test_env = test_dataset.env
+test_envs = [datasets[env_id].env for env_id in range(len(datasets))]
+
 # observation space
 #ob_size_list = [ datasets[i].env.observation_space.shape[0] for i in range(len(datasets)) ]
 #ob_size = sum(ob_size_list)
-#import pdb;pdb.set_trace()
-ob_size_per_task = 33
-ob_size = 33 * len(datasets)
-
 # action space
 # act_size = [ datasets[i].env.action_space.n for i in range(len(datasets)) ]
 # assert len(np.unique(act_size)) == 1 # the action spaces should be the same
 # act_size = np.unique(act_size)[0]
+ob_size_per_task = 33
+ob_size = 33 * len(datasets)
 act_size = 17
-
-# Get data of a trial
-def get_data(datasets, ob_size_per_task, ob_size, act_size, seq_len, envid):
-    Nevns = len(datasets)
-    inputs = np.zeros(shape=(seq_len, config['batch_size'], ob_size))
-    inputs[:, :, ob_size_per_task*envid:ob_size_per_task*(envid+1)], labels = datasets[envid]()
-
-    return inputs, labels
 
 # Model settings
 model_config = {
     'Ntasks': len(tasks),
     'input_size_per_task': ob_size_per_task,
     'n_neuron': 1000,
-    'n_neuron_per_cue': 1000,
+    'n_neuron_per_cue': 400,
     'Num_MD': 10,
     'num_active': 5, # num MD active per context
     'n_output': act_size,
@@ -178,7 +161,6 @@ model_config = {
     'PFClearn': True,
 }
 config.update(model_config)
-
 
 ###--------------------------Train network--------------------------###
 
@@ -223,21 +205,22 @@ for i in range(total_training_cycle):
 
     train_time_start = time.time()
 
-     if i < 50:
-         task_id = 0
-     elif i >= 50 and i < 100:
-         task_id = 1
-     elif i >= 100:
-         task_id = 0
-#    task_id = 0
+#     if i < 50:
+#         task_id = 0
+#     elif i >= 50 and i < 100:
+#         task_id = 1
+#     elif i >= 100:
+#         task_id = 0
+    task_id = 0
 
     dataset = datasets[task_id]
     inputs, labels = dataset()
+    import pdb;pdb.set_trace()
     assert not np.any(np.isnan(inputs))
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)[:, 0, :] # batch_size should be 1
     labels = torch.from_numpy(labels.flatten()).type(torch.long).to(device)
     labels = (F.one_hot(labels, num_classes=act_size)).float() # index -> one-hot vector
-    import pdb;pdb.set_trace()
+    #import pdb;pdb.set_trace()
     # zero the parameter gradients
     optimizer.zero_grad()
 
