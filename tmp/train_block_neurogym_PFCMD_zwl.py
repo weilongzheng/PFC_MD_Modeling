@@ -86,20 +86,27 @@ def get_full_performance(net, env, task_id, num_task, num_trial=1000, device='cp
     for i in range(num_trial):
         env.new_trial()
         ob, gt = env.ob, env.gt
-        ob = ob[:, np.newaxis, :]  # Add batch axis
-        inputs = torch.from_numpy(ob).type(torch.float).to(device)
+        
+        seq_len = ob.shape[0]
+        ob_size_per_task = ob.shape[1]
+        ob_size = num_task*ob_size_per_task
 
+        inputs = np.zeros(shape=(seq_len, ob_size))
+        inputs[:, ob_size_per_task*task_id:ob_size_per_task*(task_id+1)] = ob
+        inputs = torch.from_numpy(inputs).type(torch.float).to(device)
+        labels = torch.from_numpy(gt.flatten()).type(torch.long).to(device)
+        #
         action_pred = model(inputs, labels)
         action_pred = action_pred.detach().cpu().numpy()
         action_pred = np.argmax(action_pred, axis=-1)
-
+        #import pdb;pdb.set_trace()
         fix_len = sum(gt == 0)
         act_len = len(gt) - fix_len
         assert all(gt[:fix_len] == 0)
-        fix_perf += sum(action_pred[:fix_len, 0] == 0)/fix_len
+        fix_perf += sum(action_pred[:fix_len] == 0)/fix_len
         if act_len != 0:
             assert all(gt[fix_len:] == gt[-1])
-            act_perf += sum(action_pred[fix_len:, 0] == gt[-1])/act_len
+            act_perf += sum(action_pred[fix_len:] == gt[-1])/act_len
         else: # no action in this trial
             num_no_act_trial += 1
 
@@ -117,7 +124,7 @@ config = {
     'lr': 1e-2,
     'batch_size': 1,
     'seq_len': 200,
-    'tasks': ['yang19.dm1-v0'] #['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
+    'tasks': ['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
 }
 
 env_kwargs = {'dt': 100}
@@ -194,6 +201,8 @@ log = {
     'losses': [],
     'stamps': [],
     'perf': [],
+    'fix_perfs': [[], []],
+    'act_perfs': [[], []],
     'MDouts_all': np.zeros(shape=(total_training_cycle, config['seq_len'], config['Num_MD'])),
     'MDpreTraces_all': np.zeros(shape=(total_training_cycle, config['seq_len'], config['n_neuron'])),
     'MDpreTrace_threshold_all': np.zeros(shape=(total_training_cycle, config['seq_len'], 1)),
@@ -214,18 +223,22 @@ for i in range(total_training_cycle):
     task_id = 0
 
     dataset = datasets[task_id]
-    inputs, labels = dataset()
-    import pdb;pdb.set_trace()
+    inputs_raw, labels = dataset()
+    inputs = np.zeros(shape=(config['seq_len'], 1, ob_size))
+    inputs[:, :, ob_size_per_task*task_id:ob_size_per_task*(task_id+1)] = inputs_raw
+    #import pdb;pdb.set_trace()
     assert not np.any(np.isnan(inputs))
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)[:, 0, :] # batch_size should be 1
+    
     labels = torch.from_numpy(labels.flatten()).type(torch.long).to(device)
     labels = (F.one_hot(labels, num_classes=act_size)).float() # index -> one-hot vector
-    #import pdb;pdb.set_trace()
+    
     # zero the parameter gradients
     optimizer.zero_grad()
 
     # forward
     outputs = model(inputs, labels)
+    #import pdb;pdb.set_trace()
     # check shapes
     # print("input size: ", env.observation_space.shape)
     # print("output size: ", env.action_space.n)
@@ -278,11 +291,21 @@ for i in range(total_training_cycle):
         test_time_start = time.time()
         log['stamps'].append(i+1)
         #   fixation & action performance
-        fix_perf, act_perf = get_full_performance(model, test_env, task_id=task_id, num_task=len(tasks), num_trial=100, device=device) # set large enough num_trial to get good statistics
-        log['fix_perfs'].append(fix_perf)
-        log['act_perfs'].append(act_perf)
-        print('fixation performance at {:d} cycle: {:0.2f}'.format(i+1, fix_perf))
-        print('action performance at {:d} cycle: {:0.2f}'.format(i+1, act_perf))
+        print('Performance')
+        for env_id in range(len(datasets)):
+            fix_perf, act_perf = get_full_performance(model, test_envs[env_id], task_id=task_id, num_task=len(tasks), num_trial=200, device=device) # set large enough num_trial to get good statistics
+            log['fix_perfs'][env_id].append(fix_perf)
+            log['act_perfs'][env_id].append(act_perf)
+            print('  fix performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, fix_perf))
+            print('  act performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, act_perf))
+        #   task performance
+        # perf = get_performance(net, test_env, num_trial=50, device=device)
+        # log['perfs'].append(perf)
+        # print('task performance at {:d} cycle: {:0.2f}'.format(i+1, perf))
+        #   test loss
+        # test_loss = get_test_loss(net, test_env, criterion=criterion, num_trial=50, device=device)
+        # log['test_losses'].append(test_loss)
+        # print('test MSE loss at {:d} cycle: {:0.9f}'.format(i+1, test_loss))
         running_test_time = time.time() - test_time_start
 
         # left training time
