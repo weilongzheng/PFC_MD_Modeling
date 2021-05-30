@@ -1099,5 +1099,11 @@ class RNN_MD(nn.Module):
 
     def forward(self, x, sub_id):
         rnn_activity, _ = self.rnn(x, sub_id)
+        
+        # shutdown analysis
+        shutdown_mask = torch.zeros_like(rnn_activity)
+        shutdown_mask[:, :, sub_id*self.rnn.sub_size:(sub_id+1)*self.rnn.sub_size] = 1
+        rnn_activity = rnn_activity.mul(shutdown_mask)
+
         out = self.fc(rnn_activity)
         return out, rnn_activity

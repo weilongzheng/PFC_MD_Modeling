@@ -102,7 +102,7 @@ model_config = {
     'hidden_size': 256,
     'sub_size': 128,
     'output_size': act_size,
-    'MDeffect': True,
+    'MDeffect': False,
     'md_size': 10,
     'md_active_size': 5,
     'md_dt': 0.001,
@@ -137,7 +137,7 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 1500
+total_training_cycle = 9000
 print_every_cycle = 50
 save_every_cycle = 10
 save_times = total_training_cycle//save_every_cycle
@@ -166,9 +166,9 @@ for i in range(total_training_cycle):
     train_time_start = time.time()
     
     # control training paradigm
-    if i < 500:
+    if i < 3000:
         task_id = 0 
-    elif i > 500 and i < 1000:
+    elif i > 3000 and i < 6000:
         task_id = 1
     else:
         task_id = 0
@@ -188,9 +188,10 @@ for i in range(total_training_cycle):
     # forward + backward + optimize
     outputs, rnn_activity = net(inputs, sub_id=task_id)
     # check PFC activities
-    # if i % 100 == 99:
-    #     plt.plot(rnn_activity[-1, 0, :].detach().numpy())
-    #     plt.show()
+    if i % 100 == 99:
+        plt.figure()
+        plt.plot(rnn_activity[-1, 0, :].detach().numpy())
+        plt.show()
     # check shapes
     # print("inputs.shape: ", inputs.shape)
     # print("labels.shape: ", labels.shape)
