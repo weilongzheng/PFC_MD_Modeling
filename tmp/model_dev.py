@@ -310,7 +310,7 @@ class PytorchPFC(nn.Module):
             input_x = torch.zeros(input.shape)
 
         xadd = torch.matmul(self.Jrec, self.activity)
-        xadd += input_x + input  # input: MD inputs
+        xadd += input_x + input  # input_x: MD inputs
         self.xinp += self.dt / self.tau * (-self.xinp + xadd)
         
         if self.noisePresent:
@@ -959,6 +959,7 @@ class RNNNet(nn.Module):
         return out, rnn_activity
 
 
+# CTRNN with MD layer
 class CTRNN_MD(nn.Module):
     """Continuous-time RNN that can take MD inputs.
     Args:
@@ -970,11 +971,13 @@ class CTRNN_MD(nn.Module):
         hidden: (batch, hidden_size), initial hidden activity
     """
 
-    def __init__(self, input_size, hidden_size, sub_size, dt=None, **kwargs):
+    def __init__(self, input_size, hidden_size, sub_size, output_size, MDeffect, md_size, md_active_size, md_dt, dt=None, **kwargs):
         super().__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.sub_size = sub_size
+        self.output_size = output_size
+
         self.tau = 100
         if dt is None:
             alpha = 1
@@ -983,9 +986,21 @@ class CTRNN_MD(nn.Module):
         self.alpha = alpha
         self.oneminusalpha = 1 - alpha
 
+        # sensory input layer
         self.input2h = nn.Linear(input_size, sub_size)
+
+        # hidden layer
         self.h2h = nn.Linear(hidden_size, hidden_size)
         self.reset_parameters()
+
+        # MD layer
+        self.MDeffect = MDeffect
+        if self.MDeffect:
+            self.md = MD(Nneur=hidden_size, Num_MD=md_size, num_active=md_active_size, dt=md_dt)
+            self.md.md_output = np.zeros(md_size)
+            index = np.random.permutation(md_size)
+            self.md.md_output[index[:md_active_size]] = 1 # randomly set part of md_output to 1
+            self.md.md_output_t = np.array([])
 
     def reset_parameters(self):
         # initialized as an identity matrix*0.5
@@ -1005,12 +1020,30 @@ class CTRNN_MD(nn.Module):
         """Recurrence helper."""
         ext_input = self.input2h(input)
         rec_input = self.h2h(hidden)
+
         # expand inputs
         ext_input_expanded = torch.zeros_like(rec_input)
         ext_input_expanded[:, sub_id*self.sub_size:(sub_id+1)*self.sub_size] = ext_input
+
         pre_activation = ext_input_expanded + rec_input
-        h_new = torch.relu(hidden * self.oneminusalpha +
-                           pre_activation * self.alpha)
+
+        # md inputs
+        if self.MDeffect:
+            assert hidden.shape[0] == 1, 'batch size should be 1'
+            assert rec_input.shape[0] == 1, 'batch size should be 1'
+
+            self.md.md_output = self.md(hidden.detach().numpy()[0, :])
+
+            self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
+            rec_inp = rec_input.detach().numpy()[0, :]
+            md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.output_size))
+            md2pfc = md2pfc_weights * rec_inp  
+            md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.output_size), self.md.md_output)
+            md2pfc = torch.from_numpy(md2pfc).view_as(hidden)
+
+            pre_activation += md2pfc
+        
+        h_new = torch.relu(hidden * self.oneminusalpha + pre_activation * self.alpha)
         return h_new
 
     def forward(self, input, sub_id, hidden=None):
@@ -1023,6 +1056,12 @@ class CTRNN_MD(nn.Module):
         for i in steps:
             hidden = self.recurrence(input[i], sub_id, hidden)
             output.append(hidden)
+            
+            # save md outputs
+            # if i==0:
+            #     self.md.md_output_t = self.md.md_output.reshape((1, self.md.md_output.shape[0]))
+            # else:
+            #     self.md.md_output_t = np.concatenate((self.md.md_output_t, self.md.md_output.reshape((1,self.md.md_output.shape[0]))),axis=0)
 
         output = torch.stack(output, dim=0)
         return output, hidden
@@ -1037,11 +1076,10 @@ class RNN_MD(nn.Module):
         rnn: str, type of RNN, lstm, rnn, ctrnn, or eirnn
     """
 
-    def __init__(self, input_size, hidden_size, sub_size, output_size, **kwargs):
+    def __init__(self, input_size, hidden_size, sub_size, output_size, MDeffect, md_size, md_active_size, md_dt, **kwargs):
         super().__init__()
 
-        # Continuous time RNN
-        self.rnn = CTRNN_MD(input_size, hidden_size, sub_size, **kwargs)
+        self.rnn = CTRNN_MD(input_size, hidden_size, sub_size, output_size, MDeffect, md_size, md_active_size, md_dt, **kwargs)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, sub_id):

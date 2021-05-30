@@ -101,16 +101,24 @@ model_config = {
     'input_size': ob_size,
     'hidden_size': 256,
     'sub_size': 128,
-    'output_size': act_size
+    'output_size': act_size,
+    'MDeffect': True,
+    'md_size': 10,
+    'md_active_size': 5,
+    'md_dt': 0.001,
 }
 config.update(model_config)
 
 # RNN_MD model
-net = RNN_MD(input_size  = config['input_size' ],
-             hidden_size = config['hidden_size'],
-             sub_size    = config['sub_size'],
-             output_size = config['output_size'],
-             dt          = config['env_kwargs']['dt']).to(device)
+net = RNN_MD(input_size     = config['input_size' ],
+             hidden_size    = config['hidden_size'],
+             sub_size       = config['sub_size'],
+             output_size    = config['output_size'],
+             dt             = config['env_kwargs']['dt'],
+             MDeffect       = config['MDeffect'],
+             md_size        = config['md_size'],
+             md_active_size = config['md_active_size'],
+             md_dt          = config['md_dt'],).to(device)
 net = net.to(device)
 print(net, '\n')
 
