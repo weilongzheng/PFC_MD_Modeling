@@ -165,7 +165,7 @@ model_config = {
     'num_active': 5, # num MD active per context
     'n_output': act_size,
     'MDeffect': False,
-    'PFClearn': True,
+    'PFClearn': False,
 }
 config.update(model_config)
 
@@ -177,8 +177,8 @@ model = PytorchPFCMD(Ntasks=config['Ntasks'], input_size_per_task=config['input_
                      num_output=config['n_output'], MDeffect=config['MDeffect'])
 print(model, '\n')
 
-criterion = nn.CrossEntropyLoss()
-#criterion = nn.MSELoss()
+#criterion = nn.CrossEntropyLoss()
+criterion = nn.MSELoss()
 print('training parameters:')
 training_params = list()
 for name, param in model.named_parameters():
@@ -231,7 +231,7 @@ for i in range(total_training_cycle):
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)[:, 0, :] # batch_size should be 1
     
     labels = torch.from_numpy(labels.flatten()).type(torch.long).to(device)
-    #labels = (F.one_hot(labels, num_classes=act_size)).float() # index -> one-hot vector
+    labels = (F.one_hot(labels, num_classes=act_size)).float() # index -> one-hot vector
     
     # zero the parameter gradients
     optimizer.zero_grad()
