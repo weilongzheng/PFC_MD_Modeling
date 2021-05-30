@@ -320,7 +320,7 @@ print('Finished Training')
 ###--------------------------Analysis--------------------------###
 
 # Cross Entropy loss
-font = {'family':'Times New Roman','weight':'normal', 'size':30}
+font = {'family':'Times New Roman','weight':'normal', 'size':20}
 plt.plot(np.array(log['losses']))
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('Training MSE loss', fontdict=font)
@@ -332,17 +332,18 @@ plt.tight_layout()
 plt.show()
 
 # Task performance during training
-font = {'family':'Times New Roman','weight':'normal', 'size':30}
+font = {'family':'Times New Roman','weight':'normal', 'size':20}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
-plt.plot(log['stamps'], log['fix_perfs'], label='fixation performance')
-plt.plot(log['stamps'], log['act_perfs'], label='action performance')
+plt.figure()
+plt.plot(log['stamps'], log['fix_perfs'][0], label='fixation')
+plt.plot(log['stamps'], log['act_perfs'][0], label='action')
 # plt.axvline(x=5000, c="k", ls="--", lw=1)
 # plt.axvline(x=10000, c="k", ls="--", lw=1)
 plt.legend(prop=legend_font)
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('Performance', fontdict=font)
 # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
-plt.ylim([0.0, 1.05])
+plt.ylim([-0.05, 1.05])
 plt.yticks([0.1*i for i in range(11)])
 plt.tight_layout()
 # plt.savefig('./animation/'+'performance.png')

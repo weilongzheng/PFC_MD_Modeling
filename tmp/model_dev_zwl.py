@@ -210,6 +210,18 @@ class SensoryInputLayer():
             self.wIn[self.Nsub*taski : self.Nsub*(taski+1),  \
                      self.input_size_per_task*taski :  self.input_size_per_task*(taski+1)] = \
                      np.random.uniform(lowcue, highcue, size=(self.Nsub, self.input_size_per_task)) * self.cueFactor
+                     
+                ## plot Win
+#        import seaborn as sns
+#        ax = sns.heatmap(self.wIn,cmap='Reds')
+#        ax.set_yticks(np.arange(0,1001,200))
+#        ax.set_yticklabels(np.arange(0,1001,200), rotation=0)
+#        ax.set_xticklabels(np.arange(1,5,1), rotation=0)
+#        ax.set_xlabel('Cue Inputs')
+#        ax.set_ylabel('PFC Neuron Index')
+#        ax.set_title('Input Weights')
+#        plt.tight_layout()
+#        import pdb;pdb.set_trace() 
 
         # init input weights as in pytorch linear layer
         # k = np.sqrt(self.input_size_per_task)
@@ -523,7 +535,7 @@ class PytorchPFCMD(nn.Module):
                 n_sub=n_neuron_per_cue)
             self.sensory2pfc.torch(use_torch=True)
             # try learnable input weights
-            # self.PytorchSensory2pfc = nn.Linear(4, Num_PFC)
+            self.PytorchSensory2pfc = nn.Linear(66, Num_PFC)
         # unchanged for neurogym tasks
         else:
             raise NotImplementedError
@@ -588,9 +600,9 @@ class PytorchPFCMD(nn.Module):
                 if self.MDeffect:
                     self.md.init_activity()  # Reinit MD activity
 
-            input2pfc = self.sensory2pfc(input_t)
+            # input2pfc = self.sensory2pfc(input_t)
             # try learnable input weights
-            # input2pfc = self.PytorchSensory2pfc(input_t)
+            input2pfc = self.PytorchSensory2pfc(input_t)
             
             if self.MDeffect:
                 self.md_output = self.md(pfc_output.detach().numpy())
