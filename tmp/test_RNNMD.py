@@ -66,7 +66,7 @@ config = {
     'batch_size': 1,
     'seq_len': 100,
     # 'tasks': ngym.get_collection('yang19')
-    'tasks': ['yang19.go-v0', 'yang19.dm1-v0']
+    'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'] # 'tasks': ['yang19.go-v0', 'yang19.dm1-v0']
 }
 
 # set random seed
@@ -110,7 +110,7 @@ net = RNN_MD(input_size  = config['input_size' ],
              hidden_size = config['hidden_size'],
              sub_size    = config['sub_size'],
              output_size = config['output_size'],
-             dt=env.dt).to(device)
+             dt          = config['env_kwargs']['dt']).to(device)
 net = net.to(device)
 print(net, '\n')
 
@@ -144,10 +144,11 @@ log = {
 for i in range(total_training_cycle):
 
     train_time_start = time.time()
-
-    if i < 1000:
+    
+    # control training paradigm
+    if i < 3000:
         task_id = 0 
-    elif i > 1000 and i < 2000:
+    elif i > 3000 and i < 6000:
         task_id = 1
     else:
         task_id = 0
@@ -218,7 +219,7 @@ print('Finished Training')
 ###--------------------------Analysis--------------------------###
 
 # Cross Entropy loss
-font = {'family':'Times New Roman','weight':'normal', 'size':30}
+font = {'family':'Times New Roman','weight':'normal', 'size':25}
 plt.plot(np.array(log['losses']))
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('Training MSE loss', fontdict=font)
