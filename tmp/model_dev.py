@@ -1056,7 +1056,7 @@ class CTRNN_MD(nn.Module):
         for i in steps:
             hidden = self.recurrence(input[i], sub_id, hidden)
             output.append(hidden)
-            
+
             # save md outputs
             # if i==0:
             #     self.md.md_output_t = self.md.md_output.reshape((1, self.md.md_output.shape[0]))
