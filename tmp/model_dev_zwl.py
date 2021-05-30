@@ -206,11 +206,14 @@ class SensoryInputLayer():
             lowcue, highcue = 0.5, 1.
         else:
             lowcue, highcue = -1., 1.
-        for taski in range(self.Ntasks):
-            self.wIn[self.Nsub*taski : self.Nsub*(taski+1),  \
-                     self.input_size_per_task*taski :  self.input_size_per_task*(taski+1)] = \
-                     np.random.uniform(lowcue, highcue, size=(self.Nsub, self.input_size_per_task)) * self.cueFactor
-                     
+#        for taski in range(self.Ntasks):
+#            self.wIn[self.Nsub*taski : self.Nsub*(taski+1),  \
+#                     self.input_size_per_task*taski :  self.input_size_per_task*(taski+1)] = \
+#                     np.random.uniform(lowcue, highcue, size=(self.Nsub, self.input_size_per_task)) * self.cueFactor
+        N_cue = 15 # num nueron per stimulus dim
+        for idim in range(self.input_size_per_task*self.Ntasks):
+            self.wIn[N_cue*idim:N_cue*(idim+1),idim] = np.random.uniform(lowcue, highcue, size=(N_cue)) * self.cueFactor
+            
                 ## plot Win
 #        import seaborn as sns
 #        ax = sns.heatmap(self.wIn,cmap='Reds')
@@ -535,7 +538,7 @@ class PytorchPFCMD(nn.Module):
                 n_sub=n_neuron_per_cue)
             self.sensory2pfc.torch(use_torch=True)
             # try learnable input weights
-            self.PytorchSensory2pfc = nn.Linear(66, Num_PFC)
+            # self.PytorchSensory2pfc = nn.Linear(66, Num_PFC)
         # unchanged for neurogym tasks
         else:
             raise NotImplementedError
@@ -600,9 +603,9 @@ class PytorchPFCMD(nn.Module):
                 if self.MDeffect:
                     self.md.init_activity()  # Reinit MD activity
 
-            # input2pfc = self.sensory2pfc(input_t)
+            input2pfc = self.sensory2pfc(input_t)
             # try learnable input weights
-            input2pfc = self.PytorchSensory2pfc(input_t)
+            # input2pfc = self.PytorchSensory2pfc(input_t)
             
             if self.MDeffect:
                 self.md_output = self.md(pfc_output.detach().numpy())
