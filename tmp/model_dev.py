@@ -1048,20 +1048,35 @@ class CTRNN_MD(nn.Module):
 
     def forward(self, input, sub_id, hidden=None):
         """Propogate input through the network."""
+        
+        num_tsteps = input.size(0)
+
+        # init network activities
         if hidden is None:
             hidden = self.init_hidden(input)
+        if self.MDeffect:
+            self.md.init_activity()
 
+        # initialize variables for saving network activities
         output = []
-        steps = range(input.size(0))
-        for i in steps:
-            hidden = self.recurrence(input[i], sub_id, hidden)
-            output.append(hidden)
+        if self.MDeffect:
+            self.md.md_preTraces = np.zeros(shape=(num_tsteps, self.hidden_size))
+            self.md.md_preTrace_thresholds = np.zeros(shape=(num_tsteps, 1))
+            self.md.md_output_t *= 0
 
-            # save md outputs
-            # if i==0:
-            #     self.md.md_output_t = self.md.md_output.reshape((1, self.md.md_output.shape[0]))
-            # else:
-            #     self.md.md_output_t = np.concatenate((self.md.md_output_t, self.md.md_output.reshape((1,self.md.md_output.shape[0]))),axis=0)
+        for i in range(num_tsteps):
+            hidden = self.recurrence(input[i], sub_id, hidden)
+            
+            # save PFC activities
+            output.append(hidden)
+            # save MD activities
+            if self.MDeffect:
+                self.md.md_preTraces[i, :] = self.md.MDpreTrace
+                self.md.md_preTrace_thresholds[i, :] = self.md.MDpreTrace_threshold
+                if i==0:
+                    self.md.md_output_t = self.md.md_output.reshape((1, self.md.md_output.shape[0]))
+                else:
+                    self.md.md_output_t = np.concatenate((self.md.md_output_t, self.md.md_output.reshape((1, self.md.md_output.shape[0]))),axis=0)
 
         output = torch.stack(output, dim=0)
         return output, hidden

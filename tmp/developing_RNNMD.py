@@ -4,14 +4,12 @@ root = os.getcwd()
 sys.path.append(root)
 sys.path.append('..')
 from pathlib import Path
-
 import json
 import time
 import math
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from torch.nn import init
@@ -22,6 +20,8 @@ from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
 from model_dev import RNN_MD
 
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 ###--------------------------Helper functions--------------------------###
 
@@ -137,16 +137,26 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 40000
-print_training_cycle = 50
+total_training_cycle = 10000
+print_every_cycle = 50
+save_every_cycle = 50
+save_times = total_training_cycle//save_every_cycle
 running_loss = 0.0
 running_train_time = 0
 log = {
     'losses': [],
     'stamps': [],
     'fix_perfs': [[], []],
-    'act_perfs': [[], []]
+    'act_perfs': [[], []],
+    'PFCactivities_all': np.zeros(shape=(save_times, config['seq_len'], config['batch_size'], config['hidden_size'])),
 }
+if config['MDeffect']:
+    MD_log = {
+        'MDouts_all':               np.zeros(shape=(save_times, config['seq_len'], config['md_size'])),
+        'MDpreTraces_all':          np.zeros(shape=(save_times, config['seq_len'], config['hidden_size'])),
+        'MDpreTrace_threshold_all': np.zeros(shape=(save_times, config['seq_len'], 1)),
+    }
+    log.update(MD_log)
 
 
 for i in range(total_training_cycle):
@@ -189,17 +199,26 @@ for i in range(total_training_cycle):
     # torch.nn.utils.clip_grad_norm_(training_params, 1.0) # clip the norm of gradients
     optimizer.step()
 
+    # save activities
+    if i % save_every_cycle == (save_every_cycle - 1):
+        count_save_time = (i+1)//save_every_cycle - 1
+        log['PFCactivities_all'][count_save_time, ...] = rnn_activity.detach().numpy()
+        if config['MDeffect']:
+            log['MDouts_all'][count_save_time, ...] = net.rnn.md.md_output_t
+            log['MDpreTraces_all'][count_save_time, ...] = net.rnn.md.md_preTraces
+            log['MDpreTrace_threshold_all'][count_save_time, ...] = net.rnn.md.md_preTrace_thresholds
+
     # print statistics
     log['losses'].append(loss.item())
     running_loss += loss.item()
     running_train_time += time.time() - train_time_start
-    if i % print_training_cycle == (print_training_cycle - 1):
+    if i % print_every_cycle == (print_every_cycle - 1):
 
         print('Total step: {:d}'.format(total_training_cycle))
-        print('Training sample index: {:d}-{:d}'.format(i+1-print_training_cycle, i+1))
+        print('Training sample index: {:d}-{:d}'.format(i+1-print_every_cycle, i+1))
 
         # train loss
-        print('MSE loss: {:0.9f}'.format(running_loss / print_training_cycle))
+        print('MSE loss: {:0.9f}'.format(running_loss / print_every_cycle))
         running_loss = 0.0
         
         # test during training
@@ -217,7 +236,7 @@ for i in range(total_training_cycle):
 
         # left training time
         print('Predicted left training time: {:0.0f} s'.format(
-             (running_train_time + running_test_time) * (total_training_cycle - i - 1) / print_training_cycle),
+             (running_train_time + running_test_time) * (total_training_cycle - i - 1) / print_every_cycle),
              end='\n\n')
         running_train_time = 0
 
