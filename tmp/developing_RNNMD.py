@@ -64,7 +64,7 @@ config = {
     'env_kwargs': {'dt': 100},
     'lr': 1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
     'batch_size': 1,
-    'seq_len': 100,
+    'seq_len': 50,
     # 'tasks': ngym.get_collection('yang19')
     'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'] # 'tasks': ['yang19.go-v0', 'yang19.dm1-v0']
 }
@@ -130,9 +130,9 @@ criterion = nn.MSELoss()
 print('training parameters:')
 training_params = list()
 for name, param in net.named_parameters():
-    # if 'rnn.h2h' not in name:
+    # if 'rnn.h2h' not in name: # reservoir
     # if 'rnn.input2h' not in name:
-    if True:
+    if True: # learnable RNN
         print(name)
         training_params.append(param)
 print()

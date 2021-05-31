@@ -1038,13 +1038,19 @@ class CTRNN_MD(nn.Module):
             self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
             rec_inp = rec_input.detach().numpy()[0, :]
             md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.output_size))
-            md2pfc = md2pfc_weights * rec_inp  
+            md2pfc = md2pfc_weights * rec_inp
             md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.output_size), self.md.md_output)
             md2pfc = torch.from_numpy(md2pfc).view_as(hidden)
 
             pre_activation += md2pfc
         
         h_new = torch.relu(hidden * self.oneminusalpha + pre_activation * self.alpha)
+        
+        # shutdown analysis
+        # shutdown_mask = torch.zeros_like(h_new)
+        # shutdown_mask[:, sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 1
+        # h_new = h_new.mul(shutdown_mask)
+
         return h_new
 
     def forward(self, input, sub_id, hidden=None):
@@ -1100,11 +1106,5 @@ class RNN_MD(nn.Module):
 
     def forward(self, x, sub_id):
         rnn_activity, _ = self.rnn(x, sub_id)
-        
-        # shutdown analysis
-        # shutdown_mask = torch.zeros_like(rnn_activity)
-        # shutdown_mask[:, :, sub_id*self.rnn.sub_size:(sub_id+1)*self.rnn.sub_size] = 1
-        # rnn_activity = rnn_activity.mul(shutdown_mask)
-
         out = self.fc(rnn_activity)
         return out, rnn_activity
