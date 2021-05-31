@@ -102,7 +102,7 @@ model_config = {
     'hidden_size': 256,
     'sub_size': 128,
     'output_size': act_size,
-    'MDeffect': True,
+    'MDeffect': False,
     'md_size': 10,
     'md_active_size': 5,
     'md_dt': 0.001,
@@ -137,9 +137,9 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 10000
+total_training_cycle = 9000
 print_every_cycle = 50
-save_every_cycle = 50
+save_every_cycle = 10
 save_times = total_training_cycle//save_every_cycle
 running_loss = 0.0
 running_train_time = 0
@@ -148,13 +148,15 @@ log = {
     'stamps': [],
     'fix_perfs': [[], []],
     'act_perfs': [[], []],
-    'PFCactivities_all': np.zeros(shape=(save_times, config['seq_len'], config['batch_size'], config['hidden_size'])),
+    'PFCouts_all': np.zeros(shape=(save_times, config['seq_len'], config['batch_size'], config['hidden_size'])),
 }
 if config['MDeffect']:
     MD_log = {
         'MDouts_all':               np.zeros(shape=(save_times, config['seq_len'], config['md_size'])),
         'MDpreTraces_all':          np.zeros(shape=(save_times, config['seq_len'], config['hidden_size'])),
         'MDpreTrace_threshold_all': np.zeros(shape=(save_times, config['seq_len'], 1)),
+        'wPFC2MD_list': [],
+        'wMD2PFC_list': [],
     }
     log.update(MD_log)
 
@@ -186,9 +188,10 @@ for i in range(total_training_cycle):
     # forward + backward + optimize
     outputs, rnn_activity = net(inputs, sub_id=task_id)
     # check PFC activities
-    # if i % 100 == 99:
-    #     plt.plot(rnn_activity[-1, 0, :].detach().numpy())
-    #     plt.show()
+    if i % 100 == 99:
+        plt.figure()
+        plt.plot(rnn_activity[-1, 0, :].detach().numpy())
+        plt.show()
     # check shapes
     # print("inputs.shape: ", inputs.shape)
     # print("labels.shape: ", labels.shape)
@@ -202,11 +205,13 @@ for i in range(total_training_cycle):
     # save activities
     if i % save_every_cycle == (save_every_cycle - 1):
         count_save_time = (i+1)//save_every_cycle - 1
-        log['PFCactivities_all'][count_save_time, ...] = rnn_activity.detach().numpy()
+        log['PFCouts_all'][count_save_time, ...] = rnn_activity.detach().numpy()
         if config['MDeffect']:
             log['MDouts_all'][count_save_time, ...] = net.rnn.md.md_output_t
             log['MDpreTraces_all'][count_save_time, ...] = net.rnn.md.md_preTraces
             log['MDpreTrace_threshold_all'][count_save_time, ...] = net.rnn.md.md_preTrace_thresholds
+            log['wPFC2MD_list'].append(net.rnn.md.wPFC2MD)
+            log['wMD2PFC_list'].append(net.rnn.md.wMD2PFC)
 
     # print statistics
     log['losses'].append(loss.item())
@@ -247,6 +252,7 @@ print('Finished Training')
 
 # Cross Entropy loss
 font = {'family':'Times New Roman','weight':'normal', 'size':25}
+plt.figure()
 plt.plot(np.array(log['losses']))
 plt.xlabel('Training Cycles', fontdict=font)
 plt.ylabel('Training MSE loss', fontdict=font)
@@ -262,6 +268,7 @@ label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
 title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
 for env_id in range(len(datasets)):
+    plt.figure()
     plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
     plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
     # plt.axvline(x=5000, c="k", ls="--", lw=1)
@@ -276,3 +283,19 @@ for env_id in range(len(datasets)):
     plt.tight_layout()
     # plt.savefig('./animation/'+'performance.png')
     plt.show()
+
+# Heatmap wPFC2MD
+# font = {'family':'Times New Roman','weight':'normal', 'size':30}
+# ax = plt.figure(figsize=(8, 6))
+# ax = sns.heatmap(net.rnn.md.wPFC2MD, cmap='Reds')
+# ax.set_xticks([0, 255])
+# ax.set_xticklabels([1, 256], rotation=0)
+# ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+# ax.set_xlabel('PFC neuron index', fontdict=font)
+# ax.set_ylabel('MD neuron index', fontdict=font)
+# ax.set_title('wPFC2MD', fontdict=font)
+# cbar = ax.collections[0].colorbar
+# cbar.set_label('connection weight', fontdict=font)
+# plt.tight_layout()
+# # plt.savefig('./animation/'+'wPFC2MD.png')
+# plt.show()
