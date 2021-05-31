@@ -127,7 +127,7 @@ config = {
     'tasks': ['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
 }
 
-env_kwargs = {'dt': 100}
+env_kwargs = {'dt': 10}
 config['env_kwargs'] = env_kwargs
 
 # set random seed
