@@ -273,7 +273,7 @@ class PytorchPFC(nn.Module):
         self.noisePresent = noisePresent
         self.noiseSD = 1e-2  # 1e-3
         self.tau = 0.02
-        self.dt = 0.001
+        self.dt = 0.01 #0.001
         self.positiveRates = positiveRates
 
         if self.positiveRates:
