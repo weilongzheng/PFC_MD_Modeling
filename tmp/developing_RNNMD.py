@@ -64,7 +64,7 @@ config = {
     'env_kwargs': {'dt': 100},
     'lr': 1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
     'batch_size': 1,
-    'seq_len': 100,
+    'seq_len': 50,
     # 'tasks': ngym.get_collection('yang19')
     'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'] # 'tasks': ['yang19.go-v0', 'yang19.dm1-v0']
 }
@@ -130,7 +130,9 @@ criterion = nn.MSELoss()
 print('training parameters:')
 training_params = list()
 for name, param in net.named_parameters():
-    if True: # 'rnn.input2h' not in name:
+    # if 'rnn.h2h' not in name: # reservoir
+    # if 'rnn.input2h' not in name:
+    if True: # learnable RNN
         print(name)
         training_params.append(param)
 print()
@@ -188,7 +190,7 @@ for i in range(total_training_cycle):
     # forward + backward + optimize
     outputs, rnn_activity = net(inputs, sub_id=task_id)
     # check PFC activities
-    if i % 100 == 99:
+    if i % 200 == 199:
         plt.figure()
         plt.plot(rnn_activity[-1, 0, :].detach().numpy())
         plt.show()
@@ -232,7 +234,7 @@ for i in range(total_training_cycle):
         #   fixation & action performance
         print('Performance')
         for env_id in range(len(datasets)):
-            fix_perf, act_perf = get_full_performance(net, test_envs[env_id], task_id=task_id, num_task=len(tasks), num_trial=200, device=device) # set large enough num_trial to get good statistics
+            fix_perf, act_perf = get_full_performance(net, test_envs[env_id], task_id=env_id, num_task=len(tasks), num_trial=200, device=device) # set large enough num_trial to get good statistics
             log['fix_perfs'][env_id].append(fix_perf)
             log['act_perfs'][env_id].append(act_perf)
             print('  fix performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, fix_perf))
@@ -271,8 +273,8 @@ for env_id in range(len(datasets)):
     plt.figure()
     plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
     plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
-    # plt.axvline(x=5000, c="k", ls="--", lw=1)
-    # plt.axvline(x=10000, c="k", ls="--", lw=1)
+    plt.axvline(x=3000, c="k", ls="--", lw=1)
+    plt.axvline(x=6000, c="k", ls="--", lw=1)
     plt.legend(prop=legend_font)
     plt.xlabel('Training Cycles', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
