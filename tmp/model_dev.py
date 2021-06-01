@@ -339,43 +339,19 @@ class MD():
         self.dt = dt
         self.tsteps = 200
         self.Hebb_learning_rate = 1e-4
-        # working!
         Gbase = 0.75  # determines also the cross-task recurrence
-#        self.MDstrength = 1
-#        if self.MDstrength is None:
-#            MDval = 1.
-#        elif self.MDstrength < 0.:
-#            MDval = 0.
-#        else:
-#            MDval = self.MDstrength
-#        # subtract across tasks (task with higher MD suppresses cross-tasks)
-#        self.wMD2PFC = np.ones(shape=(self.Nneur, self.Num_MD)) * (
-#            -10.) * MDval
-#        self.useMult = True
-#        # multiply recurrence within task, no addition across tasks
-#        ## choose below option for cross-recurrence
-#        ##  if you want "MD inactivated" (low recurrence) state
-#        ##  as the state before MD learning
-#        # self.wMD2PFCMult = np.zeros(shape=(self.Nneur,self.Ntasks))
-#        # choose below option for cross-recurrence
-#        #  if you want "reservoir" (high recurrence) state
-#        #  as the state before MD learning (makes learning more difficult)
-#        self.wMD2PFCMult = np.ones(shape=(self.Nneur, self.Num_MD)) \
-#                           * PFC_G_off / Gbase * (1 - MDval)
-#        # threshold for sharp sigmoid (0.1 width) transition of MDinp
-#        self.MDthreshold = 0.4
-#
-#        # With MDeffect = True and MDstrength = 0, i.e. MD inactivated
-#        #  PFC recurrence is (1+PFC_G_off)*Gbase = (1+1.5)*0.75 = 1.875
-#        # So with MDeffect = False, ensure the same PFC recurrence for the pure reservoir
-#        # if not self.MDeffect: Gbase = 1.875
 
-        self.wPFC2MD = np.random.normal(0, 1 / np.sqrt(
-            self.Num_MD * self.Nneur), size=(self.Num_MD, self.Nneur))
-        self.wMD2PFC = np.random.normal(0, 1 / np.sqrt(
-            self.Num_MD * self.Nneur), size=(self.Nneur, self.Num_MD))
-        self.wMD2PFCMult = np.random.normal(0, 1 / np.sqrt(
-            self.Num_MD * self.Nneur), size=(self.Nneur, self.Num_MD))
+        # initialize weights
+        self.wPFC2MD = np.random.normal(0,
+                                        1 / np.sqrt(self.Num_MD * self.Nneur),
+                                        size=(self.Num_MD, self.Nneur))
+        self.wMD2PFC = np.random.normal(0,
+                                        1 / np.sqrt(self.Num_MD * self.Nneur),
+                                        size=(self.Nneur, self.Num_MD))
+        self.wMD2PFCMult = np.random.normal(0,
+                                            1 / np.sqrt(self.Num_MD * self.Nneur),
+                                            size=(self.Nneur, self.Num_MD))
+        # initialize activities
         self.MDpreTrace = np.zeros(shape=(self.Nneur))
         self.MDpostTrace = np.zeros(shape=(self.Num_MD))
         self.MDpreTrace_threshold = 0
@@ -418,7 +394,6 @@ class MD():
             self.MDinp += self.dt / self.tauMD * \
                      (-self.MDinp + np.dot(self.wPFC2MD, (input + 1. / 2)))
                      
-        #num_active = np.round(self.Num_MD / self.Ntasks)
         MDout = self.winner_take_all(self.MDinp)
 
         self.update_weights(input, MDout)
@@ -429,24 +404,11 @@ class MD():
         # MD presynaptic traces filtered over 10 trials
         # Ideally one should weight them with MD syn weights,
         #  but syn plasticity just uses pre!
-        self.MDpreTrace += 1. / self.tsteps / 5. * \
-                           (-self.MDpreTrace + rout)
-        self.MDpostTrace += 1. / self.tsteps / 5. * \
-                            (-self.MDpostTrace + MDout)
-        # MDoutTrace =  self.MDpostTrace
 
+        self.MDpreTrace += 1. / self.tsteps / 5. * (-self.MDpreTrace + rout)
+        self.MDpostTrace += 1. / self.tsteps / 5. * (-self.MDpostTrace + MDout)
         MDoutTrace = self.winner_take_all(self.MDpostTrace)
-#        MDoutTrace = np.zeros(self.Num_MD)
-#        MDpostTrace_sorted = np.sort(self.MDpostTrace)
-#        num_active = np.round(self.Num_MD / self.Ntasks)
-#        # MDthreshold  = np.mean(MDpostTrace_sorted[-4:])
-#        MDthreshold = np.mean(
-#            MDpostTrace_sorted[-int(num_active) * 2:])
-#        # MDthreshold  = np.mean(self.MDpostTrace)
-#        index_pos = np.where(self.MDpostTrace >= MDthreshold)
-#        index_neg = np.where(self.MDpostTrace < MDthreshold)
-#        MDoutTrace[index_pos] = 1
-#        MDoutTrace[index_neg] = 0
+
         return MDoutTrace
 
     def update_weights(self, rout, MDout):
@@ -457,12 +419,9 @@ class MD():
             MDout: activity of MD
         """
         MDoutTrace = self.update_trace(rout, MDout)
-        #                    if self.MDpostTrace[0] > self.MDpostTrace[1]: MDoutTrace = np.array([1,0])
-        #                    else: MDoutTrace = np.array([0,1])
+
         self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
-        # self.MDpreTrace_threshold = np.mean(self.MDpreTrace)+0.4*np.std(self.MDpreTrace)
-        #self.MDpreTrace_threshold = np.mean(self.MDpreTrace[:self.Nsub * self.Ncues])  # first 800 cells are cue selective
-        # MDoutTrace_threshold = np.mean(MDoutTrace) #median
+        
         MDoutTrace_threshold = 0.5  
         
         # update and clip the weights
@@ -475,12 +434,11 @@ class MD():
         
         # slow-decaying PFC-MD weights
         # wPFC2MDdelta = 30000 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+
         # self.wPFC2MD += 1. / self.tsteps / 5. * (-1.0 * self.wPFC2MD + 1.0 * wPFC2MDdelta)
         # self.wPFC2MD = np.clip(self.wPFC2MD, 0., 1.)
-       
         # self.wMD2PFC += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFC + 1.0 * (wPFC2MDdelta.T))
         # self.wMD2PFC = np.clip(self.wMD2PFC, -10., 0.)
-     
         # self.wMD2PFCMult += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T))
         # self.wMD2PFCMult = np.clip(self.wMD2PFCMult, 0.,7. / self.G)
         
@@ -497,7 +455,6 @@ class MD():
         # Thresholding
         MDout = np.zeros(self.Num_MD)
         MDinp_sorted = np.sort(MDinp)
-        # num_active = np.round(self.Num_MD / self.Ntasks)
 
         MDthreshold = np.mean(MDinp_sorted[-int(self.num_active) * 2:])
         # MDthreshold  = np.mean(MDinp)
@@ -505,6 +462,7 @@ class MD():
         index_neg = np.where(MDinp < MDthreshold)
         MDout[index_pos] = 1
         MDout[index_neg] = 0
+
         return MDout
 
 
