@@ -127,7 +127,7 @@ config = {
     'tasks': ['yang19.dm1-v0', 'yang19.ctxdm1-v0'],
 }
 
-env_kwargs = {'dt': 10}
+env_kwargs = {'dt': 15}
 config['env_kwargs'] = env_kwargs
 
 # set random seed
@@ -193,7 +193,7 @@ else:
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 150
+total_training_cycle = 1200
 print_training_cycle = 10
 running_loss = 0.0
 running_train_time = 0.0
@@ -271,7 +271,7 @@ for i in range(total_training_cycle):
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip the norm of gradients 
     if config['PFClearn'] == True:
         # torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-6) # clip the norm of gradients; Jrec 1e-6
-        torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1.0)
+        torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-5)
     optimizer.step()
 
     # print statistics
