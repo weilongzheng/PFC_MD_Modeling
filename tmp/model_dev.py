@@ -935,6 +935,7 @@ class CTRNN_MD(nn.Module):
         self.hidden_size = hidden_size
         self.sub_size = sub_size
         self.output_size = output_size
+        self.md_size = md_size
 
         self.tau = 100
         if dt is None:

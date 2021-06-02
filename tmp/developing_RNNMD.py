@@ -196,6 +196,9 @@ for i in range(total_training_cycle):
         plt.show()
         if config['MDeffect']:
             plt.figure()
+            plt.plot(net.rnn.md.md_preTraces[-1, :])
+            plt.show()
+            plt.figure()
             plt.plot(net.rnn.md.md_output_t[-1, :])
             plt.show()
             plt.figure(figsize=(12, 8))
