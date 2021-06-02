@@ -234,8 +234,8 @@ for i in range(num_cycle_test):
             MDouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
         cues_all[i*inpsPerConext*Ncontexts+tstart,:,:] = input[tstart*tsteps:(tstart+1)*tsteps,:]
         tstart += 1
-    #import pdb;pdb.set_trace()    
-    mse = np.mean((output - target)**2)*inpsPerConext*Ncontexts # one cycle has 4 cues
+   
+    mse = loss.item()
     log['mse'].append(mse)
 
 log['wPFC2MD'] = model.md.wPFC2MD
