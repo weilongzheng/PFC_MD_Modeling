@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Generate trainset
-RNGSEED = 5 # set random seed
+RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
@@ -35,7 +35,7 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 noiseSD = 1e-1
-MDeffect = False
+MDeffect = True
 PFClearn = False
 noiseInput = False # additional noise input neuron 
 
@@ -221,12 +221,17 @@ PFCouts_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps,n_ne
 for i in range(num_cycle_test):
     print('testing '+str(i))
     input, target = test_set()
+
+    input = torch.from_numpy(input).type(torch.float)
+    target = torch.from_numpy(target).type(torch.float)
+    
     output = model(input, target)
     
     tstart = 0
     for itrial in range(inpsPerConext*Ncontexts): 
-        PFCouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.pfc_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
-        MDouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+        PFCouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
+        if MDeffect == True: 
+            MDouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
         cues_all[i*inpsPerConext*Ncontexts+tstart,:,:] = input[tstart*tsteps:(tstart+1)*tsteps,:]
         tstart += 1
     #import pdb;pdb.set_trace()    
