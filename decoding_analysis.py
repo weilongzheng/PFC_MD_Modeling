@@ -47,11 +47,14 @@ if __name__ == '__main__':
     acc_context_pfc_all = np.zeros([len(RNGs),round(tsteps/2)])
     acc_context_md_all = np.zeros([len(RNGs),round(tsteps/2)])
     
+    plot_pfc_md = False
+    
     for i,itau in enumerate(RNGs):
-        pickle_in = open('files/final/test_numMD10_numContext2_MDTrue_R1.pkl','rb')
+        pickle_in = open('files/final/test_noiseJ_numMD10_numContext2_MDTrue_R1.pkl','rb')
         data = pickle.load(pickle_in)
         
         cues_all = data['cues_all']
+        #cues_all = cues_all[:,:,:4]
         routs_all = data['PFCouts_all']
         MDouts_all = data['MDouts_all']
         
@@ -141,25 +144,26 @@ if __name__ == '__main__':
 #                 'acc_context_md_all':acc_context_md_all},pickle_out)
 #    pickle_out.close()
         ## plot pfc md activity
+    if plot_pfc_md==True:
         
-    plotActivity(routs_all[100,50,:],'PFC','tab:red')
-    plt.tight_layout()
-    plt.savefig(FIGUREPATH/'pfc_ctx1.pdf') 
-    #plt.savefig(FIGUREPATH/'pfc_ctx1.png', dpi=300)
-    plotActivity(routs_all[98,50,:],'PFC','tab:red')
-    plt.tight_layout()
-    plt.savefig(FIGUREPATH/'pfc_ctx2.pdf') 
-    #plt.savefig(FIGUREPATH/'pfc_ctx2.png', dpi=300)
-    
-    plotActivity(data['MDouts_all'][100,50,:],'MD','tab:blue')
-    plt.tight_layout()
-    plt.savefig(FIGUREPATH/'md_ctx1.pdf') 
-    #plt.savefig(FIGUREPATH/'md_ctx1.png', dpi=300)
-    plotActivity(data['MDouts_all'][98,50,:],'MD','tab:blue')
-    plt.tight_layout()
-    plt.savefig(FIGUREPATH/'md_ctx2.pdf') 
-    #plt.savefig(FIGUREPATH/'md_ctx2.png', dpi=300)
-    
+        plotActivity(routs_all[100,50,:],'PFC','tab:red')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'pfc_ctx1.pdf') 
+        #plt.savefig(FIGUREPATH/'pfc_ctx1.png', dpi=300)
+        plotActivity(routs_all[98,50,:],'PFC','tab:red')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'pfc_ctx2.pdf') 
+        #plt.savefig(FIGUREPATH/'pfc_ctx2.png', dpi=300)
+        
+        plotActivity(data['MDouts_all'][100,50,:],'MD','tab:blue')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'md_ctx1.pdf') 
+        #plt.savefig(FIGUREPATH/'md_ctx1.png', dpi=300)
+        plotActivity(data['MDouts_all'][98,50,:],'MD','tab:blue')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'md_ctx2.pdf') 
+        #plt.savefig(FIGUREPATH/'md_ctx2.png', dpi=300)
+        
     plt.figure(figsize=(2.4,2.4))
     plt.plot(acc_rule_pfc,'tab:red',label='PFC')
     plt.plot(acc_rule_md,'tab:blue',label='MD')
@@ -170,8 +174,8 @@ if __name__ == '__main__':
     plt.ylabel('Decoding Rule')
     #plt.ylim([-0.05, 1.25])
     plt.tight_layout()
-    plt.savefig(FIGUREPATH/'decoding_rule.pdf') 
-    plt.savefig(FIGUREPATH/'decoding_rule.png', dpi=300) 
+    plt.savefig(FIGUREPATH/'decoding_rule_noiseN.pdf') 
+#    plt.savefig(FIGUREPATH/'decoding_rule.png', dpi=300) 
     
     plt.figure(figsize=(2.4,2.4))
     plt.plot(acc_context_pfc,'tab:red',label='PFC')
@@ -183,8 +187,20 @@ if __name__ == '__main__':
     plt.ylabel('Decoding Context')
     #plt.ylim([-0.05, 1.25])
     plt.tight_layout()
-    plt.savefig(FIGUREPATH/'decoding_context.pdf') 
-    plt.savefig(FIGUREPATH/'decoding_context.png', dpi=300) 
+    plt.savefig(FIGUREPATH/'decoding_context_noiseN.pdf') 
+#    plt.savefig(FIGUREPATH/'decoding_context.png', dpi=300) 
+
+#plt.figure(figsize=(2.4,2.4))
+#plt.plot(acc_rule_md,'tab:red',label='Rule')
+#plt.plot(acc_context_md,'tab:blue',label='Context')
+#plt.fill_between(range(0,50),1*np.ones(50),0.28*np.ones(50),facecolor='orange',alpha=0.2)
+#plt.xticks(np.arange(0,101,20),np.arange(0,201,40))
+#plt.xlabel('Time Steps')
+#plt.legend(frameon=False)
+#plt.ylabel('Accuracy')
+##plt.ylim([-0.05, 1.25])
+#plt.tight_layout()
+#plt.savefig(FIGUREPATH/'decoding_md_noiseN.pdf')
     
 #    import pdb;pdb.set_trace()
 #    run_decoder(path)
