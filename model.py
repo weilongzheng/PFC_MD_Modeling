@@ -427,12 +427,12 @@ class SensoryInputLayer():
             self.wIn += np.random.normal(size=(np.shape(self.wIn))) * noiseSD
         
         # Input weights have overlops (mix neurons)
-#        if self.weightOverlap == True:
-##            ''' overlap across rules'''
-##            for cuei in np.arange(self.Ncues):
-##                self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1)+int(self.Nsub/2), cuei] = \
-##                    np.random.uniform(lowcue, highcue, size=self.Nsub+int(self.Nsub/2)) \
-##                    * self.cueFactor
+        if self.weightOverlap == True:
+            ''' overlap across rules'''
+            for cuei in np.arange(self.Ncues):
+                self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1)+int(self.Nsub/2), cuei] = \
+                    np.random.uniform(lowcue, highcue, size=self.Nsub+int(self.Nsub/2)) \
+                    * self.cueFactor
 ##                    
 #            ''' overlap across context'''
 #            N_overlap = 15

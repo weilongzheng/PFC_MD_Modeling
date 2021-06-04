@@ -17,28 +17,52 @@ import random
 import sklearn
 from sklearn.svm import LinearSVC
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-
+from sklearn.manifold import TSNE
+import matplotlib as mpl
 MODELPATH = Path('./files')
-FIGUREPATH = Path('./figures')
+FIGUREPATH = Path('./results')
 
+mpl.rcParams['font.size'] = 7
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'arial'
+
+def plot_tsne(X_embedded,label):
+    plt.figure(figsize=(2.4,2.4))
+    #X_embedded = TSNE(n_components=2).fit_transform(x)
+    plt.scatter(X_embedded[label==0,0], X_embedded[label==0,1], s = 2, c ='tab:red', label='Context 1') #'tab:blue', 'tab:orange', 'tab:green'
+    plt.scatter(X_embedded[label==1,0], X_embedded[label==1,1], s = 2, c ='tab:blue', label='Context 2')
+    plt.legend(frameon=False)
+
+def plotActivity(x, legend_use, color_use='tab:red'):
+    plt.figure(figsize=(2.4,2.4))
+    plt.plot(x,color_use,label=legend_use)
+    plt.xlabel('Neuron Index')
+    plt.legend()
+    plt.legend(frameon=False)
+    plt.ylabel('Activity (a.u.)')
+    plt.tight_layout()
 
 if __name__ == '__main__':
     #Tau_times = [1/2, 1/4, 1/6, 1/8, 1/10]
-    Tau_times = [1]
+    RNGs = [1]
     #Tau_times.extend(range(2,12,2))
     #Hebb_LR = [0,0.0001,0.001,0.01,0.1]
     #num_MD = [10,20,30,40,50]
     tsteps = 200
-    acc_rule_pfc_all = np.zeros([len(Tau_times),round(tsteps/2)])
-    acc_rule_md_all = np.zeros([len(Tau_times),round(tsteps/2)])
-    acc_context_pfc_all = np.zeros([len(Tau_times),round(tsteps/2)])
-    acc_context_md_all = np.zeros([len(Tau_times),round(tsteps/2)])
+    acc_rule_pfc_all = np.zeros([len(RNGs),round(tsteps/2)])
+    acc_rule_md_all = np.zeros([len(RNGs),round(tsteps/2)])
+    acc_context_pfc_all = np.zeros([len(RNGs),round(tsteps/2)])
+    acc_context_md_all = np.zeros([len(RNGs),round(tsteps/2)])
     
-    for i,itau in enumerate(Tau_times):
-        pickle_in = open('files/test_numMD10_numContext2_MDTrue_R5.pkl','rb')
+    plot_pfc_md = False
+    
+    for i,itau in enumerate(RNGs):
+        pickle_in = open('files/final/test_numMD10_numContext2_MDTrue_R1.pkl','rb')
         data = pickle.load(pickle_in)
         
         cues_all = data['cues_all']
+        #cues_all = cues_all[:,:,:4]
         routs_all = data['PFCouts_all']
         MDouts_all = data['MDouts_all']
         
@@ -62,6 +86,10 @@ if __name__ == '__main__':
             temp_index = np.where(temp==1)
             context_label[i_time] = temp_index[0]
         
+        plot_pfc_md_tsne = True
+        if plot_pfc_md_tsne == True:
+            plot_tsne(routs_all[:,50,:],rule_label)
+        import pdb;pdb.set_trace()
         ## decode rule from pfc
         acc_rule_pfc = list()
         n_train = int(0.8 * num_trial)
@@ -127,30 +155,64 @@ if __name__ == '__main__':
 #                 'acc_context_pfc_all':acc_context_pfc_all,\
 #                 'acc_context_md_all':acc_context_md_all},pickle_out)
 #    pickle_out.close()
+        ## plot pfc md activity
+    if plot_pfc_md==True:
+        
+        plotActivity(routs_all[100,50,:],'PFC','tab:red')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'pfc_ctx1.pdf') 
+        #plt.savefig(FIGUREPATH/'pfc_ctx1.png', dpi=300)
+        plotActivity(routs_all[98,50,:],'PFC','tab:red')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'pfc_ctx2.pdf') 
+        #plt.savefig(FIGUREPATH/'pfc_ctx2.png', dpi=300)
+        
+        plotActivity(data['MDouts_all'][100,50,:],'MD','tab:blue')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'md_ctx1.pdf') 
+        #plt.savefig(FIGUREPATH/'md_ctx1.png', dpi=300)
+        plotActivity(data['MDouts_all'][98,50,:],'MD','tab:blue')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'md_ctx2.pdf') 
+        #plt.savefig(FIGUREPATH/'md_ctx2.png', dpi=300)
+        
+    plt.figure(figsize=(2.4,2.4))
+    plt.plot(acc_rule_pfc,'tab:red',label='PFC')
+    plt.plot(acc_rule_md,'tab:blue',label='MD')
+    plt.fill_between(range(0,50),1*np.ones(50),0.3*np.ones(50),facecolor='orange',alpha=0.2)
+    plt.xticks(np.arange(0,101,20),np.arange(0,201,40))
+    plt.xlabel('Time Steps')
+    plt.legend(frameon=False)
+    plt.ylabel('Decoding Rule')
+    #plt.ylim([-0.05, 1.25])
+    plt.tight_layout()
+    plt.savefig(FIGUREPATH/'decoding_rule_noiseN.pdf') 
+#    plt.savefig(FIGUREPATH/'decoding_rule.png', dpi=300) 
     
-plt.figure()
-plt.plot(acc_rule_pfc,'-r',label='PFC')
-plt.legend()
-plt.plot(acc_rule_md,'-b',label='MD')
-plt.fill_between(range(0,50),1*np.ones(50),0.3*np.ones(50),facecolor='orange',alpha=0.2)
-plt.xticks(np.arange(0,101,10),np.arange(0,201,20))
-plt.xlabel('Time steps')
-plt.legend()
-plt.ylabel('Decoding Rule')
-#plt.ylim([-0.05, 1.25])
-plt.tight_layout()
-    
-plt.figure()
-plt.plot(acc_context_pfc,'-r',label='PFC')
-plt.legend()
-plt.plot(acc_context_md,'-b',label='MD')
-plt.fill_between(range(0,50),1*np.ones(50),0.3*np.ones(50),facecolor='orange',alpha=0.2)
-plt.xticks(np.arange(0,101,10),np.arange(0,201,20))
-plt.xlabel('Time steps')
-plt.legend()
-plt.ylabel('Decoding Context')
-#plt.ylim([-0.05, 1.25])
-plt.tight_layout()
+    plt.figure(figsize=(2.4,2.4))
+    plt.plot(acc_context_pfc,'tab:red',label='PFC')
+    plt.plot(acc_context_md,'tab:blue',label='MD')
+    plt.fill_between(range(0,50),1*np.ones(50),0.3*np.ones(50),facecolor='orange',alpha=0.2)
+    plt.xticks(np.arange(0,101,20),np.arange(0,201,40))
+    plt.xlabel('Time Steps')
+    plt.legend(frameon=False)
+    plt.ylabel('Decoding Context')
+    #plt.ylim([-0.05, 1.25])
+    plt.tight_layout()
+    plt.savefig(FIGUREPATH/'decoding_context_noiseN.pdf') 
+#    plt.savefig(FIGUREPATH/'decoding_context.png', dpi=300) 
+
+#plt.figure(figsize=(2.4,2.4))
+#plt.plot(acc_rule_md,'tab:red',label='Rule')
+#plt.plot(acc_context_md,'tab:blue',label='Context')
+#plt.fill_between(range(0,50),1*np.ones(50),0.28*np.ones(50),facecolor='orange',alpha=0.2)
+#plt.xticks(np.arange(0,101,20),np.arange(0,201,40))
+#plt.xlabel('Time Steps')
+#plt.legend(frameon=False)
+#plt.ylabel('Accuracy')
+##plt.ylim([-0.05, 1.25])
+#plt.tight_layout()
+#plt.savefig(FIGUREPATH/'decoding_md_noiseN.pdf')
     
 #    import pdb;pdb.set_trace()
 #    run_decoder(path)

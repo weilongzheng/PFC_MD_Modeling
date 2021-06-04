@@ -38,9 +38,10 @@ noiseSD = 1e-1
 MDeffect = True
 PFClearn = False
 noiseInput = False # additional noise input neuron 
+noisePresent = False # recurrent noise
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
-MDeffect=MDeffect, noiseInput = noiseInput)
+MDeffect=MDeffect, noisePresent = noisePresent, noiseInput = noiseInput)
 
 # Training
 criterion = nn.MSELoss() 
@@ -158,9 +159,9 @@ if  MDeffect == True:
     log['wMD2PFC'] = model.md.wMD2PFC
     log['wMD2PFCMult'] = model.md.wMD2PFCMult
 
-filename = Path('files')
+filename = Path('files/final')
 os.makedirs(filename, exist_ok=True)
-file_training = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+file_training = 'train_noiseJ_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
 with open(filename / file_training, 'wb') as f:
     pickle.dump(log, f)
     
@@ -206,7 +207,7 @@ if  MDeffect == True:
     
     
 ## Testing
-Ntest = 500
+Ntest = 100
 Nextra = 0
 tsteps = 200
 test_set = RikhyeTask(Ntrain=Ntest, Nextra = Nextra, Ncontexts=Ncontexts, inpsPerConext = inpsPerConext, blockTrain=False)
@@ -216,11 +217,16 @@ log = defaultdict(list)
 num_cycle_test = Ntest+Nextra
 mses = list()
 cues_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps, inpsPerConext*Ncontexts))
+if noiseInput == True:
+    cues_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps, inpsPerConext*Ncontexts+1))
+    
 MDouts_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps,Num_MD))
 PFCouts_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps,n_neuron))
 for i in range(num_cycle_test):
     print('testing '+str(i))
     input, target = test_set()
+    if noiseInput == True:
+        input = np.hstack((input,np.random.normal(size=(input.shape[0],1)) * noiseSD))
 
     input = torch.from_numpy(input).type(torch.float)
     target = torch.from_numpy(target).type(torch.float)
@@ -242,9 +248,9 @@ log['wPFC2MD'] = model.md.wPFC2MD
 log['wMD2PFC'] = model.md.wMD2PFC
 log['wMD2PFCMult'] = model.md.wMD2PFCMult
     
-filename = Path('files') #/ 'tmp'
+filename = Path('files/final') 
 os.makedirs(filename, exist_ok=True)
-file_training = 'test_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
+file_training = 'test_noiseJ_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
 with open(filename / file_training, 'wb') as f:
     pickle.dump({'log':log,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all,'cues_all':cues_all}, f, protocol = 4)
 
