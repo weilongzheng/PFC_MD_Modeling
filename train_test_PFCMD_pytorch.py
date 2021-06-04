@@ -38,7 +38,7 @@ noiseSD = 1e-1
 MDeffect = True
 PFClearn = False
 noiseInput = False # additional noise input neuron 
-noisePresent = True # recurrent noise
+noisePresent = False # recurrent noise
 
 model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
 MDeffect=MDeffect, noisePresent = noisePresent, noiseInput = noiseInput)

@@ -45,7 +45,8 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 noiseSD = 1e-1
-noisePresent = True
+noisePresent = False
+noiseInput = False
 MDeffect = True
 PFClearn = False
 
@@ -169,7 +170,7 @@ if  MDeffect == True:
 
 filename = Path('files')
 os.makedirs(filename, exist_ok=True)
-file_training = 'train_allnoise_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+file_training = 'train_multicues_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
 with open(filename / file_training, 'wb') as f:
     pickle.dump(log, f)
     
@@ -238,21 +239,52 @@ if  MDeffect == True:
     plt.tight_layout()
     plt.show()
 
-## plot pfc recurrent weights before and after training
-#Jrec = model.pfc.Jrec.detach().numpy()
-#Jrec_init = Jrec_init.detach().numpy()
-#fig, axes = plt.subplots(nrows=1, ncols=2)
-## find minimum of minima & maximum of maxima
-#minmin = np.min([np.percentile(Jrec_init,10), np.percentile(Jrec,10)])
-#maxmax = np.max([np.percentile(Jrec_init,90), np.percentile(Jrec,90)])
-#num_show = 200
-#im1 = axes[0].imshow(Jrec_init[:num_show,:num_show], vmin=minmin, vmax=maxmax,
-#                     extent=(0,num_show,0,num_show), cmap='viridis')
-#im2 = axes[1].imshow(Jrec[:num_show,:num_show], vmin=minmin, vmax=maxmax,
-#                     extent=(0,num_show,0,num_show), cmap='viridis')
-#
-## add space for colour bar
-#fig.subplots_adjust(right=0.85)
-#cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
-#fig.colorbar(im2, cax=cbar_ax)
+## Testing
+Ntest = 100
+Nextra = 0
+tsteps = 200
+test_set = RikhyeTaskMultiCues(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=False, tsteps_noise=tsteps_noise)
+
+log = defaultdict(list)
+
+num_cycle_test = Ntest+Nextra
+mses = list()
+cues_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps, inpsPerConext*Ncontexts))
+if noiseInput == True:
+    cues_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps, inpsPerConext*Ncontexts+1))
+    
+MDouts_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps,Num_MD))
+PFCouts_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps,n_neuron))
+for i in range(num_cycle_test):
+    print('testing '+str(i))
+    input, target = test_set()
+    if noiseInput == True:
+        input = np.hstack((input,np.random.normal(size=(input.shape[0],1)) * noiseSD))
+
+    input = torch.from_numpy(input).type(torch.float)
+    target = torch.from_numpy(target).type(torch.float)
+    
+    output = model(input, target)
+    
+    tstart = 0
+    for itrial in range(inpsPerConext*Ncontexts): 
+        PFCouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
+        if MDeffect == True: 
+            MDouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+        cues_all[i*inpsPerConext*Ncontexts+tstart,:,:] = input[tstart*tsteps:(tstart+1)*tsteps,:]
+        tstart += 1
+   
+    mse = loss.item()
+    log['mse'].append(mse)
+
+log['wPFC2MD'] = model.md.wPFC2MD
+log['wMD2PFC'] = model.md.wMD2PFC
+log['wMD2PFCMult'] = model.md.wMD2PFCMult
+    
+filename = Path('files/final') 
+os.makedirs(filename, exist_ok=True)
+file_training = 'test_multicues_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
+with open(filename / file_training, 'wb') as f:
+    pickle.dump({'log':log,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all,'cues_all':cues_all}, f, protocol = 4)
+
 

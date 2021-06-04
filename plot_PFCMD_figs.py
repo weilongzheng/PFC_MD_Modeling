@@ -8,6 +8,7 @@ import plot_utils as pltu
 import matplotlib as mpl
 import seaborn as sns
 import pickle
+import sklearn
 MODELPATH = Path('./files')
 FIGUREPATH = Path('./results')
 
@@ -53,8 +54,10 @@ def plot_wMD2PFCMult(wMD2PFCMult):
     plt.tight_layout()
     plt.show()
     
+
+    
 if __name__ == "__main__":
-    pickle_in = open('files/final/train_noiseJ_numMD10_numContext2_MDTrue_PFCFalse_R1.pkl','rb')
+    pickle_in = open('files/final/train_multicues_numMD10_numContext2_MDTrue_PFCFalse_R3.pkl','rb')
     data = pickle.load(pickle_in)
     
     wPFC2MD = data['wPFC2MD']
@@ -62,10 +65,12 @@ if __name__ == "__main__":
     wMD2PFCMult = data['wMD2PFCMult']
     
     plot_wPFC2MD(wPFC2MD)
-    plt.savefig(FIGUREPATH/'wPFC2MD_noiseJ.pdf') 
+    plt.savefig(FIGUREPATH/'wPFC2MD_multicues.pdf') 
     plot_wMD2PFC(wMD2PFC)
-    plt.savefig(FIGUREPATH/'wMD2PFC_noiseJ.pdf') 
+    plt.savefig(FIGUREPATH/'wMD2PFC_multicues.pdf') 
     import pdb;pdb.set_trace()
     plot_wMD2PFCMult(wMD2PFCMult)
     plt.savefig(FIGUREPATH/'wMD2PFCMult_noiseN.pdf') 
+    
+    
     

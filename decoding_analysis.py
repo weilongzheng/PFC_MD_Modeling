@@ -17,6 +17,7 @@ import random
 import sklearn
 from sklearn.svm import LinearSVC
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.manifold import TSNE
 import matplotlib as mpl
 MODELPATH = Path('./files')
 FIGUREPATH = Path('./results')
@@ -25,6 +26,10 @@ mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
+
+def plot_tsne(x):
+    plt.figure(figsize=(2.4,2.4))
+    X_embedded = TSNE(n_components=2).fit_transform(X)
 
 def plotActivity(x, legend_use, color_use='tab:red'):
     plt.figure(figsize=(2.4,2.4))
@@ -50,7 +55,7 @@ if __name__ == '__main__':
     plot_pfc_md = False
     
     for i,itau in enumerate(RNGs):
-        pickle_in = open('files/final/test_noiseJ_numMD10_numContext2_MDTrue_R1.pkl','rb')
+        pickle_in = open('files/final/test_multicues_numMD10_numContext2_MDTrue_R3.pkl','rb')
         data = pickle.load(pickle_in)
         
         cues_all = data['cues_all']
