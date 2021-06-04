@@ -551,10 +551,10 @@ class PytorchPFCMD(nn.Module):
             # input2pfc = self.PytorchSensory2pfc(input_t)
             
             if self.MDeffect:
-                self.md_output = self.md(pfc_output.detach().numpy())
+                self.md_output = self.md(pfc_output.cpu().detach().numpy())
 
                 self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
-                rec_inp = np.dot(self.pfc.Jrec.detach().numpy(), self.pfc.activity.detach().numpy())
+                rec_inp = np.dot(self.pfc.Jrec.cpu().detach().numpy(), self.pfc.activity.cpu().detach().numpy())
                 md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.num_output))
                 md2pfc = md2pfc_weights * rec_inp  
                 md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.num_output), self.md_output)
@@ -568,7 +568,7 @@ class PytorchPFCMD(nn.Module):
                 self.md_preTraces[i, :] = self.md.MDpreTrace
                 self.md_preTrace_thresholds[i, :] = self.md.MDpreTrace_threshold
                 
-#                pfc_output = self.pfc(input2pfc, torch.from_numpy(md2pfc)).detach().numpy()
+#                pfc_output = self.pfc(input2pfc, torch.from_numpy(md2pfc)).cpu().detach().numpy()
 #                pfc_output_t = pfc_output.reshape((1, pfc_output.shape[0]))
 #                self.pfc_outputs[i, :] = torch.from_numpy(pfc_output_t)
 
@@ -784,11 +784,11 @@ class Elman_MD(nn.Module):
 
             if self.MDeffect:
                 # Generate MD activities
-                self.md_output = self.md(RNN_hidden_t.detach().numpy()[0, :]) # batch size should be 1
+                self.md_output = self.md(RNN_hidden_t.cpu().detach().numpy()[0, :]) # batch size should be 1
                 
                 # Generate MD -> PFC inputs
                 self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
-                rec_inp = np.dot(self.parm['rnn.h2h.weight'].detach().numpy(), RNN_hidden_t.detach().numpy()[0, :])  # PFC recurrent inputs # batch size should be 1
+                rec_inp = np.dot(self.parm['rnn.h2h.weight'].cpu().detach().numpy(), RNN_hidden_t.cpu().detach().numpy()[0, :])  # PFC recurrent inputs # batch size should be 1
                 md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.output_size))
                 md2pfc = md2pfc_weights * rec_inp                                                                # MD inputs - multiplicative term
                 md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.output_size), self.md_output)    # MD inputs - additive term
@@ -992,14 +992,14 @@ class CTRNN_MD(nn.Module):
             assert hidden.shape[0] == 1, 'batch size should be 1'
             assert rec_input.shape[0] == 1, 'batch size should be 1'
 
-            self.md.md_output = self.md(hidden.detach().numpy()[0, :])
+            self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
 
             self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
-            rec_inp = rec_input.detach().numpy()[0, :]
+            rec_inp = rec_input.cpu().detach().numpy()[0, :]
             md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.output_size))
             md2pfc = md2pfc_weights * rec_inp
             md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.output_size), self.md.md_output)
-            md2pfc = torch.from_numpy(md2pfc).view_as(hidden)
+            md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             pre_activation += md2pfc
         

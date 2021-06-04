@@ -59,7 +59,9 @@ def get_full_performance(net, env, task_id, num_task, num_trial=1000, device='cp
 
 ###--------------------------Training configs--------------------------###
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cpu' # CPU is faster
+
 print("device:", device, '\n')
 
 config = {
@@ -105,7 +107,7 @@ model_config = {
     'hidden_size': 256,
     'sub_size': 128,
     'output_size': act_size,
-    'MDeffect': False,
+    'MDeffect': True,
     'md_size': 10,
     'md_active_size': 5,
     'md_dt': 0.001,
@@ -142,9 +144,9 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 1500
+total_training_cycle = 9000
 print_every_cycle = 50
-save_every_cycle = 1
+save_every_cycle = 50
 save_times = total_training_cycle//save_every_cycle
 running_loss = 0.0
 running_train_time = 0
@@ -171,9 +173,9 @@ for i in range(total_training_cycle):
     train_time_start = time.time()
     
     # control training paradigm
-    if i < 500:
+    if i < 3000:
         task_id = 0 
-    elif i > 500 and i < 1000:
+    elif i > 3000 and i < 6000:
         task_id = 1
     else:
         task_id = 0
@@ -195,7 +197,7 @@ for i in range(total_training_cycle):
     # check PFC and MD activities
     if i % 100 == 99:
         plt.figure()
-        plt.plot(rnn_activity[-1, 0, :].detach().numpy())
+        plt.plot(rnn_activity[-1, 0, :].cpu().detach().numpy())
         plt.show()
         if config['MDeffect']:
             plt.figure()
@@ -222,7 +224,7 @@ for i in range(total_training_cycle):
     # save activities
     if i % save_every_cycle == (save_every_cycle - 1):
         count_save_time = (i+1)//save_every_cycle - 1
-        log['PFCouts_all'][count_save_time, ...] = rnn_activity.detach().numpy()
+        log['PFCouts_all'][count_save_time, ...] = rnn_activity.cpu().detach().numpy()
         if config['MDeffect']:
             log['MDouts_all'][count_save_time, ...] = net.rnn.md.md_output_t
             log['MDpreTraces_all'][count_save_time, ...] = net.rnn.md.md_preTraces
@@ -356,3 +358,15 @@ if config['MDeffect']:
 # gif_path = './animation/'+'PFCoutputs_evolution.gif'
 # imageio.mimsave(gif_path, images, duration=0.2)
 # optimize(gif_path)
+
+# recurrent weights
+# font = {'family':'Times New Roman','weight':'normal', 'size':15}
+# plt.figure()
+# ms = plt.matshow(net.rnn.h2h.weight.cpu().detach(), cmap='Reds')
+# plt.xlabel('PFC neuron index', fontdict=font)
+# plt.ylabel('PFC neuron index', fontdict=font)
+# plt.xticks(ticks=[0, 255], labels=[1, 256])
+# plt.yticks(ticks=[0, 255], labels=[1, 256])
+# plt.title('Recurrent weights', fontdict=font)
+# plt.colorbar(ms)
+# plt.show()
