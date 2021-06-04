@@ -27,9 +27,12 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
-def plot_tsne(x):
+def plot_tsne(x,label):
     plt.figure(figsize=(2.4,2.4))
-    X_embedded = TSNE(n_components=2).fit_transform(X)
+    X_embedded = TSNE(n_components=2).fit_transform(x)
+    plt.scatter(X_embedded[label==0,0], X_embedded[label==0,1])
+    plt.scatter(X_embedded[label==1,0], X_embedded[label==1,1])
+    plt.legend()
 
 def plotActivity(x, legend_use, color_use='tab:red'):
     plt.figure(figsize=(2.4,2.4))
@@ -55,7 +58,7 @@ if __name__ == '__main__':
     plot_pfc_md = False
     
     for i,itau in enumerate(RNGs):
-        pickle_in = open('files/final/test_multicues_numMD10_numContext2_MDTrue_R3.pkl','rb')
+        pickle_in = open('files/final/test_numMD10_numContext2_MDTrue_R1.pkl','rb')
         data = pickle.load(pickle_in)
         
         cues_all = data['cues_all']
@@ -83,6 +86,10 @@ if __name__ == '__main__':
             temp_index = np.where(temp==1)
             context_label[i_time] = temp_index[0]
         
+        plot_pfc_md_tsne = True
+        if plot_pfc_md_tsne == True:
+            plot_tsne(routs_all[:,50,:],rule_label)
+        import pdb;pdb.set_trace()
         ## decode rule from pfc
         acc_rule_pfc = list()
         n_train = int(0.8 * num_trial)
