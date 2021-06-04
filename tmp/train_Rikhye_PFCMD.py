@@ -46,11 +46,10 @@ num_active = 5  # num MD active per context
 n_output = 2
 MDeffect = False
 PFClearn = False
-shift = 0 # shift step
 
-
-model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
-MDeffect=MDeffect)
+model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue,
+                     Num_MD=Num_MD, num_active=num_active,
+                     num_output=n_output, MDeffect=MDeffect)
 
 # Training
 criterion = nn.MSELoss()
@@ -76,8 +75,6 @@ total_step = Ntrain*Ncontexts+Nextra
 #total_step = Ntrain+Nextra # used for only one block training
 tsteps = 200 # time steps in a trial
 MDpreTraces = np.zeros(shape=(total_step,n_neuron))
-#MDouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,Num_MD))
-#PFCouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
 MDouts_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, Num_MD))
 MDpreTraces_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, n_neuron))
 MDpreTrace_threshold_all = np.zeros(shape=(total_step, tsteps*inpsPerConext, 1))
@@ -93,8 +90,6 @@ log = defaultdict(list)
 #timestamps = []
 #model_name = 'model-' + str(int(time.time()))
 #savemodel = False
-
-
 
 
 for i in range(total_step):
@@ -113,16 +108,8 @@ for i in range(total_step):
     outputs = model(inputs, labels)
 
     # save PFC and MD activities
-    # PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
-    # if  MDeffect == True:
-    #     MDouts_all[i,:] = model.md_output
-    #     MDpreTraces[i,:] = model.md.MDpreTrace
-    # for itrial in range(inpsPerConext): 
-        #PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
-    # save PFC and MD activities
     PFCouts_all[i,:,:] = model.pfc_outputs.detach().numpy()
     if  MDeffect == True:
-        # MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
         MDouts_all[i,:,:] = model.md_output_t
         MDpreTraces_all[i,:,:] = model.md_preTraces
         MDpreTrace_threshold_all[i, :, :] = model.md_preTrace_thresholds
@@ -142,7 +129,7 @@ for i in range(total_step):
     #     model.sensory2pfc.shift(shift=shift)
     ###model.md.shift_weights(shift=shift)
     ###print(model.md.wPFC2MD[0, 0:20])
-    ###rint(model.md.wMD2PFC[0:20, 0])
+    ###print(model.md.wMD2PFC[0:20, 0])
     ###print(model.sensory2pfc.wIn[:, 0])
 
     # print statistics
@@ -160,7 +147,6 @@ for i in range(total_step):
 
         print('Total step: {:d}'.format(total_step))
         print('Training sample index: {:d}-{:d}'.format(i+1-print_step, i+1))
-        print('shift: {:d}'.format(shift))
 
         # running loss
         print('loss: {:0.5f}'.format(running_loss / print_step))
@@ -197,27 +183,27 @@ if  MDeffect == True:
     log['wMD2PFC'] = model.md.wMD2PFC
     log['wMD2PFCMult'] = model.md.wMD2PFCMult
 
-filename = Path('files')
-os.makedirs(filename, exist_ok=True)
+# filename = Path('files')
+# os.makedirs(filename, exist_ok=True)
 # file_training = 'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
 #                 '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
 #                 '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
-file_training = 'Animation'+'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
-                '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
-                '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
-with open(filename / file_training, 'wb') as f:
-    pickle.dump(log, f)
+# file_training = 'Animation'+'Ntrain'+str(Ntrain)+'_Nextra'+str(Nextra)+'_train_numMD'+str(Num_MD)+\
+#                 '_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+\
+#                 '_shift'+str(shift)+'_R'+str(RNGSEED)+'.pkl'
+# with open(filename / file_training, 'wb') as f:
+#     pickle.dump(log, f)
 
 
 print('Finished Training')
 
 
 # Make some plots
-with open(filename / file_training, 'rb') as f:
-    log = pickle.load(f)
+# with open(filename / file_training, 'rb') as f:
+#     log = pickle.load(f)
 
 # Plot MSE curve
-plt.plot(log['mse'], label=f'With MD; shift step = {shift}')
+plt.plot(log['mse'])
 plt.xlabel('Cycles')
 plt.ylabel('MSE loss')
 plt.legend()
@@ -226,6 +212,32 @@ plt.legend()
 #plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 plt.tight_layout()
 plt.show()
+
+# PFC outputs in a cycle
+# font = {'family':'Times New Roman','weight':'normal', 'size':30}
+# idx_cycle = 20
+# PFCouts_cycle = PFCouts_all[idx_cycle, :, :]
+# for i in range(PFCouts_cycle.shape[0]):
+#     meanPFCouts_cycle = np.mean(PFCouts_cycle[i, :])
+#     plt.plot(PFCouts_cycle[i, :])
+#     plt.axhline(y=meanPFCouts_cycle, color='r', linestyle='-')
+#     plt.title('PFC outputs' + ' Step-'+str(i+1), fontdict=font)
+#     plt.xlabel('PFC neuron index')
+#     plt.ylabel('PFC activities')
+#     plt.xlim([-50, 1050])
+#     plt.ylim([0.0, 1.0])
+#     plt.xticks(ticks=[100*i for i in range(11)], rotation=0)
+#     plt.yticks(ticks=[0.1*i for i in range(11)], rotation=0)
+#     plt.savefig('./animation/'+f'PFCoutputs_index_{i}.png')
+#     plt.close() # do not show figs in line
+
+# images = []
+# for i in range(PFCouts_cycle.shape[0]):
+#     filename = './animation/'+f'PFCoutputs_index_{i}.png'
+#     images.append(imageio.imread(filename))
+# gif_path = './animation/'+'PFCoutputs_evolution.gif'
+# imageio.mimsave(gif_path, images, duration=0.2)
+# optimize(gif_path)
 
 ## plot pfc2md weights
 # wPFC2MD = log['wPFC2MD']

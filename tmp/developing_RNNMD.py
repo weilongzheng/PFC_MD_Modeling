@@ -22,6 +22,9 @@ from model_dev import RNN_MD
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+import imageio
+from pygifsicle import optimize
+
 
 ###--------------------------Helper functions--------------------------###
 
@@ -102,7 +105,7 @@ model_config = {
     'hidden_size': 256,
     'sub_size': 128,
     'output_size': act_size,
-    'MDeffect': True,
+    'MDeffect': False,
     'md_size': 10,
     'md_active_size': 5,
     'md_dt': 0.001,
@@ -330,3 +333,26 @@ if config['MDeffect']:
     plt.tight_layout()
     # plt.savefig('./animation/'+'wMD2PFC.png')
     plt.show()
+
+# PFC outputs at a cycle
+# font = {'family':'Times New Roman','weight':'normal', 'size':30}
+# idx_cycle = 20
+# PFCouts_cycle = log['PFCouts_all'][idx_cycle, :, 0, :]
+# for i in range(PFCouts_cycle.shape[0]):
+#     meanPFCouts_cycle = np.mean(PFCouts_cycle[i, :])
+#     plt.plot(PFCouts_cycle[i, :])
+#     plt.axhline(y=meanPFCouts_cycle, color='r', linestyle='-')
+#     plt.title('PFC outputs' + ' Step-'+str(i+1), fontdict=font)
+#     plt.xlabel('PFC neuron index')
+#     plt.ylabel('PFC activities')
+#     plt.xlim([-5, 261])
+#     plt.ylim([0.0, 1.0])
+#     plt.savefig('./animation/'+f'PFCoutputs_index_{i}.png')
+#     plt.close() # do not show figs in lin
+# images = []
+# for i in range(PFCouts_cycle.shape[0]):
+#     filename = './animation/'+f'PFCoutputs_index_{i}.png'
+#     images.append(imageio.imread(filename))
+# gif_path = './animation/'+'PFCoutputs_evolution.gif'
+# imageio.mimsave(gif_path, images, duration=0.2)
+# optimize(gif_path)
