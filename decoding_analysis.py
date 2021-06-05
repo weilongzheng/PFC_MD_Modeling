@@ -29,7 +29,7 @@ mpl.rcParams['font.family'] = 'arial'
 
 def plot_tsne(X_embedded,label):
     plt.figure(figsize=(2.4,2.4))
-    #X_embedded = TSNE(n_components=2).fit_transform(x)
+    X_embedded = TSNE(n_components=2).fit_transform(x)
     plt.scatter(X_embedded[label==0,0], X_embedded[label==0,1], s = 2, c ='tab:red', label='Context 1') #'tab:blue', 'tab:orange', 'tab:green'
     plt.scatter(X_embedded[label==1,0], X_embedded[label==1,1], s = 2, c ='tab:blue', label='Context 2')
     plt.legend(frameon=False)
