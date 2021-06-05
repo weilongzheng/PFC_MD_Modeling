@@ -168,6 +168,35 @@ if config['MDeffect']:
     log.update(MD_log)
 
 
+# MD learning phase
+task_id = 0
+net.rnn.md.learn = True
+for i in range(200):
+    
+    dataset = datasets[task_id]
+    inputs, labels = dataset()
+    assert not np.any(np.isnan(inputs))
+
+    # numpy -> torch
+    inputs = torch.from_numpy(inputs).type(torch.float).to(device)
+    labels = torch.from_numpy(labels).type(torch.long).to(device)
+    # normalize inputs
+    # inputs = inputs / (abs(inputs).max() + 1e-15)
+    # index -> one-hot vector
+    labels = (F.one_hot(labels, num_classes=act_size)).float()
+
+    outputs, rnn_activity = net(inputs, sub_id=task_id)
+    if i % 10 == 9:
+        if config['MDeffect']:
+            plt.figure()
+            plt.plot(net.rnn.md.md_preTraces[-1, :])
+            plt.axhline(y=np.mean(net.rnn.md.md_preTraces[-1, :]), color='r', linestyle='-')
+            plt.title('Pretrace')
+            plt.show()
+
+
+# RNN learning phase
+net.rnn.md.learn = False
 for i in range(total_training_cycle):
 
     train_time_start = time.time()
@@ -198,13 +227,16 @@ for i in range(total_training_cycle):
     if i % 100 == 99:
         plt.figure()
         plt.plot(rnn_activity[-1, 0, :].cpu().detach().numpy())
+        plt.title('PFC activities')
         plt.show()
         if config['MDeffect']:
             plt.figure()
             plt.plot(net.rnn.md.md_preTraces[-1, :])
+            plt.title('Pretrace')
             plt.show()
             plt.figure()
             plt.plot(net.rnn.md.md_output_t[-1, :])
+            plt.title('MD activities')
             plt.show()
             plt.figure(figsize=(12, 8))
             for wPFC2MD_id in range(config['md_size']):
