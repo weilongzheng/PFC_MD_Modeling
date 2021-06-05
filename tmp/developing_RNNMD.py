@@ -169,10 +169,6 @@ if config['MDeffect']:
 
 
 # MD learning phase
-# For MD decoding task-relevant neurons
-#   Hebbian learning rate should be 10 times higher (fast learning)
-#   Compute difference of PFC activities between steps (dynamical neurons -> task relevant neurons)
-#   Robust different random seeds √
 if config['MDeffect']:
     net.rnn.md.learn = True
     MDlearning_steps = 400
