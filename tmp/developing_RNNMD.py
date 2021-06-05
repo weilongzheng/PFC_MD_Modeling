@@ -169,34 +169,78 @@ if config['MDeffect']:
 
 
 # MD learning phase
-task_id = 0
-net.rnn.md.learn = True
-for i in range(200):
-    
-    dataset = datasets[task_id]
-    inputs, labels = dataset()
-    assert not np.any(np.isnan(inputs))
+# For MD decoding task-relevant neurons
+#   Hebbian learning rate should be 10 times higher (fast learning)
+#   Compute difference of PFC activities between steps (dynamical neurons -> task relevant neurons)
+#   Robust different random seeds √
+if config['MDeffect']:
+    net.rnn.md.learn = True
+    MDlearning_steps = 400
+    for i in range(MDlearning_steps):
+        if i < 200:
+            task_id = 0
+        else:
+            task_id = 1
+        dataset = datasets[task_id]
+        inputs, labels = dataset()
+        assert not np.any(np.isnan(inputs))
 
-    # numpy -> torch
-    inputs = torch.from_numpy(inputs).type(torch.float).to(device)
-    labels = torch.from_numpy(labels).type(torch.long).to(device)
-    # normalize inputs
-    # inputs = inputs / (abs(inputs).max() + 1e-15)
-    # index -> one-hot vector
-    labels = (F.one_hot(labels, num_classes=act_size)).float()
+        # numpy -> torch
+        inputs = torch.from_numpy(inputs).type(torch.float).to(device)
+        labels = torch.from_numpy(labels).type(torch.long).to(device)
+        # normalize inputs
+        # inputs = inputs / (abs(inputs).max() + 1e-15)
+        # index -> one-hot vector
+        labels = (F.one_hot(labels, num_classes=act_size)).float()
 
-    outputs, rnn_activity = net(inputs, sub_id=task_id)
-    if i % 10 == 9:
-        if config['MDeffect']:
-            plt.figure()
-            plt.plot(net.rnn.md.md_preTraces[-1, :])
-            plt.axhline(y=np.mean(net.rnn.md.md_preTraces[-1, :]), color='r', linestyle='-')
-            plt.title('Pretrace')
-            plt.show()
+        outputs, rnn_activity = net(inputs, sub_id=task_id)
+        if i % 20 == 19:
+            if config['MDeffect']:
+                plt.figure(figsize=(16, 4))
+                plt.subplot(1, 2, 1)
+                plt.plot(net.rnn.md.md_preTraces[-1, :])
+                plt.axhline(y=np.mean(net.rnn.md.md_preTraces[-1, :]), color='r', linestyle='-')
+                plt.title('Pretrace')
+                plt.subplot(1, 2, 2)
+                plt.plot(net.rnn.md.md_output_t[-1, :])
+                plt.title('MD activities')
+                plt.show()
+    net.rnn.md.learn = False
+
+    # Heatmap wPFC2MD
+    font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    ax = plt.figure(figsize=(8, 6))
+    ax = sns.heatmap(net.rnn.md.wPFC2MD, cmap='Reds')
+    ax.set_xticks([0, 255])
+    ax.set_xticklabels([1, 256], rotation=0)
+    ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+    ax.set_xlabel('PFC neuron index', fontdict=font)
+    ax.set_ylabel('MD neuron index', fontdict=font)
+    ax.set_title('wPFC2MD', fontdict=font)
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('connection weight', fontdict=font)
+    plt.tight_layout()
+    # plt.savefig('./animation/'+'wPFC2MD.png')
+    plt.show()
+
+    # Heatmap wMD2PFC
+    font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    ax = plt.figure(figsize=(8, 6))
+    ax = sns.heatmap(net.rnn.md.wMD2PFC, cmap='Blues_r')
+    ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+    ax.set_yticks([0, 255])
+    ax.set_yticklabels([1, 256], rotation=0)
+    ax.set_xlabel('MD neuron index', fontdict=font)
+    ax.set_ylabel('PFC neuron index', fontdict=font)
+    ax.set_title('wMD2PFC', fontdict=font)
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('connection weight', fontdict=font)
+    plt.tight_layout()
+    # plt.savefig('./animation/'+'wMD2PFC.png')
+    plt.show()
 
 
 # RNN learning phase
-net.rnn.md.learn = False
 for i in range(total_training_cycle):
 
     train_time_start = time.time()
@@ -212,11 +256,14 @@ for i in range(total_training_cycle):
     dataset = datasets[task_id]
     inputs, labels = dataset()
     assert not np.any(np.isnan(inputs))
-
+    
+    # numpy -> torch
     inputs = torch.from_numpy(inputs).type(torch.float).to(device)
-    # inputs = inputs / (abs(inputs).max() + 1e-15) # normalize inputs
-    labels = torch.from_numpy(labels).type(torch.long).to(device) # numpy -> torch
-    labels = (F.one_hot(labels, num_classes=act_size)).float() # index -> one-hot vector
+    labels = torch.from_numpy(labels).type(torch.long).to(device)
+    # normalize inputs
+    # inputs = inputs / (abs(inputs).max() + 1e-15)
+    # index -> one-hot vector
+    labels = (F.one_hot(labels, num_classes=act_size)).float()
 
     # zero the parameter gradients
     optimizer.zero_grad()
@@ -230,18 +277,18 @@ for i in range(total_training_cycle):
         plt.title('PFC activities')
         plt.show()
         if config['MDeffect']:
-            plt.figure()
-            plt.plot(net.rnn.md.md_preTraces[-1, :])
-            plt.title('Pretrace')
-            plt.show()
+            # plt.figure()
+            # plt.plot(net.rnn.md.md_preTraces[-1, :])
+            # plt.title('Pretrace')
+            # plt.show()
             plt.figure()
             plt.plot(net.rnn.md.md_output_t[-1, :])
             plt.title('MD activities')
             plt.show()
-            plt.figure(figsize=(12, 8))
-            for wPFC2MD_id in range(config['md_size']):
-                plt.subplot(config['md_size'], 1, wPFC2MD_id+1)
-                plt.plot(net.rnn.md.wPFC2MD[wPFC2MD_id, :])
+            # plt.figure(figsize=(12, 8))
+            # for wPFC2MD_id in range(config['md_size']):
+            #     plt.subplot(config['md_size'], 1, wPFC2MD_id+1)
+            #     plt.plot(net.rnn.md.wPFC2MD[wPFC2MD_id, :])
             plt.show()
     # check shapes
     # print("inputs.shape: ", inputs.shape)
@@ -259,10 +306,10 @@ for i in range(total_training_cycle):
         log['PFCouts_all'][count_save_time, ...] = rnn_activity.cpu().detach().numpy()
         if config['MDeffect']:
             log['MDouts_all'][count_save_time, ...] = net.rnn.md.md_output_t
-            log['MDpreTraces_all'][count_save_time, ...] = net.rnn.md.md_preTraces
-            log['MDpreTrace_threshold_all'][count_save_time, ...] = net.rnn.md.md_preTrace_thresholds
-            log['wPFC2MD_list'].append(net.rnn.md.wPFC2MD)
-            log['wMD2PFC_list'].append(net.rnn.md.wMD2PFC)
+            # log['MDpreTraces_all'][count_save_time, ...] = net.rnn.md.md_preTraces
+            # log['MDpreTrace_threshold_all'][count_save_time, ...] = net.rnn.md.md_preTrace_thresholds
+            # log['wPFC2MD_list'].append(net.rnn.md.wPFC2MD)
+            # log['wMD2PFC_list'].append(net.rnn.md.wMD2PFC)
 
     # print statistics
     log['losses'].append(loss.item())
@@ -335,40 +382,40 @@ for env_id in range(len(datasets)):
     # plt.savefig('./animation/'+'performance.png')
     plt.show()
 
-if config['MDeffect']:
-    # Heatmap wPFC2MD
-    font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    ax = plt.figure(figsize=(8, 6))
-    ax = sns.heatmap(log['wPFC2MD_list'][-1], cmap='Reds')
-    ax.set_xticks([0, 255])
-    ax.set_xticklabels([1, 256], rotation=0)
-    ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-    ax.set_xlabel('PFC neuron index', fontdict=font)
-    ax.set_ylabel('MD neuron index', fontdict=font)
-    ax.set_title('wPFC2MD', fontdict=font)
-    cbar = ax.collections[0].colorbar
-    cbar.set_label('connection weight', fontdict=font)
-    plt.tight_layout()
-    # plt.savefig('./animation/'+'wPFC2MD.png')
-    plt.show()
+# if config['MDeffect']:
+#     # Heatmap wPFC2MD
+#     font = {'family':'Times New Roman','weight':'normal', 'size':20}
+#     ax = plt.figure(figsize=(8, 6))
+#     ax = sns.heatmap(log['wPFC2MD_list'][-1], cmap='Reds')
+#     ax.set_xticks([0, 255])
+#     ax.set_xticklabels([1, 256], rotation=0)
+#     ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+#     ax.set_xlabel('PFC neuron index', fontdict=font)
+#     ax.set_ylabel('MD neuron index', fontdict=font)
+#     ax.set_title('wPFC2MD', fontdict=font)
+#     cbar = ax.collections[0].colorbar
+#     cbar.set_label('connection weight', fontdict=font)
+#     plt.tight_layout()
+#     # plt.savefig('./animation/'+'wPFC2MD.png')
+#     plt.show()
 
-    # Heatmap wMD2PFC
-    font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    ax = plt.figure(figsize=(8, 6))
-    ax = sns.heatmap(log['wMD2PFC_list'][-1], cmap='Blues_r')
-    ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-    ax.set_yticks([0, 255])
-    ax.set_yticklabels([1, 256], rotation=0)
-    ax.set_xlabel('MD neuron index', fontdict=font)
-    ax.set_ylabel('PFC neuron index', fontdict=font)
-    ax.set_title('wMD2PFC', fontdict=font)
-    cbar = ax.collections[0].colorbar
-    cbar.set_label('connection weight', fontdict=font)
-    plt.tight_layout()
-    # plt.savefig('./animation/'+'wMD2PFC.png')
-    plt.show()
+#     # Heatmap wMD2PFC
+#     font = {'family':'Times New Roman','weight':'normal', 'size':20}
+#     ax = plt.figure(figsize=(8, 6))
+#     ax = sns.heatmap(log['wMD2PFC_list'][-1], cmap='Blues_r')
+#     ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+#     ax.set_yticks([0, 255])
+#     ax.set_yticklabels([1, 256], rotation=0)
+#     ax.set_xlabel('MD neuron index', fontdict=font)
+#     ax.set_ylabel('PFC neuron index', fontdict=font)
+#     ax.set_title('wMD2PFC', fontdict=font)
+#     cbar = ax.collections[0].colorbar
+#     cbar.set_label('connection weight', fontdict=font)
+#     plt.tight_layout()
+#     # plt.savefig('./animation/'+'wMD2PFC.png')
+#     plt.show()
 
-# PFC outputs at a cycle
+# PFC outputs within a cycle
 # font = {'family':'Times New Roman','weight':'normal', 'size':30}
 # idx_cycle = 20
 # PFCouts_cycle = log['PFCouts_all'][idx_cycle, :, 0, :]

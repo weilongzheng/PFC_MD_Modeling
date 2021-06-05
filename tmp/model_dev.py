@@ -894,7 +894,6 @@ class CTRNN(nn.Module):
         output = torch.stack(output, dim=0)
         return output, hidden
 
-
 class RNNNet(nn.Module):
     """Recurrent network model.
     Args:
@@ -916,6 +915,7 @@ class RNNNet(nn.Module):
         out = self.fc(rnn_activity)
         return out, rnn_activity
 
+
 # MD for neurogym tasks
 class MD_GYM():
     def __init__(self, Nneur, Num_MD, num_active=1, positiveRates=True, dt=0.001):
@@ -928,7 +928,7 @@ class MD_GYM():
         self.tau = 0.02
         self.tau_times = 4
         self.dt = dt
-        self.tau_trace = 200
+        self.tau_trace = 1000 # unit, time steps
         self.Hebb_learning_rate = 1e-4
         Gbase = 0.75  # determines also the cross-task recurrence
 
@@ -977,29 +977,28 @@ class MD_GYM():
         Returns:
             output: array (n_output,)
         """
-        # compute MD inputs
+        # compute MD outputs
         #  MD decays 10x slower than PFC neurons,
         #  so as to somewhat integrate PFC input over time
         if self.positiveRates:
             self.MDinp += self.dt / self.tauMD * (-self.MDinp + np.dot(self.wPFC2MD, input))
-        else:  # shift PFC rates, so that mean is non-zero to turn MD on
-            self.MDinp += self.dt / self.tauMD * (-self.MDinp + np.dot(self.wPFC2MD, (input + 0.5)))
-        
-        # compute MD outputs          
+        else:
+            # shift PFC rates, so that mean is non-zero to turn MD on
+            self.MDinp += self.dt / self.tauMD * (-self.MDinp + np.dot(self.wPFC2MD, (input + 0.5)))      
         MDout = self.winner_take_all(self.MDinp)
 
-        # update PFC-MD weights
+        # update
         if self.learn:
+            # update PFC-MD weights
             self.update_weights(input, MDout)
+            # update PFC activities in the previous step
+            self.prev_PFCout = input
 
         return MDout
 
     def update_trace(self, rout, MDout):
-        # MD presynaptic traces filtered over 10 trials
-        # Ideally one should weight them with MD syn weights,
-        #  but syn plasticity just uses pre!
-
-        self.MDpreTrace += 1. / self.tau_trace * (-self.MDpreTrace + (rout - self.prev_PFCout))
+        # update pretrace based on the difference between steps
+        self.MDpreTrace += 1. / self.tau_trace * (-self.MDpreTrace + abs(rout - self.prev_PFCout))
         self.MDpostTrace += 1. / self.tau_trace * (-self.MDpostTrace + MDout)
         MDoutTrace = self.winner_take_all(self.MDpostTrace)
 
@@ -1020,7 +1019,7 @@ class MD_GYM():
         
         # update and clip the weights
         #  original
-        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 10 * 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0.,7. / self.G)
