@@ -27,12 +27,12 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
 
-def plot_tsne(X_embedded,label):
+def plot_tsne(X_embedded,label,label_str, color_str):
     plt.figure(figsize=(2.4,2.4))
-    X_embedded = TSNE(n_components=2).fit_transform(x)
-    plt.scatter(X_embedded[label==0,0], X_embedded[label==0,1], s = 2, c ='tab:red', label='Context 1') #'tab:blue', 'tab:orange', 'tab:green'
-    plt.scatter(X_embedded[label==1,0], X_embedded[label==1,1], s = 2, c ='tab:blue', label='Context 2')
+    plt.scatter(X_embedded[label==0,0], X_embedded[label==0,1], s = 2, c = color_str[0], label = label_str[0])
+    plt.scatter(X_embedded[label==1,0], X_embedded[label==1,1], s = 2, c = color_str[1 ], label = label_str[1])
     plt.legend(frameon=False)
+    plt.tight_layout()
 
 def plotActivity(x, legend_use, color_use='tab:red'):
     plt.figure(figsize=(2.4,2.4))
@@ -88,7 +88,18 @@ if __name__ == '__main__':
         
         plot_pfc_md_tsne = True
         if plot_pfc_md_tsne == True:
-            plot_tsne(routs_all[:,50,:],rule_label)
+            legend_str = ['Rule 1', 'Rule 2']
+            color_str = ['tab:red','tab:blue']
+            pfc_embedded = TSNE(n_components=2).fit_transform(routs_all[:,120,:])
+            plot_tsne(pfc_embedded,rule_label,legend_str,color_str)
+            md_embedded = TSNE(n_components=2).fit_transform(MDouts_all[:,120,:])
+            plot_tsne(md_embedded,rule_label,legend_str,color_str)
+            legend_str = ['Context 1', 'Context 2']
+            color_str = ['tab:orange', 'tab:green']
+            plot_tsne(pfc_embedded,context_label,legend_str,color_str)
+            plot_tsne(md_embedded,context_label,legend_str,color_str)
+            
+            
         import pdb;pdb.set_trace()
         ## decode rule from pfc
         acc_rule_pfc = list()
