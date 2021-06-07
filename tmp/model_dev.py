@@ -894,7 +894,6 @@ class CTRNN(nn.Module):
         output = torch.stack(output, dim=0)
         return output, hidden
 
-
 class RNNNet(nn.Module):
     """Recurrent network model.
     Args:
@@ -916,6 +915,146 @@ class RNNNet(nn.Module):
         out = self.fc(rnn_activity)
         return out, rnn_activity
 
+
+# MD for neurogym tasks
+class MD_GYM():
+    def __init__(self, Nneur, Num_MD, num_active=1, positiveRates=True, dt=0.001):
+        self.Nneur = Nneur
+        self.Num_MD = Num_MD
+        self.positiveRates = positiveRates
+        self.num_active = num_active # num_active: num MD active per context
+        self.learn = True # update MD weights or not
+
+        self.tau = 0.02
+        self.tau_times = 4
+        self.dt = dt
+        self.tau_trace = 1000 # unit, time steps
+        self.Hebb_learning_rate = 1e-4
+        Gbase = 0.75  # determines also the cross-task recurrence
+
+        # initialize weights
+        self.wPFC2MD = np.random.normal(0,
+                                        1 / np.sqrt(self.Num_MD * self.Nneur),
+                                        size=(self.Num_MD, self.Nneur))
+        self.wMD2PFC = np.random.normal(0,
+                                        1 / np.sqrt(self.Num_MD * self.Nneur),
+                                        size=(self.Nneur, self.Num_MD))
+        self.wMD2PFCMult = np.random.normal(0,
+                                            1 / np.sqrt(self.Num_MD * self.Nneur),
+                                            size=(self.Nneur, self.Num_MD))
+        # initialize activities
+        self.prev_PFCout = np.zeros(shape=(self.Nneur)) # PFC activities in the previous step
+        self.MDpreTrace = np.zeros(shape=(self.Nneur))
+        self.MDpostTrace = np.zeros(shape=(self.Num_MD))
+        self.MDpreTrace_threshold = 0
+
+        # Choose G based on the type of activation function
+        #  unclipped activation requires lower G than clipped activation,
+        #  which in turn requires lower G than shifted tanh activation.
+        if self.positiveRates:
+            self.G = Gbase
+            self.tauMD = self.tau * self.tau_times  ##self.tau
+        else:
+            self.G = Gbase
+            self.MDthreshold = 0.4
+            self.tauMD = self.tau * 10 * self.tau_times
+        self.init_activity()
+        
+    def init_activity(self):
+        self.MDinp = np.zeros(shape=self.Num_MD)
+        
+    def __call__(self, input, *args, **kwargs):
+        """Run the network one step
+
+        For now, consider this network receiving input from PFC,
+        input stands for activity of PFC neurons
+        output stands for output current to MD neurons
+
+        Args:
+            input: array (n_input,)
+            
+
+        Returns:
+            output: array (n_output,)
+        """
+        # compute MD outputs
+        #  MD decays 10x slower than PFC neurons,
+        #  so as to somewhat integrate PFC input over time
+        if self.positiveRates:
+            self.MDinp += self.dt / self.tauMD * (-self.MDinp + np.dot(self.wPFC2MD, input))
+        else:
+            # shift PFC rates, so that mean is non-zero to turn MD on
+            self.MDinp += self.dt / self.tauMD * (-self.MDinp + np.dot(self.wPFC2MD, (input + 0.5)))      
+        MDout = self.winner_take_all(self.MDinp)
+
+        # update
+        if self.learn:
+            # update PFC-MD weights
+            self.update_weights(input, MDout)
+            # update PFC activities in the previous step
+            self.prev_PFCout = input
+
+        return MDout
+
+    def update_trace(self, rout, MDout):
+        # update pretrace based on the difference between steps
+        self.MDpreTrace += 1. / self.tau_trace * (-self.MDpreTrace + abs(rout - self.prev_PFCout))
+        self.MDpostTrace += 1. / self.tau_trace * (-self.MDpostTrace + MDout)
+        MDoutTrace = self.winner_take_all(self.MDpostTrace)
+
+        return MDoutTrace
+
+    def update_weights(self, rout, MDout):
+        """Update weights with plasticity rules.
+
+        Args:
+            rout: input to MD
+            MDout: activity of MD
+        """
+        
+        MDoutTrace = self.update_trace(rout, MDout)
+
+        self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
+        MDoutTrace_threshold = 0.5  
+        
+        # update and clip the weights
+        #  original
+        wPFC2MDdelta = 10 * 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)
+        self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
+        self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
+        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0.,7. / self.G)
+        
+        #  slow-decaying PFC-MD weights
+        # wPFC2MDdelta = 30000 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
+        # self.wPFC2MD += 1. / self.tsteps / 5. * (-1.0 * self.wPFC2MD + 1.0 * wPFC2MDdelta)
+        # self.wPFC2MD = np.clip(self.wPFC2MD, 0., 1.)
+        # self.wMD2PFC += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFC + 1.0 * (wPFC2MDdelta.T))
+        # self.wMD2PFC = np.clip(self.wMD2PFC, -10., 0.)
+        # self.wMD2PFCMult += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T))
+        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult, 0.,7. / self.G)
+        
+        #  decaying PFC-MD weights
+        # alpha = 0 # 0.5 when shift on, 0 when shift off
+        # self.wPFC2MD = np.clip((1-alpha)* self.wPFC2MD + wPFC2MDdelta, 0., 1.)
+        # self.wMD2PFC = np.clip((1-alpha) * self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
+        # self.wMD2PFCMult = np.clip((1-alpha) * self.wMD2PFCMult + (wPFC2MDdelta.T), 0.,7. / self.G)
+
+    def winner_take_all(self, MDinp):
+        '''Winner take all on the MD
+        '''
+
+        # Thresholding
+        MDout = np.zeros(self.Num_MD)
+        MDinp_sorted = np.sort(MDinp)
+
+        MDthreshold = np.mean(MDinp_sorted[-int(self.num_active) * 2:])
+        # MDthreshold  = np.mean(MDinp)
+        index_pos = np.where(MDinp >= MDthreshold)
+        index_neg = np.where(MDinp < MDthreshold)
+        MDout[index_pos] = 1
+        MDout[index_neg] = 0
+
+        return MDout
 
 # CTRNN with MD layer
 class CTRNN_MD(nn.Module):
@@ -955,7 +1094,7 @@ class CTRNN_MD(nn.Module):
         # MD layer
         self.MDeffect = MDeffect
         if self.MDeffect:
-            self.md = MD(Nneur=hidden_size, Num_MD=md_size, num_active=md_active_size, dt=md_dt)
+            self.md = MD_GYM(Nneur=hidden_size, Num_MD=md_size, num_active=md_active_size, dt=md_dt, positiveRates=True)
             self.md.md_output = np.zeros(md_size)
             index = np.random.permutation(md_size)
             self.md.md_output[index[:md_active_size]] = 1 # randomly set part of md_output to 1
