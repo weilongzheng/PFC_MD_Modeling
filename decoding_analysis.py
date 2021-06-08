@@ -26,6 +26,12 @@ mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
+mpl.rcParams['axes.spines.left'] = True
+mpl.rcParams['axes.spines.right'] = False
+mpl.rcParams['axes.spines.top'] = False
+mpl.rcParams['axes.spines.bottom'] = True
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
 
 def plot_tsne(X_embedded,label,label_str, color_str):
     plt.figure(figsize=(2.4,2.4))
