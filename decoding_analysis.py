@@ -92,7 +92,7 @@ if __name__ == '__main__':
             temp_index = np.where(temp==1)
             context_label[i_time] = temp_index[0]
         
-        plot_pfc_md_tsne = False
+        plot_pfc_md_tsne = True
         if plot_pfc_md_tsne == True:
             legend_str = ['Rule 1', 'Rule 2']
             color_str = ['tab:red','tab:blue']
