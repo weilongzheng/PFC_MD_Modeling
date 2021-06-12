@@ -649,13 +649,13 @@ import torch
 from torch import nn
 
 class PytorchPFC(nn.Module):
-    def __init__(self, n_neuron, n_neuron_per_cue, positiveRates=True, MDeffect=True, noisePresent = False):
+    def __init__(self, n_neuron, n_neuron_per_cue, pfcNoise, positiveRates=True, MDeffect=True, noisePresent = False):
         super().__init__()
         self.Nneur = n_neuron
         self.Nsub = n_neuron_per_cue
         self.useMult = True
         self.noisePresent = noisePresent
-        self.noiseSD = 1e-2  # 1e-3
+        self.noiseSD = pfcNoise #1e-2  # 1e-3
         self.tau = 0.02
         self.dt = 0.001
 
@@ -947,7 +947,7 @@ class PytorchMD(nn.Module):
 
 
 class PytorchPFCMD(nn.Module):
-    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, MDeffect=True, noisePresent = False, noiseInput = False):
+    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, pfcNoise, MDeffect=True, noisePresent = False, noiseInput = False):
         super().__init__()
         """
         additional noise input neuron if noiseInput is true
@@ -968,7 +968,7 @@ class PytorchPFCMD(nn.Module):
                 n_output=Num_PFC)
             self.sensory2pfc.torch(use_torch=True)
 
-        self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, MDeffect=MDeffect, noisePresent = noisePresent)
+        self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, pfcNoise, MDeffect=MDeffect, noisePresent = noisePresent)
 
         #self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
         self.pfc2out = nn.Linear(Num_PFC, num_output)
