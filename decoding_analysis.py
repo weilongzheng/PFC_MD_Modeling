@@ -50,19 +50,20 @@ def plotActivity(x, legend_use, color_use='tab:red'):
 if __name__ == '__main__':
     #Tau_times = [1/2, 1/4, 1/6, 1/8, 1/10]
     RNGs = [1]
+    config = [1e-2,1e-1,1e0,1e1,0.3,0.5,0.7,0.9,1.5]
     #Tau_times.extend(range(2,12,2))
     #Hebb_LR = [0,0.0001,0.001,0.01,0.1]
     #num_MD = [10,20,30,40,50]
     tsteps = 200
-    acc_rule_pfc_all = np.zeros([len(RNGs),round(tsteps/2)])
-    acc_rule_md_all = np.zeros([len(RNGs),round(tsteps/2)])
-    acc_context_pfc_all = np.zeros([len(RNGs),round(tsteps/2)])
-    acc_context_md_all = np.zeros([len(RNGs),round(tsteps/2)])
+    acc_rule_pfc_all = np.zeros([len(config),round(tsteps/2)])
+    acc_rule_md_all = np.zeros([len(config),round(tsteps/2)])
+    acc_context_pfc_all = np.zeros([len(config),round(tsteps/2)])
+    acc_context_md_all = np.zeros([len(config),round(tsteps/2)])
     
     plot_pfc_md = False
     
-    for i,itau in enumerate(RNGs):
-        pickle_in = open('files/final/test_numMD10_numContext2_MDTrue_R1.pkl','rb')
+    for i,itau in enumerate(config):
+        pickle_in = open('files/final/test_pfcNoise'+str(itau)+'_numMD'+str(10)+'_numContext'+str(2)+'_MD'+str(True)+'_R'+str(1)+'.pkl','rb')
         data = pickle.load(pickle_in)
         
         cues_all = data['cues_all']
@@ -104,7 +105,7 @@ if __name__ == '__main__':
             plot_tsne(md_embedded,context_label,legend_str,color_str)
             
             
-        import pdb;pdb.set_trace()
+        #import pdb;pdb.set_trace()
         ## decode rule from pfc
         acc_rule_pfc = list()
         n_train = int(0.8 * num_trial)
