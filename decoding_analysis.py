@@ -50,7 +50,7 @@ def plotActivity(x, legend_use, color_use='tab:red'):
 if __name__ == '__main__':
     #Tau_times = [1/2, 1/4, 1/6, 1/8, 1/10]
     RNGs = [1]
-    config = [1e-2,1e-1,1e0,1e1,0.3,0.5,0.7,0.9,1.5]
+    config = [1e-2,1e-1,0.3,0.5,0.7,0.9,1e0,1.5,1e1]
     #Tau_times.extend(range(2,12,2))
     #Hebb_LR = [0,0.0001,0.001,0.01,0.1]
     #num_MD = [10,20,30,40,50]
@@ -191,7 +191,42 @@ if __name__ == '__main__':
         plt.tight_layout()
         plt.savefig(FIGUREPATH/'md_ctx2.pdf') 
         #plt.savefig(FIGUREPATH/'md_ctx2.png', dpi=300)
-        
+    
+    plot_decoding_vs_para = True
+if plot_decoding_vs_para == True:
+    plt.figure(figsize=(2.4,2.4))
+    pfc_mean = np.mean(acc_context_pfc_all[:,10:50:10],axis=1)
+    md_mean = np.mean(acc_context_md_all[:,10:50:10],axis=1)
+    pfc_std = np.std(acc_context_pfc_all[:,10:50:10],axis=1)
+    md_std = np.std(acc_context_md_all[:,10:50:10],axis=1)
+    plt.semilogx(config,pfc_mean,'-v',color='tab:red',label='PFC')
+    plt.semilogx(config,md_mean,'-s',color='tab:blue',label='MD')
+    plt.fill_between(config, pfc_mean - pfc_std,pfc_mean + pfc_std, alpha=0.2,color='tab:red')
+    plt.fill_between(config, md_mean - md_std,md_mean + md_std, alpha=0.2,color='tab:blue')
+    plt.legend(frameon=False)
+    plt.xlabel('PFC Noise STD') 
+    plt.title('Cue Period')
+    plt.ylabel('Decoding Context')
+    plt.tight_layout()
+    plt.savefig(FIGUREPATH/'pfc_noise_decoding_cue.pdf')
+    
+    plt.figure(figsize=(2.4,2.4))
+    pfc_mean = np.mean(acc_context_pfc_all[:,60:100:10],axis=1)
+    md_mean = np.mean(acc_context_md_all[:,60:100:10],axis=1)
+    pfc_std = np.std(acc_context_pfc_all[:,60:100:10],axis=1)
+    md_std = np.std(acc_context_md_all[:,60:100:10],axis=1)
+    plt.semilogx(config,pfc_mean,'-v',color='tab:red',label='PFC')
+    plt.semilogx(config,md_mean,'-s',color='tab:blue',label='MD')
+    plt.fill_between(config, pfc_mean - pfc_std,pfc_mean + pfc_std, alpha=0.2,color='tab:red')
+    plt.fill_between(config, md_mean - md_std,md_mean + md_std, alpha=0.2,color='tab:blue')
+    plt.legend(frameon=False)
+    plt.xlabel('PFC Noise STD')
+    plt.ylabel('Decoding Context')
+    plt.title('Delay Period')
+    plt.tight_layout()
+    plt.savefig(FIGUREPATH/'pfc_noise_decoding_delay.pdf')
+    
+    
     plt.figure(figsize=(2.4,2.4))
     plt.plot(acc_rule_pfc,'tab:red',label='PFC')
     plt.plot(acc_rule_md,'tab:blue',label='MD')
