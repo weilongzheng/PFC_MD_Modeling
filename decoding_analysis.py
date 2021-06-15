@@ -19,6 +19,7 @@ from sklearn.svm import LinearSVC
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.manifold import TSNE
 import matplotlib as mpl
+import seaborn as sns
 MODELPATH = Path('./files')
 FIGUREPATH = Path('./results')
 
@@ -40,12 +41,12 @@ def plot_tsne(X_embedded,label,label_str, color_str):
 
 def plotActivity(x, legend_use, color_use='tab:red'):
     plt.figure(figsize=(2.4,2.4))
-    plt.plot(x,color_use,label=legend_use)
-    plt.xlabel('Neuron Index')
-    plt.legend()
-    plt.legend(frameon=False)
-    plt.ylabel('Activity (a.u.)')
+    ax = sns.heatmap(x, cmap = color_use)
+    ax.set_xlabel('Time Steps')
+    ax.set_ylabel('Neuron Index')
+    ax.set_title(legend_use)
     plt.tight_layout()
+    plt.show()
 
 if __name__ == '__main__':
     #Tau_times = [1/2, 1/4, 1/6, 1/8, 1/10]
