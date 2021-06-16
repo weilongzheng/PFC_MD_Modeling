@@ -175,19 +175,19 @@ if __name__ == '__main__':
         ## plot pfc md activity
     if plot_pfc_md==True:
         
-        plotActivity(routs_all[100,50,:],'PFC','tab:red')
+        plotActivity(routs_all[100,:,:],'PFC','tab:red')
         plt.tight_layout()
         plt.savefig(FIGUREPATH/'pfc_ctx1.pdf') 
         #plt.savefig(FIGUREPATH/'pfc_ctx1.png', dpi=300)
-        plotActivity(routs_all[98,50,:],'PFC','tab:red')
+        plotActivity(routs_all[98,:,:],'PFC','tab:red')
         plt.tight_layout()
         plt.savefig(FIGUREPATH/'pfc_ctx2.pdf') 
         #plt.savefig(FIGUREPATH/'pfc_ctx2.png', dpi=300)
         
-        plotActivity(data['MDouts_all'][100,50,:],'MD','tab:blue')
+        plotActivity(data['MDouts_all'][100,:,:],'MD','tab:blue')
         plt.tight_layout()
         plt.savefig(FIGUREPATH/'md_ctx1.pdf') 
-        #plt.savefig(FIGUREPATH/'md_ctx1.png', dpi=300)
+        #plt.savefig(FIGUREPATH/'md_ctx1.png: dpi=300)
         plotActivity(data['MDouts_all'][98,50,:],'MD','tab:blue')
         plt.tight_layout()
         plt.savefig(FIGUREPATH/'md_ctx2.pdf') 
