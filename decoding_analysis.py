@@ -41,7 +41,11 @@ def plot_tsne(X_embedded,label,label_str, color_str):
 
 def plotActivity(x, legend_use, color_use='tab:red'):
     plt.figure(figsize=(2.4,2.4))
-    ax = sns.heatmap(x, cmap = color_use)
+    ax = sns.heatmap(x.T, cmap = color_use)
+    ax.set_xticks(np.arange(0,x.shape[0], 49))
+    ax.set_xticklabels(np.arange(1,x.shape[0]+1, 49), rotation=0)
+    ax.set_yticks([0, x.shape[1]-1])
+    ax.set_yticklabels([1, x.shape[1]], rotation=0)
     ax.set_xlabel('Time Steps')
     ax.set_ylabel('Neuron Index')
     ax.set_title(legend_use)
@@ -96,20 +100,20 @@ if __name__ == '__main__':
         
         if plot_pfc_md==True:
         
-            plotActivity(routs_all[100,:,:],'PFC','tab:red')
+            plotActivity(routs_all[100,:,:],'PFC','Reds')
             plt.tight_layout()
             plt.savefig(FIGUREPATH/'pfc_ctx1.pdf') 
             #plt.savefig(FIGUREPATH/'pfc_ctx1.png', dpi=300)
-            plotActivity(routs_all[98,:,:],'PFC','tab:red')
+            plotActivity(routs_all[98,:,:],'PFC','Reds')
             plt.tight_layout()
             plt.savefig(FIGUREPATH/'pfc_ctx2.pdf') 
             #plt.savefig(FIGUREPATH/'pfc_ctx2.png', dpi=300)
             
-            plotActivity(data['MDouts_all'][100,:,:],'MD','tab:blue')
+            plotActivity(data['MDouts_all'][100,:,:],'MD','Blues_r')
             plt.tight_layout()
             plt.savefig(FIGUREPATH/'md_ctx1.pdf') 
             #plt.savefig(FIGUREPATH/'md_ctx1.png: dpi=300)
-            plotActivity(data['MDouts_all'][98,50,:],'MD','tab:blue')
+            plotActivity(data['MDouts_all'][98,:,:],'MD','Blues_r')
             plt.tight_layout()
             plt.savefig(FIGUREPATH/'md_ctx2.pdf') 
             #plt.savefig(FIGUREPATH/'md_ctx2.png', dpi=300)
