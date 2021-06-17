@@ -50,8 +50,9 @@ def plotActivity(x, legend_use, color_use='tab:red'):
 
 if __name__ == '__main__':
     #Tau_times = [1/2, 1/4, 1/6, 1/8, 1/10]
-    RNGs = [1]
+    # RNGs = [1]
     config = [1e-2,1e-1,0.3,0.5,0.7,0.9,1e0,1.5,1e1]
+    config = [1]
     #Tau_times.extend(range(2,12,2))
     #Hebb_LR = [0,0.0001,0.001,0.01,0.1]
     #num_MD = [10,20,30,40,50]
@@ -61,10 +62,11 @@ if __name__ == '__main__':
     acc_context_pfc_all = np.zeros([len(config),round(tsteps/2)])
     acc_context_md_all = np.zeros([len(config),round(tsteps/2)])
     
-    plot_pfc_md = False
+    plot_pfc_md = True
     
     for i,itau in enumerate(config):
-        pickle_in = open('files/final/test_pfcNoise'+str(itau)+'_numMD'+str(10)+'_numContext'+str(2)+'_MD'+str(True)+'_R'+str(1)+'.pkl','rb')
+        pickle_in = open('files/final/test_numMD10_numContext2_MDTrue_R1.pkl','rb')
+        #pickle_in = open('files/final/test_pfcNoise'+str(itau)+'_numMD'+str(10)+'_numContext'+str(2)+'_MD'+str(True)+'_R'+str(1)+'.pkl','rb')
         data = pickle.load(pickle_in)
         
         cues_all = data['cues_all']
@@ -92,6 +94,26 @@ if __name__ == '__main__':
             temp_index = np.where(temp==1)
             context_label[i_time] = temp_index[0]
         
+        if plot_pfc_md==True:
+        
+            plotActivity(routs_all[100,:,:],'PFC','tab:red')
+            plt.tight_layout()
+            plt.savefig(FIGUREPATH/'pfc_ctx1.pdf') 
+            #plt.savefig(FIGUREPATH/'pfc_ctx1.png', dpi=300)
+            plotActivity(routs_all[98,:,:],'PFC','tab:red')
+            plt.tight_layout()
+            plt.savefig(FIGUREPATH/'pfc_ctx2.pdf') 
+            #plt.savefig(FIGUREPATH/'pfc_ctx2.png', dpi=300)
+            
+            plotActivity(data['MDouts_all'][100,:,:],'MD','tab:blue')
+            plt.tight_layout()
+            plt.savefig(FIGUREPATH/'md_ctx1.pdf') 
+            #plt.savefig(FIGUREPATH/'md_ctx1.png: dpi=300)
+            plotActivity(data['MDouts_all'][98,50,:],'MD','tab:blue')
+            plt.tight_layout()
+            plt.savefig(FIGUREPATH/'md_ctx2.pdf') 
+            #plt.savefig(FIGUREPATH/'md_ctx2.png', dpi=300)
+        import pdb;pdb.set_trace()
         plot_pfc_md_tsne = False
         if plot_pfc_md_tsne == True:
             legend_str = ['Rule 1', 'Rule 2']
@@ -106,7 +128,7 @@ if __name__ == '__main__':
             plot_tsne(md_embedded,context_label,legend_str,color_str)
             
             
-        #import pdb;pdb.set_trace()
+        #
         ## decode rule from pfc
         acc_rule_pfc = list()
         n_train = int(0.8 * num_trial)
@@ -173,25 +195,7 @@ if __name__ == '__main__':
 #                 'acc_context_md_all':acc_context_md_all},pickle_out)
 #    pickle_out.close()
         ## plot pfc md activity
-    if plot_pfc_md==True:
-        
-        plotActivity(routs_all[100,:,:],'PFC','tab:red')
-        plt.tight_layout()
-        plt.savefig(FIGUREPATH/'pfc_ctx1.pdf') 
-        #plt.savefig(FIGUREPATH/'pfc_ctx1.png', dpi=300)
-        plotActivity(routs_all[98,:,:],'PFC','tab:red')
-        plt.tight_layout()
-        plt.savefig(FIGUREPATH/'pfc_ctx2.pdf') 
-        #plt.savefig(FIGUREPATH/'pfc_ctx2.png', dpi=300)
-        
-        plotActivity(data['MDouts_all'][100,:,:],'MD','tab:blue')
-        plt.tight_layout()
-        plt.savefig(FIGUREPATH/'md_ctx1.pdf') 
-        #plt.savefig(FIGUREPATH/'md_ctx1.png: dpi=300)
-        plotActivity(data['MDouts_all'][98,50,:],'MD','tab:blue')
-        plt.tight_layout()
-        plt.savefig(FIGUREPATH/'md_ctx2.pdf') 
-        #plt.savefig(FIGUREPATH/'md_ctx2.png', dpi=300)
+    
     
     plot_decoding_vs_para = True
     if plot_decoding_vs_para == True:
