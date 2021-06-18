@@ -39,7 +39,7 @@ def plot_tsne(X_embedded,label,label_str, color_str):
     plt.legend(frameon=False)
     plt.tight_layout()
 
-def plotActivity(x, legend_use, color_use='tab:red'):
+def plotActivity(x, legend_use, color_use='Reds'):
     plt.figure(figsize=(2.4,2.4))
     ax = sns.heatmap(x.T, cmap = color_use)
     ax.set_xticks(np.arange(0,x.shape[0], 49))
