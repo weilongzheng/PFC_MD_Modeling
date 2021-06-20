@@ -40,6 +40,7 @@ def plot_tsne(X_embedded,label,label_str, color_str):
     plt.tight_layout()
 
 def plotActivity(x, legend_use, color_use='Reds'):
+    '''plot activity heatmap'''
     plt.figure(figsize=(2.4,2.4))
     ax = sns.heatmap(x.T, cmap = color_use)
     ax.set_xticks(np.arange(0,x.shape[0], 49))
@@ -55,7 +56,7 @@ def plotActivity(x, legend_use, color_use='Reds'):
 if __name__ == '__main__':
     #Tau_times = [1/2, 1/4, 1/6, 1/8, 1/10]
     # RNGs = [1]
-    config = [1e-2,1e-1,0.3,0.5,0.7,0.9,1e0,1.5,1e1]
+    # config = [1e-2,1e-1,0.3,0.5,0.7,0.9,1e0,1.5,1e1]
     config = [1]
     #Tau_times.extend(range(2,12,2))
     #Hebb_LR = [0,0.0001,0.001,0.01,0.1]
