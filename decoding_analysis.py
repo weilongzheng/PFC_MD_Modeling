@@ -19,6 +19,7 @@ from sklearn.svm import LinearSVC
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.manifold import TSNE
 import matplotlib as mpl
+import seaborn as sns
 MODELPATH = Path('./files')
 FIGUREPATH = Path('./results')
 
@@ -26,39 +27,51 @@ mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
+mpl.rcParams['axes.spines.left'] = True
+mpl.rcParams['axes.spines.right'] = False
+mpl.rcParams['axes.spines.top'] = False
+mpl.rcParams['axes.spines.bottom'] = True
 
-def plot_tsne(X_embedded,label):
+def plot_tsne(X_embedded,label,label_str, color_str):
     plt.figure(figsize=(2.4,2.4))
-    X_embedded = TSNE(n_components=2).fit_transform(x)
-    plt.scatter(X_embedded[label==0,0], X_embedded[label==0,1], s = 2, c ='tab:red', label='Context 1') #'tab:blue', 'tab:orange', 'tab:green'
-    plt.scatter(X_embedded[label==1,0], X_embedded[label==1,1], s = 2, c ='tab:blue', label='Context 2')
+    plt.scatter(X_embedded[label==0,0], X_embedded[label==0,1], s = 2, c = color_str[0], label = label_str[0])
+    plt.scatter(X_embedded[label==1,0], X_embedded[label==1,1], s = 2, c = color_str[1 ], label = label_str[1])
     plt.legend(frameon=False)
-
-def plotActivity(x, legend_use, color_use='tab:red'):
-    plt.figure(figsize=(2.4,2.4))
-    plt.plot(x,color_use,label=legend_use)
-    plt.xlabel('Neuron Index')
-    plt.legend()
-    plt.legend(frameon=False)
-    plt.ylabel('Activity (a.u.)')
     plt.tight_layout()
+
+def plotActivity(x, legend_use, color_use='Reds'):
+    '''plot activity heatmap'''
+    plt.figure(figsize=(2.4,2.4))
+    ax = sns.heatmap(x.T, cmap = color_use)
+    ax.set_xticks(np.arange(0,x.shape[0], 49))
+    ax.set_xticklabels(np.arange(1,x.shape[0]+1, 49), rotation=0)
+    ax.set_yticks([0, x.shape[1]-1])
+    ax.set_yticklabels([1, x.shape[1]], rotation=0)
+    ax.set_xlabel('Time Steps')
+    ax.set_ylabel('Neuron Index')
+    ax.set_title(legend_use)
+    plt.tight_layout()
+    plt.show()
 
 if __name__ == '__main__':
     #Tau_times = [1/2, 1/4, 1/6, 1/8, 1/10]
-    RNGs = [1]
+    # RNGs = [1]
+    # config = [1e-2,1e-1,0.3,0.5,0.7,0.9,1e0,1.5,1e1]
+    config = [1]
     #Tau_times.extend(range(2,12,2))
     #Hebb_LR = [0,0.0001,0.001,0.01,0.1]
     #num_MD = [10,20,30,40,50]
     tsteps = 200
-    acc_rule_pfc_all = np.zeros([len(RNGs),round(tsteps/2)])
-    acc_rule_md_all = np.zeros([len(RNGs),round(tsteps/2)])
-    acc_context_pfc_all = np.zeros([len(RNGs),round(tsteps/2)])
-    acc_context_md_all = np.zeros([len(RNGs),round(tsteps/2)])
+    acc_rule_pfc_all = np.zeros([len(config),round(tsteps/2)])
+    acc_rule_md_all = np.zeros([len(config),round(tsteps/2)])
+    acc_context_pfc_all = np.zeros([len(config),round(tsteps/2)])
+    acc_context_md_all = np.zeros([len(config),round(tsteps/2)])
     
-    plot_pfc_md = False
+    plot_pfc_md = True
     
-    for i,itau in enumerate(RNGs):
+    for i,itau in enumerate(config):
         pickle_in = open('files/final/test_numMD10_numContext2_MDTrue_R1.pkl','rb')
+        #pickle_in = open('files/final/test_pfcNoise'+str(itau)+'_numMD'+str(10)+'_numContext'+str(2)+'_MD'+str(True)+'_R'+str(1)+'.pkl','rb')
         data = pickle.load(pickle_in)
         
         cues_all = data['cues_all']
@@ -86,10 +99,41 @@ if __name__ == '__main__':
             temp_index = np.where(temp==1)
             context_label[i_time] = temp_index[0]
         
-        plot_pfc_md_tsne = True
-        if plot_pfc_md_tsne == True:
-            plot_tsne(routs_all[:,50,:],rule_label)
+        if plot_pfc_md==True:
+        
+            plotActivity(routs_all[100,:,:],'PFC','Reds')
+            #plt.tight_layout()
+            plt.savefig(FIGUREPATH/'pfc_ctx1.pdf') 
+            #plt.savefig(FIGUREPATH/'pfc_ctx1.png', dpi=300)
+            plotActivity(routs_all[98,:,:],'PFC','Reds')
+            #plt.tight_layout()
+            plt.savefig(FIGUREPATH/'pfc_ctx2.pdf') 
+            #plt.savefig(FIGUREPATH/'pfc_ctx2.png', dpi=300)
+            
+            plotActivity(data['MDouts_all'][100,:,:],'MD','Blues_r')
+            #plt.tight_layout()
+            plt.savefig(FIGUREPATH/'md_ctx1.pdf') 
+            #plt.savefig(FIGUREPATH/'md_ctx1.png: dpi=300)
+            plotActivity(data['MDouts_all'][98,:,:],'MD','Blues_r')
+            #plt.tight_layout()
+            plt.savefig(FIGUREPATH/'md_ctx2.pdf') 
+            #plt.savefig(FIGUREPATH/'md_ctx2.png', dpi=300)
         import pdb;pdb.set_trace()
+        plot_pfc_md_tsne = False
+        if plot_pfc_md_tsne == True:
+            legend_str = ['Rule 1', 'Rule 2']
+            color_str = ['tab:red','tab:blue']
+            pfc_embedded = TSNE(n_components=2).fit_transform(routs_all[:,120,:])
+            plot_tsne(pfc_embedded,rule_label,legend_str,color_str)
+            md_embedded = TSNE(n_components=2).fit_transform(MDouts_all[:,120,:])
+            plot_tsne(md_embedded,rule_label,legend_str,color_str)
+            legend_str = ['Context 1', 'Context 2']
+            color_str = ['tab:orange', 'tab:green']
+            plot_tsne(pfc_embedded,context_label,legend_str,color_str)
+            plot_tsne(md_embedded,context_label,legend_str,color_str)
+            
+            
+        #
         ## decode rule from pfc
         acc_rule_pfc = list()
         n_train = int(0.8 * num_trial)
@@ -156,26 +200,43 @@ if __name__ == '__main__':
 #                 'acc_context_md_all':acc_context_md_all},pickle_out)
 #    pickle_out.close()
         ## plot pfc md activity
-    if plot_pfc_md==True:
+    
+    
+    plot_decoding_vs_para = True
+    if plot_decoding_vs_para == True:
+        plt.figure(figsize=(2.4,2.4))
+        pfc_mean = np.mean(acc_context_pfc_all[:,10:50:10],axis=1)
+        md_mean = np.mean(acc_context_md_all[:,10:50:10],axis=1)
+        pfc_std = np.std(acc_context_pfc_all[:,10:50:10],axis=1)
+        md_std = np.std(acc_context_md_all[:,10:50:10],axis=1)
+        plt.semilogx(config,pfc_mean,'-v',color='tab:red',label='PFC')
+        plt.semilogx(config,md_mean,'-s',color='tab:blue',label='MD')
+        plt.fill_between(config, pfc_mean - pfc_std,pfc_mean + pfc_std, alpha=0.2,color='tab:red')
+        plt.fill_between(config, md_mean - md_std,md_mean + md_std, alpha=0.2,color='tab:blue')
+        plt.legend(frameon=False)
+        plt.xlabel('PFC Noise STD') 
+        plt.title('Cue Period')
+        plt.ylabel('Decoding Context')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'pfc_noise_decoding_cue.pdf')
         
-        plotActivity(routs_all[100,50,:],'PFC','tab:red')
+        plt.figure(figsize=(2.4,2.4))
+        pfc_mean = np.mean(acc_context_pfc_all[:,60:100:10],axis=1)
+        md_mean = np.mean(acc_context_md_all[:,60:100:10],axis=1)
+        pfc_std = np.std(acc_context_pfc_all[:,60:100:10],axis=1)
+        md_std = np.std(acc_context_md_all[:,60:100:10],axis=1)
+        plt.semilogx(config,pfc_mean,'-v',color='tab:red',label='PFC')
+        plt.semilogx(config,md_mean,'-s',color='tab:blue',label='MD')
+        plt.fill_between(config, pfc_mean - pfc_std,pfc_mean + pfc_std, alpha=0.2,color='tab:red')
+        plt.fill_between(config, md_mean - md_std,md_mean + md_std, alpha=0.2,color='tab:blue')
+        plt.legend(frameon=False)
+        plt.xlabel('PFC Noise STD')
+        plt.ylabel('Decoding Context')
+        plt.title('Delay Period')
         plt.tight_layout()
-        plt.savefig(FIGUREPATH/'pfc_ctx1.pdf') 
-        #plt.savefig(FIGUREPATH/'pfc_ctx1.png', dpi=300)
-        plotActivity(routs_all[98,50,:],'PFC','tab:red')
-        plt.tight_layout()
-        plt.savefig(FIGUREPATH/'pfc_ctx2.pdf') 
-        #plt.savefig(FIGUREPATH/'pfc_ctx2.png', dpi=300)
-        
-        plotActivity(data['MDouts_all'][100,50,:],'MD','tab:blue')
-        plt.tight_layout()
-        plt.savefig(FIGUREPATH/'md_ctx1.pdf') 
-        #plt.savefig(FIGUREPATH/'md_ctx1.png', dpi=300)
-        plotActivity(data['MDouts_all'][98,50,:],'MD','tab:blue')
-        plt.tight_layout()
-        plt.savefig(FIGUREPATH/'md_ctx2.pdf') 
-        #plt.savefig(FIGUREPATH/'md_ctx2.png', dpi=300)
-        
+        plt.savefig(FIGUREPATH/'pfc_noise_decoding_delay.pdf')
+    
+    
     plt.figure(figsize=(2.4,2.4))
     plt.plot(acc_rule_pfc,'tab:red',label='PFC')
     plt.plot(acc_rule_md,'tab:blue',label='MD')
