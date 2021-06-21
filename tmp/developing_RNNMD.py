@@ -19,7 +19,13 @@ import neurogym as ngym
 from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
 from model_dev import RNN_MD
-
+import matplotlib as mpl
+mpl.rcParams['axes.spines.left'] = True
+mpl.rcParams['axes.spines.right'] = False
+mpl.rcParams['axes.spines.top'] = False
+mpl.rcParams['axes.spines.bottom'] = True
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio
@@ -71,7 +77,9 @@ config = {
     'batch_size': 1,
     'seq_len': 50,
     # 'tasks': ngym.get_collection('yang19')
-    'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'] # 'tasks': ['yang19.go-v0', 'yang19.dm1-v0']
+    'tasks': ['yang19.go-v0', 'yang19.rtgo-v0']
+    # 'tasks': ['yang19.go-v0', 'yang19.dm1-v0']
+    # 'tasks': ['yang19.dlydm1-v0', 'yang19.go-v0']
 }
 
 # set random seed
