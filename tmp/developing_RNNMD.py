@@ -433,7 +433,7 @@ for env_id in range(len(datasets)):
 #     plt.xlim([-5, 261])
 #     plt.ylim([0.0, 1.0])
 #     plt.savefig('./animation/'+f'PFCoutputs_index_{i}.png')
-#     plt.close() # do not show figs in lin
+#     plt.close() # do not show figs in line
 # images = []
 # for i in range(PFCouts_cycle.shape[0]):
 #     filename = './animation/'+f'PFCoutputs_index_{i}.png'
