@@ -66,7 +66,7 @@ def get_full_performance(net, env, task_id, num_task, num_trial=1000, device='cp
 ###--------------------------Training configs--------------------------###
 
 # device = 'cuda' if torch.cuda.is_available() else 'cpu'
-device = 'cpu' # CPU is faster
+device = 'cpu' # always CPU
 
 print("device:", device, '\n')
 
@@ -144,7 +144,6 @@ print('training parameters:')
 training_params = list()
 for name, param in net.named_parameters():
     # if 'rnn.h2h' not in name: # reservoir
-    # if 'rnn.input2h' not in name:
     if True: # learnable RNN
         print(name)
         training_params.append(param)
