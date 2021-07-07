@@ -175,6 +175,7 @@ if config['MDeffect']:
     }
     log.update(MD_log)
     net.rnn.md.learn = True
+    net.rnn.md.sendinputs = True
 
 
 for i in range(total_training_cycle):
@@ -197,6 +198,7 @@ for i in range(total_training_cycle):
         # control MD learning
         if i == MDlearning_steps:
             net.rnn.md.learn = False
+            net.rnn.md.sendinputs = True
         # plot MD activities
         if i < MDlearning_steps and i % 20 == 19:
             plt.figure(figsize=(16, 4))

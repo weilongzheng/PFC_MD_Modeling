@@ -924,11 +924,12 @@ class MD_GYM():
         self.positiveRates = positiveRates
         self.num_active = num_active # num_active: num MD active per context
         self.learn = True # update MD weights or not
+        self.sendinputs = True # send inputs to RNN or not
 
         self.tau = 0.02
         self.tau_times = 4
         self.dt = dt
-        self.tau_trace = 50 # unit, time steps
+        self.tau_trace = 1000 # unit, time steps
         self.Hebb_learning_rate = 1e-4
         Gbase = 0.75  # determines also the cross-task recurrence
 
@@ -1019,7 +1020,7 @@ class MD_GYM():
         
         # update and clip the weights
         #  original
-        wPFC2MDdelta = 20 * 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 10 * 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0.,7. / self.G)
@@ -1140,7 +1141,8 @@ class CTRNN_MD(nn.Module):
             md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.output_size), self.md.md_output)
             md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
-            pre_activation += md2pfc
+            if self.md.sendinputs:
+                pre_activation += md2pfc
         
         h_new = torch.relu(hidden * self.oneminusalpha + pre_activation * self.alpha)
         

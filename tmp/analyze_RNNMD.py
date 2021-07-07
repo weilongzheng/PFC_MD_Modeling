@@ -20,7 +20,7 @@ if True:
     print(PFCouts_all.shape) # (num_cycles, seq_len, batch_size, hidden_size)
     font = {'family':'Times New Roman','weight':'normal', 'size':25}
     label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    for idx_cycle in [0, 1, 49, 50, 51, 52, 53, 199, 200, 250, 399, 400]:
+    for idx_cycle in [0, 1, 49, 50, 51, 52, 53, 199, 200, 250, 399, 400]: # choose the cycle to visualize
         PFCouts_cycle = log['PFCouts_all'][idx_cycle, :, 0, :]
         for i in range(PFCouts_cycle.shape[0]):
             meanPFCouts_cycle = np.mean(PFCouts_cycle[i, :])
@@ -47,7 +47,7 @@ if False:
     MDpreTrace_threshold_all = log['MDpreTrace_threshold_all']
     font = {'family':'Times New Roman','weight':'normal', 'size':25}
     label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    for idx_cycle in [0, 1, 49, 50, 51, 52, 53, 199, 200, 250, 399, 400]:
+    for idx_cycle in [0, 1, 49, 50, 51, 52, 53, 199, 200, 250, 399, 400]: # choose the cycle to visualize
         MDpreTraces_cycle = MDpreTraces_all[idx_cycle, :, :]
         MDpreTrace_threshold_cycle = MDpreTrace_threshold_all[idx_cycle, :, :]
         for i in range(MDpreTraces_cycle.shape[0]):
