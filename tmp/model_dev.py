@@ -1016,7 +1016,7 @@ class MD_GYM():
         MDoutTrace = self.update_trace(rout, MDout)
 
         self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
-        MDoutTrace_threshold = 0.5  
+        MDoutTrace_threshold = 0.5
         
         # update and clip the weights
         #  original
