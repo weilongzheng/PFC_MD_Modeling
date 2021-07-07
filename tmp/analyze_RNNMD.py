@@ -11,36 +11,63 @@ import imageio
 from pygifsicle import optimize
 
 
-log = np.load('./files/'+'log_MD.npy', allow_pickle=True).item()
-
-PFCouts_all = log['PFCouts_all']
-print(PFCouts_all.shape) # (num_cycles, seq_len, batch_size, hidden_size)
+log = np.load('./files/'+'log_withMD.npy', allow_pickle=True).item()
 
 
 # PFC outputs within a cycle
-font = {'family':'Times New Roman','weight':'normal', 'size':25}
-label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-idx_cycle = 400
-PFCouts_cycle = log['PFCouts_all'][idx_cycle, :, 0, :]
-for i in range(PFCouts_cycle.shape[0]):
-    meanPFCouts_cycle = np.mean(PFCouts_cycle[i, :])
-    plt.plot(PFCouts_cycle[i, :])
-    plt.axhline(y=meanPFCouts_cycle, color='r', linestyle='-')
-    plt.title(f'PFC outputs Cycle-{idx_cycle}' + ' Step-'+str(i+1), fontdict=font)
-    plt.xlabel('PFC neuron index', fontdict=label_font)
-    plt.ylabel('PFC activities', fontdict=label_font)
-    plt.xlim([-5, 261])
-    plt.ylim([0.0, 1.0])
-    plt.savefig('./animation/'+f'PFCoutputs_index_{i}.png')
-    plt.close() # do not show figs in line
-images = []
-for i in range(PFCouts_cycle.shape[0]):
-    filename = './animation/'+f'PFCoutputs_index_{i}.png'
-    images.append(imageio.imread(filename))
-gif_path = './animation/'+f'PFCoutputs_evolution_cycle{idx_cycle}.gif'
-imageio.mimsave(gif_path, images, duration=0.2)
-optimize(gif_path)
+if False:
+    PFCouts_all = log['PFCouts_all']
+    print(PFCouts_all.shape) # (num_cycles, seq_len, batch_size, hidden_size)
+    font = {'family':'Times New Roman','weight':'normal', 'size':25}
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    idx_cycle = 400
+    PFCouts_cycle = log['PFCouts_all'][idx_cycle, :, 0, :]
+    for i in range(PFCouts_cycle.shape[0]):
+        meanPFCouts_cycle = np.mean(PFCouts_cycle[i, :])
+        plt.plot(PFCouts_cycle[i, :])
+        plt.axhline(y=meanPFCouts_cycle, color='r', linestyle='-')
+        plt.title(f'PFC outputs Cycle-{idx_cycle}' + ' Step-'+str(i+1), fontdict=font)
+        plt.xlabel('PFC neuron index', fontdict=label_font)
+        plt.ylabel('PFC activities', fontdict=label_font)
+        plt.xlim([-5, 261])
+        plt.ylim([0.0, 1.0])
+        plt.savefig('./animation/'+f'PFCoutputs_index_{i}.png')
+        plt.close() # do not show figs in line
+    images = []
+    for i in range(PFCouts_cycle.shape[0]):
+        filename = './animation/'+f'PFCoutputs_index_{i}.png'
+        images.append(imageio.imread(filename))
+    gif_path = './animation/'+f'PFCoutputs_evolution_cycle{idx_cycle}.gif'
+    imageio.mimsave(gif_path, images, duration=0.2)
+    optimize(gif_path)
 
+# Presynaptic traces within a cycle
+if True:
+    MDpreTraces_all = log['MDpreTraces_all']
+    MDpreTrace_threshold_all = log['MDpreTrace_threshold_all']
+    font = {'family':'Times New Roman','weight':'normal', 'size':25}
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    # idx_cycle = 400
+    for idx_cycle in [0, 1, 50, 199, 200, 250, 399, 400]:
+        MDpreTraces_cycle = MDpreTraces_all[idx_cycle, :, :]
+        MDpreTrace_threshold_cycle = MDpreTrace_threshold_all[idx_cycle, :, :]
+        for i in range(MDpreTraces_cycle.shape[0]):
+            plt.plot(MDpreTraces_cycle[i, :])
+            plt.axhline(y=MDpreTrace_threshold_cycle[i, :], color='r', linestyle='-')
+            plt.title(f'Pre traces Cycle-{idx_cycle}' + ' Step-'+str(i+1), fontdict=font)
+            plt.xlabel('PFC neuron index', fontdict=label_font)
+            plt.ylabel('Presynaptic traces', fontdict=label_font)
+            plt.xlim([-5, 261])
+            plt.ylim([0.0, 0.1])
+            plt.savefig('./animation/'+f'MDpreTraces_index_{i}.png')
+            plt.close() # do not show figs in line
+        images = []
+        for i in range(MDpreTraces_cycle.shape[0]):
+            filename = './animation/'+f'MDpreTraces_index_{i}.png'
+            images.append(imageio.imread(filename))
+        gif_path = './animation/'+f'MDpreTraces_evolution_cycle{idx_cycle}.gif'
+        imageio.mimsave(gif_path, images, duration=0.2)
+        optimize(gif_path)
 
 # if config['MDeffect']:
 #     # Heatmap wPFC2MD

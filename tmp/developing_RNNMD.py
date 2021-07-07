@@ -295,10 +295,10 @@ for i in range(total_training_cycle):
         log['PFCouts_all'][count_save_time, ...] = rnn_activity.cpu().detach().numpy()
         if config['MDeffect']:
             log['MDouts_all'][count_save_time, ...] = net.rnn.md.md_output_t
-            # log['MDpreTraces_all'][count_save_time, ...] = net.rnn.md.md_preTraces
-            # log['MDpreTrace_threshold_all'][count_save_time, ...] = net.rnn.md.md_preTrace_thresholds
-            # log['wPFC2MD_list'].append(net.rnn.md.wPFC2MD)
-            # log['wMD2PFC_list'].append(net.rnn.md.wMD2PFC)
+            log['MDpreTraces_all'][count_save_time, ...] = net.rnn.md.md_preTraces
+            log['MDpreTrace_threshold_all'][count_save_time, ...] = net.rnn.md.md_preTrace_thresholds
+            log['wPFC2MD_list'].append(net.rnn.md.wPFC2MD)
+            log['wMD2PFC_list'].append(net.rnn.md.wMD2PFC)
 
     # print statistics
     log['losses'].append(loss.item())
