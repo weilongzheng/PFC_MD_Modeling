@@ -337,6 +337,9 @@ print('Finished Training')
 
 ###--------------------------Analysis--------------------------###
 
+# save log
+# np.save('./files/'+'log_withMD.npy', log)
+
 # Cross Entropy loss
 font = {'family':'Times New Roman','weight':'normal', 'size':25}
 plt.figure()

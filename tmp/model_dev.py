@@ -928,7 +928,7 @@ class MD_GYM():
         self.tau = 0.02
         self.tau_times = 4
         self.dt = dt
-        self.tau_trace = 1000 # unit, time steps
+        self.tau_trace = 50 # unit, time steps
         self.Hebb_learning_rate = 1e-4
         Gbase = 0.75  # determines also the cross-task recurrence
 
@@ -1019,7 +1019,7 @@ class MD_GYM():
         
         # update and clip the weights
         #  original
-        wPFC2MDdelta = 10 * 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 20 * 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0.,7. / self.G)
