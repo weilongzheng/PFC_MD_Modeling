@@ -38,9 +38,11 @@ noiseSD = 1e-1
 MDeffect = False
 PFClearn = False
 noiseInput = False # additional noise input neuron 
+pfcNoise = 1e-2 
+noisePresent = False # recurrent noise
 
-model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, \
-MDeffect=MDeffect, noiseInput = noiseInput)
+model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, pfcNoise = pfcNoise,\
+    MDeffect=MDeffect, noisePresent = noisePresent, noiseInput = noiseInput)
 
 # Training
 criterion = nn.MSELoss() 
@@ -76,6 +78,7 @@ tsteps = 200
 MDouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,Num_MD))
 PFCouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
 outputs_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,2))
+Wout_all = np.zeros(shape=(total_step,n_output,n_neuron))
 for i in range(total_step):
 
     train_time_start = time.time()
@@ -119,6 +122,8 @@ for i in range(total_step):
     log['mse'].append(mse)
     running_train_time += time.time() - train_time_start
     running_loss += loss.item()
+    
+    Wout_all[i,:,:] = model.pfc2out.weight.detach().numpy()
 
     if i % print_step == (print_step - 1):
 
@@ -160,9 +165,9 @@ if  MDeffect == True:
 
 filename = Path('files')
 os.makedirs(filename, exist_ok=True)
-file_training = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+file_training = 'train_wout_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
 with open(filename / file_training, 'wb') as f:
-    pickle.dump(log, f)
+    pickle.dump({'log':log,'Wout_all':Wout_all,'PFCouts_all':PFCouts_all}, f)
     
 # Plot MSE curve
 plt.plot(log['mse'], label='With MD')
