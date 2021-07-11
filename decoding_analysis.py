@@ -33,7 +33,7 @@ mpl.rcParams['axes.spines.top'] = False
 mpl.rcParams['axes.spines.bottom'] = True
 
 def plot_tsne(X_embedded,label,label_str, color_str):
-    plt.figure(figsize=(2.4,2.4))
+    plt.figure(figsize=(2.6,2.6))
     plt.scatter(X_embedded[label==0,0], X_embedded[label==0,1], s = 2, c = color_str[0], label = label_str[0])
     plt.scatter(X_embedded[label==1,0], X_embedded[label==1,1], s = 2, c = color_str[1 ], label = label_str[1])
     plt.legend(frameon=False)
@@ -43,8 +43,8 @@ def plotActivity(x, legend_use, color_use='Reds'):
     '''plot activity heatmap'''
     plt.figure(figsize=(2.4,2.4))
     ax = sns.heatmap(x.T, cmap = color_use)
-    ax.set_xticks(np.arange(0,x.shape[0], 49))
-    ax.set_xticklabels(np.arange(1,x.shape[0]+1, 49), rotation=0)
+    ax.set_xticks(np.arange(0,x.shape[0]+1, 50))
+    ax.set_xticklabels(np.arange(0,x.shape[0]+1, 50), rotation=0)
     ax.set_yticks([0, x.shape[1]-1])
     ax.set_yticklabels([1, x.shape[1]], rotation=0)
     ax.set_xlabel('Time Steps')
@@ -105,7 +105,7 @@ if __name__ == '__main__':
             #plt.tight_layout()
             plt.savefig(FIGUREPATH/'pfc_ctx1.pdf') 
             #plt.savefig(FIGUREPATH/'pfc_ctx1.png', dpi=300)
-            plotActivity(routs_all[98,:,:],'PFC','Reds')
+            plotActivity(routs_all[200,:,:],'PFC','Reds')
             #plt.tight_layout()
             plt.savefig(FIGUREPATH/'pfc_ctx2.pdf') 
             #plt.savefig(FIGUREPATH/'pfc_ctx2.png', dpi=300)
@@ -114,7 +114,7 @@ if __name__ == '__main__':
             #plt.tight_layout()
             plt.savefig(FIGUREPATH/'md_ctx1.pdf') 
             #plt.savefig(FIGUREPATH/'md_ctx1.png: dpi=300)
-            plotActivity(data['MDouts_all'][98,:,:],'MD','Blues_r')
+            plotActivity(data['MDouts_all'][200,:,:],'MD','Blues_r')
             #plt.tight_layout()
             plt.savefig(FIGUREPATH/'md_ctx2.pdf') 
             #plt.savefig(FIGUREPATH/'md_ctx2.png', dpi=300)
