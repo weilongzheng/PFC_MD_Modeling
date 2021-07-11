@@ -1137,9 +1137,9 @@ class CTRNN_MD(nn.Module):
 
             self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
             rec_inp = rec_input.cpu().detach().numpy()[0, :]
-            md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.output_size))
+            md2pfc_weights = (self.md.MD2PFCMult/self.md.Num_MD)
             md2pfc = md2pfc_weights * rec_inp
-            md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.output_size), self.md.md_output)
+            md2pfc += np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
             md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             if self.md.sendinputs:
