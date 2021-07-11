@@ -944,7 +944,6 @@ class MD_GYM():
                                             1 / np.sqrt(self.Num_MD * self.Nneur),
                                             size=(self.Nneur, self.Num_MD))
         # initialize activities
-        self.prev_PFCout = np.zeros(shape=(self.Nneur)) # PFC activities in the previous step
         self.MDpreTrace = np.zeros(shape=(self.Nneur))
         self.MDpostTrace = np.zeros(shape=(self.Num_MD))
         self.MDpreTrace_threshold = 0
@@ -963,7 +962,6 @@ class MD_GYM():
         
     def init_activity(self):
         self.MDinp = np.zeros(shape=self.Num_MD)
-        self.prev_PFCout = np.zeros(shape=(self.Nneur))
         
     def __call__(self, input, *args, **kwargs):
         """Run the network one step
@@ -999,8 +997,10 @@ class MD_GYM():
         return MDout
 
     def update_trace(self, rout, MDout):
-        # update pretrace based on the difference between steps
-        self.MDpreTrace += 1. / self.tau_trace * (-self.MDpreTrace + 2*abs(rout - self.prev_PFCout))
+        # Use OR opertion to update pretraces
+        part = int(0.1*len(rout))
+        rout_threshold = np.mean(np.sort(rout)[-part:]) # WATCH OUT: this is different from the self.MDpreTrace_threshold now! 
+        self.MDpreTrace = ((self.MDpreTrace>0) | (rout>rout_threshold)).astype(float)
         self.MDpostTrace += 1. / self.tau_trace * (-self.MDpostTrace + MDout)
         MDoutTrace = self.winner_take_all(self.MDpostTrace)
 
@@ -1015,31 +1015,15 @@ class MD_GYM():
         """
         
         MDoutTrace = self.update_trace(rout, MDout)
-
         self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
         MDoutTrace_threshold = 0.5
         
         # update and clip the weights
         #  original
-        wPFC2MDdelta = 15 * 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0.,7. / self.G)
-        
-        #  slow-decaying PFC-MD weights
-        # wPFC2MDdelta = 30000 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
-        # self.wPFC2MD += 1. / self.tsteps / 5. * (-1.0 * self.wPFC2MD + 1.0 * wPFC2MDdelta)
-        # self.wPFC2MD = np.clip(self.wPFC2MD, 0., 1.)
-        # self.wMD2PFC += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFC + 1.0 * (wPFC2MDdelta.T))
-        # self.wMD2PFC = np.clip(self.wMD2PFC, -10., 0.)
-        # self.wMD2PFCMult += 1. / self.tsteps / 5. * (-1.0 * self.wMD2PFCMult + 1.0 * (wPFC2MDdelta.T))
-        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult, 0.,7. / self.G)
-        
-        #  decaying PFC-MD weights
-        # alpha = 0 # 0.5 when shift on, 0 when shift off
-        # self.wPFC2MD = np.clip((1-alpha)* self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        # self.wMD2PFC = np.clip((1-alpha) * self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
-        # self.wMD2PFCMult = np.clip((1-alpha) * self.wMD2PFCMult + (wPFC2MDdelta.T), 0.,7. / self.G)
 
     def winner_take_all(self, MDinp):
         '''Winner take all on the MD

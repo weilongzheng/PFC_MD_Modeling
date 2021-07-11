@@ -151,8 +151,7 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 6000
-MDlearning_steps = 400
+total_training_cycle = 2000
 print_every_cycle = 50
 save_every_cycle = 1
 save_times = total_training_cycle//save_every_cycle
@@ -183,35 +182,46 @@ for i in range(total_training_cycle):
     train_time_start = time.time()    
 
     # control training paradigm
-    if i < MDlearning_steps//2:
-        task_id = 0
-    elif i >= MDlearning_steps//2 and i < MDlearning_steps:
-        task_id = 1
-    elif i >= MDlearning_steps and i < 2000:
-        task_id = 0
-    elif i >= 2000 and i < 4000:
-        task_id = 1
-    else:
-        task_id = 0
+    task_id = 0
 
-    if config['MDeffect']:
-        # control MD learning
-        if i == MDlearning_steps:
-            net.rnn.md.learn = True
-            net.rnn.md.sendinputs = True
-        # plot MD activities
-        if i < MDlearning_steps and i % 20 == 19:
+    # fetch data
+    dataset = datasets[task_id]
+    inputs, labels = dataset()
+    assert not np.any(np.isnan(inputs))
+    
+    # numpy -> torch
+    inputs = torch.from_numpy(inputs).type(torch.float).to(device)
+    labels = torch.from_numpy(labels).type(torch.long).to(device)
+    # normalize inputs
+    # inputs = inputs / (abs(inputs).max() + 1e-15)
+    # index -> one-hot vector
+    labels = (F.one_hot(labels, num_classes=act_size)).float()
+
+    # zero the parameter gradients
+    optimizer.zero_grad()
+
+    # forward + backward + optimize
+    outputs, rnn_activity = net(inputs, sub_id=task_id)
+
+    # plot during training
+    # check PFC and MD activities
+    if i % 50 == 49:
+        plt.figure()
+        plt.plot(rnn_activity[-1, 0, :].cpu().detach().numpy())
+        plt.title('PFC activities')
+        plt.show()
+        if config['MDeffect']:
+            # Presynaptic traces
             plt.figure(figsize=(16, 4))
             plt.subplot(1, 2, 1)
             plt.plot(net.rnn.md.md_preTraces[-1, :])
             plt.axhline(y=np.mean(net.rnn.md.md_preTraces[-1, :]), color='r', linestyle='-')
             plt.title('Pretrace')
+            # MD activities
             plt.subplot(1, 2, 2)
             plt.plot(net.rnn.md.md_output_t[-1, :])
             plt.title('MD activities')
             plt.show()
-        # plot PFC-MD weights
-        if i == MDlearning_steps:
             # Heatmap wPFC2MD
             font = {'family':'Times New Roman','weight':'normal', 'size':20}
             ax = plt.figure(figsize=(8, 6))
@@ -241,45 +251,6 @@ for i in range(total_training_cycle):
             cbar.set_label('connection weight', fontdict=font)
             plt.tight_layout()
             # plt.savefig('./animation/'+'wMD2PFC.png')
-            plt.show()
-    
-    # fetch data
-    dataset = datasets[task_id]
-    inputs, labels = dataset()
-    assert not np.any(np.isnan(inputs))
-    
-    # numpy -> torch
-    inputs = torch.from_numpy(inputs).type(torch.float).to(device)
-    labels = torch.from_numpy(labels).type(torch.long).to(device)
-    # normalize inputs
-    # inputs = inputs / (abs(inputs).max() + 1e-15)
-    # index -> one-hot vector
-    labels = (F.one_hot(labels, num_classes=act_size)).float()
-
-    # zero the parameter gradients
-    optimizer.zero_grad()
-
-    # forward + backward + optimize
-    outputs, rnn_activity = net(inputs, sub_id=task_id)
-    # check PFC and MD activities
-    if i % 100 == 99:
-        plt.figure()
-        plt.plot(rnn_activity[-1, 0, :].cpu().detach().numpy())
-        plt.title('PFC activities')
-        plt.show()
-        if config['MDeffect']:
-            # plt.figure()
-            # plt.plot(net.rnn.md.md_preTraces[-1, :])
-            # plt.title('Pretrace')
-            # plt.show()
-            plt.figure()
-            plt.plot(net.rnn.md.md_output_t[-1, :])
-            plt.title('MD activities')
-            plt.show()
-            # plt.figure(figsize=(12, 8))
-            # for wPFC2MD_id in range(config['md_size']):
-            #     plt.subplot(config['md_size'], 1, wPFC2MD_id+1)
-            #     plt.plot(net.rnn.md.wPFC2MD[wPFC2MD_id, :])
             plt.show()
     # check shapes
     # print("inputs.shape: ", inputs.shape)
@@ -356,24 +327,24 @@ plt.tight_layout()
 plt.show()
 
 # Task performance during training
-label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
-legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
-for env_id in range(len(datasets)):
-    plt.figure()
-    plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
-    plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
-    plt.fill_between(x=[   0, 2000], y1=0.0, y2=1.05, facecolor='red', alpha=0.05)
-    plt.fill_between(x=[2000, 4000], y1=0.0, y2=1.05, facecolor='green', alpha=0.05)
-    plt.fill_between(x=[4000, 6000], y1=0.0, y2=1.05, facecolor='red', alpha=0.05)
-    plt.legend(prop=legend_font)
-    plt.xlabel('Training Cycles', fontdict=label_font)
-    plt.ylabel('Performance', fontdict=label_font)
-    plt.title('Task{:d}: '.format(env_id+1)+tasks[env_id], fontdict=title_font)
-    # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
-    plt.xlim([0.0, None])
-    plt.ylim([0.0, 1.05])
-    plt.yticks([0.1*i for i in range(11)])
-    plt.tight_layout()
-    # plt.savefig('./animation/'+'performance.png')
-    plt.show()
+# label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+# title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
+# legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
+# for env_id in range(len(datasets)):
+#     plt.figure()
+#     plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
+#     plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
+#     plt.fill_between(x=[   0, 2000], y1=0.0, y2=1.05, facecolor='red', alpha=0.05)
+#     plt.fill_between(x=[2000, 4000], y1=0.0, y2=1.05, facecolor='green', alpha=0.05)
+#     plt.fill_between(x=[4000, 6000], y1=0.0, y2=1.05, facecolor='red', alpha=0.05)
+#     plt.legend(prop=legend_font)
+#     plt.xlabel('Training Cycles', fontdict=label_font)
+#     plt.ylabel('Performance', fontdict=label_font)
+#     plt.title('Task{:d}: '.format(env_id+1)+tasks[env_id], fontdict=title_font)
+#     # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
+#     plt.xlim([0.0, None])
+#     plt.ylim([0.0, 1.05])
+#     plt.yticks([0.1*i for i in range(11)])
+#     plt.tight_layout()
+#     # plt.savefig('./animation/'+'performance.png')
+#     plt.show()
