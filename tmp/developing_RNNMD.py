@@ -151,7 +151,7 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 2000
+total_training_cycle = 3000
 print_every_cycle = 50
 save_every_cycle = 50
 save_times = total_training_cycle//save_every_cycle
@@ -183,6 +183,12 @@ for i in range(total_training_cycle):
     train_time_start = time.time()    
 
     # control training paradigm
+    # if i < 2000:
+    #     task_id = 0
+    # elif i >= 2000 and i < 4000:
+    #     task_id = 1
+    # elif i >= 4000:
+    #     task_id = 0
     task_id = 0
 
     # fetch data
@@ -205,7 +211,7 @@ for i in range(total_training_cycle):
     outputs, rnn_activity = net(inputs, sub_id=task_id)
 
     # plot during training
-    if i % 50 == 49:
+    if i % 200 == 199:
         font = {'family':'Times New Roman','weight':'normal', 'size':20}
         # PFC activities
         plt.figure()
@@ -328,24 +334,24 @@ plt.tight_layout()
 plt.show()
 
 # Task performance during training
-# label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-# title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
-# legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
-# for env_id in range(len(datasets)):
-#     plt.figure()
-#     plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
-#     plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
-#     plt.fill_between(x=[   0, 2000], y1=0.0, y2=1.05, facecolor='red', alpha=0.05)
-#     plt.fill_between(x=[2000, 4000], y1=0.0, y2=1.05, facecolor='green', alpha=0.05)
-#     plt.fill_between(x=[4000, 6000], y1=0.0, y2=1.05, facecolor='red', alpha=0.05)
-#     plt.legend(prop=legend_font)
-#     plt.xlabel('Training Cycles', fontdict=label_font)
-#     plt.ylabel('Performance', fontdict=label_font)
-#     plt.title('Task{:d}: '.format(env_id+1)+tasks[env_id], fontdict=title_font)
-#     # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
-#     plt.xlim([0.0, None])
-#     plt.ylim([0.0, 1.05])
-#     plt.yticks([0.1*i for i in range(11)])
-#     plt.tight_layout()
-#     # plt.savefig('./animation/'+'performance.png')
-#     plt.show()
+label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
+legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
+for env_id in range(len(datasets)):
+    plt.figure()
+    plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
+    plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
+    plt.fill_between(x=[   0, 2000], y1=0.0, y2=1.05, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[2000, 4000], y1=0.0, y2=1.05, facecolor='green', alpha=0.05)
+    plt.fill_between(x=[4000, 6000], y1=0.0, y2=1.05, facecolor='red', alpha=0.05)
+    plt.legend(prop=legend_font)
+    plt.xlabel('Training Cycles', fontdict=label_font)
+    plt.ylabel('Performance', fontdict=label_font)
+    plt.title('Task{:d}: '.format(env_id+1)+tasks[env_id], fontdict=title_font)
+    # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
+    plt.xlim([0.0, None])
+    plt.ylim([0.0, 1.05])
+    plt.yticks([0.1*i for i in range(11)])
+    plt.tight_layout()
+    # plt.savefig('./animation/'+'performance.png')
+    plt.show()

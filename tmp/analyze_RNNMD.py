@@ -68,38 +68,39 @@ if True:
         imageio.mimsave(gif_path, images, duration=0.2)
         optimize(gif_path)
 
-# if config['MDeffect']:
-#     # Heatmap wPFC2MD
-#     font = {'family':'Times New Roman','weight':'normal', 'size':20}
-#     ax = plt.figure(figsize=(8, 6))
-#     ax = sns.heatmap(log['wPFC2MD_list'][-1], cmap='Reds')
-#     ax.set_xticks([0, 255])
-#     ax.set_xticklabels([1, 256], rotation=0)
-#     ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-#     ax.set_xlabel('PFC neuron index', fontdict=font)
-#     ax.set_ylabel('MD neuron index', fontdict=font)
-#     ax.set_title('wPFC2MD', fontdict=font)
-#     cbar = ax.collections[0].colorbar
-#     cbar.set_label('connection weight', fontdict=font)
-#     plt.tight_layout()
-#     # plt.savefig('./animation/'+'wPFC2MD.png')
-#     plt.show()
+if False:
+    if config['MDeffect']:
+        # Heatmap wPFC2MD
+        font = {'family':'Times New Roman','weight':'normal', 'size':20}
+        ax = plt.figure(figsize=(8, 6))
+        ax = sns.heatmap(log['wPFC2MD_list'][-1], cmap='Reds')
+        ax.set_xticks([0, 255])
+        ax.set_xticklabels([1, 256], rotation=0)
+        ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+        ax.set_xlabel('PFC neuron index', fontdict=font)
+        ax.set_ylabel('MD neuron index', fontdict=font)
+        ax.set_title('wPFC2MD', fontdict=font)
+        cbar = ax.collections[0].colorbar
+        cbar.set_label('connection weight', fontdict=font)
+        plt.tight_layout()
+        # plt.savefig('./animation/'+'wPFC2MD.png')
+        plt.show()
 
-#     # Heatmap wMD2PFC
-#     font = {'family':'Times New Roman','weight':'normal', 'size':20}
-#     ax = plt.figure(figsize=(8, 6))
-#     ax = sns.heatmap(log['wMD2PFC_list'][-1], cmap='Blues_r')
-#     ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-#     ax.set_yticks([0, 255])
-#     ax.set_yticklabels([1, 256], rotation=0)
-#     ax.set_xlabel('MD neuron index', fontdict=font)
-#     ax.set_ylabel('PFC neuron index', fontdict=font)
-#     ax.set_title('wMD2PFC', fontdict=font)
-#     cbar = ax.collections[0].colorbar
-#     cbar.set_label('connection weight', fontdict=font)
-#     plt.tight_layout()
-#     # plt.savefig('./animation/'+'wMD2PFC.png')
-#     plt.show()
+        # Heatmap wMD2PFC
+        font = {'family':'Times New Roman','weight':'normal', 'size':20}
+        ax = plt.figure(figsize=(8, 6))
+        ax = sns.heatmap(log['wMD2PFC_list'][-1], cmap='Blues_r')
+        ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+        ax.set_yticks([0, 255])
+        ax.set_yticklabels([1, 256], rotation=0)
+        ax.set_xlabel('MD neuron index', fontdict=font)
+        ax.set_ylabel('PFC neuron index', fontdict=font)
+        ax.set_title('wMD2PFC', fontdict=font)
+        cbar = ax.collections[0].colorbar
+        cbar.set_label('connection weight', fontdict=font)
+        plt.tight_layout()
+        # plt.savefig('./animation/'+'wMD2PFC.png')
+        plt.show()
 
 # recurrent weights
 # font = {'family':'Times New Roman','weight':'normal', 'size':15}
