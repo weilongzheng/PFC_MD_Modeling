@@ -929,7 +929,7 @@ class MD_GYM():
         self.tau = 0.02
         self.tau_times = 4
         self.dt = dt
-        self.tau_trace = 200 # unit, time steps
+        self.tau_trace = 500 # unit, time steps
         self.Hebb_learning_rate = 1e-4
         Gbase = 0.75  # determines also the cross-task recurrence
 
@@ -1015,16 +1015,17 @@ class MD_GYM():
         # MD outputs
         MDoutTrace = self.update_trace(rout, MDout)
 
-        # compute thresholds
+        # use OR opertion to get binary pretraces
         part = int(0.3*len(rout)) 
         self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[-part:])
-        MDoutTrace_threshold = 0.5
-
-        # use OR opertion to get binary pretraces
         self.MDpreTrace_binary = ((self.MDpreTrace>self.MDpreTrace_threshold) | (rout>self.MDpreTrace_threshold)).astype(float)
         
-        # update and clip the weights
-        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_threshold)
+        # compute thresholds
+        self.MDpreTrace_binary_threshold = np.mean(self.MDpreTrace_binary)
+        MDoutTrace_threshold = 0.5
+        
+        # update and clip the PFCMD weights
+        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0., 7. / self.G)
@@ -1159,6 +1160,7 @@ class CTRNN_MD(nn.Module):
             self.md.md_preTraces = np.zeros(shape=(num_tsteps, self.hidden_size))
             self.md.md_preTraces_binary = np.zeros(shape=(num_tsteps, self.hidden_size))
             self.md.md_preTrace_thresholds = np.zeros(shape=(num_tsteps, 1))
+            self.md.md_preTrace_binary_thresholds = np.zeros(shape=(num_tsteps, 1))
             self.md.md_output_t *= 0
 
         for i in range(num_tsteps):
@@ -1171,6 +1173,7 @@ class CTRNN_MD(nn.Module):
                 self.md.md_preTraces[i, :] = self.md.MDpreTrace
                 self.md.md_preTraces_binary[i, :] = self.md.MDpreTrace_binary
                 self.md.md_preTrace_thresholds[i, :] = self.md.MDpreTrace_threshold
+                self.md.md_preTrace_binary_thresholds[i, :] = self.md.MDpreTrace_binary_threshold
                 if i==0:
                     self.md.md_output_t = self.md.md_output.reshape((1, self.md.md_output.shape[0]))
                 else:

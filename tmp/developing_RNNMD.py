@@ -170,6 +170,7 @@ if config['MDeffect']:
         'MDpreTraces_all':          np.zeros(shape=(save_times, config['seq_len'], config['hidden_size'])),
         'MDpreTraces_binary_all':   np.zeros(shape=(save_times, config['seq_len'], config['hidden_size'])),
         'MDpreTrace_threshold_all': np.zeros(shape=(save_times, config['seq_len'], 1)),
+        'MDpreTrace_binary_threshold_all': np.zeros(shape=(save_times, config['seq_len'], 1)),
         'wPFC2MD_list': [],
         'wMD2PFC_list': [],
     }
@@ -228,7 +229,7 @@ for i in range(total_training_cycle):
             # Binary presynaptic traces
             plt.subplot(2, 3, 2)
             plt.plot(net.rnn.md.md_preTraces_binary[-1, :])
-            plt.axhline(y=net.rnn.md.md_preTrace_thresholds[-1], color='r', linestyle='-')
+            plt.axhline(y=net.rnn.md.md_preTrace_binary_thresholds[-1], color='r', linestyle='-')
             plt.title('Pretrace_binary', fontdict=font)
             # MD activities
             plt.subplot(2, 3, 3)
@@ -277,6 +278,7 @@ for i in range(total_training_cycle):
             log['MDpreTraces_all'][count_save_time, ...] = net.rnn.md.md_preTraces
             log['MDpreTraces_binary_all'][count_save_time, ...] = net.rnn.md.md_preTraces_binary
             log['MDpreTrace_threshold_all'][count_save_time, ...] = net.rnn.md.md_preTrace_thresholds
+            log['MDpreTrace_binary_threshold_all'][count_save_time, ...] = net.rnn.md.MDpreTrace_binary_threshold
             log['wPFC2MD_list'].append(net.rnn.md.wPFC2MD)
             log['wMD2PFC_list'].append(net.rnn.md.wMD2PFC)
 
