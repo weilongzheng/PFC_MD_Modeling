@@ -929,7 +929,7 @@ class MD_GYM():
         self.tau = 0.02
         self.tau_times = 4
         self.dt = dt
-        self.tau_trace = 500 # unit, time steps
+        self.tau_trace = 100 # unit, time steps
         self.Hebb_learning_rate = 1e-4
         Gbase = 0.75  # determines also the cross-task recurrence
 
@@ -945,6 +945,7 @@ class MD_GYM():
                                             size=(self.Nneur, self.Num_MD))
         # initialize activities
         self.MDpreTrace = np.zeros(shape=(self.Nneur))
+        self.MDpreTrace_binary = np.zeros(shape=(self.Nneur))
         self.MDpostTrace = np.zeros(shape=(self.Num_MD))
         self.MDpreTrace_threshold = 0
 
@@ -997,10 +998,7 @@ class MD_GYM():
         return MDout
 
     def update_trace(self, rout, MDout):
-        # Use OR opertion to update pretraces
-        part = int(0.1*len(rout))
-        rout_threshold = np.mean(np.sort(rout)[-part:]) # WATCH OUT: this is different from the self.MDpreTrace_threshold now! 
-        self.MDpreTrace = ((self.MDpreTrace>0) | (rout>rout_threshold)).astype(float)
+        self.MDpreTrace += 1. / self.tau_trace * (-self.MDpreTrace + rout)
         self.MDpostTrace += 1. / self.tau_trace * (-self.MDpostTrace + MDout)
         MDoutTrace = self.winner_take_all(self.MDpostTrace)
 
@@ -1013,17 +1011,23 @@ class MD_GYM():
             rout: input to MD
             MDout: activity of MD
         """
-        
+
+        # MD outputs
         MDoutTrace = self.update_trace(rout, MDout)
-        self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
+
+        # compute thresholds
+        part = int(0.3*len(rout)) 
+        self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[-part:])
         MDoutTrace_threshold = 0.5
+
+        # use OR opertion to get binary pretraces
+        self.MDpreTrace_binary = ((self.MDpreTrace>self.MDpreTrace_threshold) | (rout>self.MDpreTrace_threshold)).astype(float)
         
         # update and clip the weights
-        #  original
-        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)
+        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_threshold)
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
-        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0.,7. / self.G)
+        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0., 7. / self.G)
 
     def winner_take_all(self, MDinp):
         '''Winner take all on the MD
@@ -1153,6 +1157,7 @@ class CTRNN_MD(nn.Module):
         output = []
         if self.MDeffect:
             self.md.md_preTraces = np.zeros(shape=(num_tsteps, self.hidden_size))
+            self.md.md_preTraces_binary = np.zeros(shape=(num_tsteps, self.hidden_size))
             self.md.md_preTrace_thresholds = np.zeros(shape=(num_tsteps, 1))
             self.md.md_output_t *= 0
 
@@ -1164,6 +1169,7 @@ class CTRNN_MD(nn.Module):
             # save MD activities
             if self.MDeffect:
                 self.md.md_preTraces[i, :] = self.md.MDpreTrace
+                self.md.md_preTraces_binary[i, :] = self.md.MDpreTrace_binary
                 self.md.md_preTrace_thresholds[i, :] = self.md.MDpreTrace_threshold
                 if i==0:
                     self.md.md_output_t = self.md.md_output.reshape((1, self.md.md_output.shape[0]))
