@@ -114,10 +114,14 @@ def plotRout():
     plt.title('PFC (MD On)')
     plt.tight_layout()
     plt.savefig(FIGUREPATH/'pfc_activity_MD.pdf') 
-#    c=np.mean(routs_mean[cue2,:],axis=1)
-#    plt.plot(c.T,color='r')
-#    plt.xlabel('Neuron #')
-#    plt.ylabel('Mean Activity')
+    c=np.mean(routs_mean[cue2,:],axis=1)
+    plt.figure(figsize=(2.4,2.4))
+    plt.plot(c.T,color='r')
+    plt.xlabel('Neuron #')
+    plt.ylabel('Mean Activity')
+    plt.title('PFC (MD On)')
+    plt.tight_layout()
+    plt.savefig(FIGUREPATH/'pfc_activity2_MD.pdf') 
 
     file = open('files/final/test_numMD10_numContext2_MDFalse_R1.pkl','rb')
     data = pickle.load(file)
@@ -136,6 +140,14 @@ def plotRout():
     plt.title('PFC (MD Off)')
     plt.tight_layout()
     plt.savefig(FIGUREPATH/'pfc_activity_noMD.pdf') 
+    c=np.mean(routs_mean[cue2,:],axis=1)
+    plt.figure(figsize=(2.4,2.4))
+    plt.plot(c.T,color='r')
+    plt.xlabel('Neuron #')
+    plt.ylabel('Mean Activity')
+    plt.title('PFC (MD On)')
+    plt.tight_layout()
+    plt.savefig(FIGUREPATH/'pfc_activity2_noMD.pdf') 
     
     
 def plotPFCnorm():
@@ -183,5 +195,5 @@ def plotPFCnorm():
     
 if __name__ == '__main__':
     #plotDeltaW()
-    #plotRout()
+    plotRout()
     plotPFCnorm()
