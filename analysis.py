@@ -90,5 +90,24 @@ def plotDeltaW():
     plt.legend(frameon=False)
     plt.tight_layout()
     
+def plotRout():
+    '''
+    plot pfc mean activity
+    '''
+    file = open('files/final/test_numMD10_numContext2_MDTrue_R1.pkl','rb')
+    data = pickle.load(file)
+    routs_all = data['PFCouts_all']
+    
+    routs_mean = np.mean(routs_all,axis=1)
+    c=np.mean(routs_mean[cue1,:],axis=1)
+    plt.plot(c.T)
+    plt.xlabel('Neuron #')
+    plt.ylabel('Mean Activity')
+    
+    c=np.mean(routs_mean[cue2,:],axis=1)
+    plt.plot(c.T,color='r')
+    plt.xlabel('Neuron #')
+    plt.ylabel('Mean Activity')
+    
 if __name__ == '__main__':
     plotDeltaW()

@@ -34,12 +34,13 @@ Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
 noiseSD = 1e-1
-MDeffect = True
+MDeffect = False
 PFClearn = False
 noiseInput = False # additional noise input neuron 
-noisePresent = True # recurrent noise
+noisePresent = False # recurrent noise
 pfcNoise = 1e-2 #[1e-3,1e-2,1e-1,1e0,1e1] [0.3,0.5,0.7,0.9,1.5] #input noise SD
-config = [1e-2,1e-1,1e0,1e1,0.3,0.5,0.7,0.9,1.5]
+#config = [1e-2,1e-1,1e0,1e1,0.3,0.5,0.7,0.9,1.5] # pfc noise std range
+config = [1e-2]
 
 ###############################
 for pfcNoise in config:
@@ -256,7 +257,7 @@ for pfcNoise in config:
         
     filename = Path('files/final') 
     os.makedirs(filename, exist_ok=True)
-    file_training = 'test_pfcNoise'+str(pfcNoise)+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
+    file_training = 'test'+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
     with open(filename / file_training, 'wb') as f:
         pickle.dump({'log':log,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all,'cues_all':cues_all}, f, protocol = 4)
     
