@@ -4,6 +4,13 @@ Created on Wed Jul  7 23:33:07 2021
 
 @author: weilo
 """
+import matplotlib as mpl
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib 
+from matplotlib import ticker
+FIGUREPATH = Path('./results')
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
@@ -12,15 +19,11 @@ mpl.rcParams['axes.spines.left'] = True
 mpl.rcParams['axes.spines.right'] = False
 mpl.rcParams['axes.spines.top'] = False
 mpl.rcParams['axes.spines.bottom'] = True
-    # plot delta W 
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib 
-from matplotlib import ticker
-FIGUREPATH = Path('./results')
 
 def plotDeltaW():
+    '''
+    # plot delta W 
+    '''
     file = open('files/train_wout_numMD10_numContext2_MDFalse_PFCFalse_R10.pkl','rb')
     data = pickle.load(file)
     wOuts = data['Wout_all']
@@ -97,17 +100,43 @@ def plotRout():
     file = open('files/final/test_numMD10_numContext2_MDTrue_R1.pkl','rb')
     data = pickle.load(file)
     routs_all = data['PFCouts_all']
+    cues_all = data['cues_all']
+    a = cues_all[:,0,:]
+    cue1 = np.where(a[:,0]==1)
+    cue2 = np.where(a[:,1]==1)
     
     routs_mean = np.mean(routs_all,axis=1)
     c=np.mean(routs_mean[cue1,:],axis=1)
+    plt.figure(figsize=(2.4,2.4))
     plt.plot(c.T)
     plt.xlabel('Neuron #')
-    plt.ylabel('Mean Activity')
+    plt.ylabel('Mean Activity (a.u.)')
+    plt.title('PFC (MD On)')
+    plt.tight_layout()
+    plt.savefig(FIGUREPATH/'pfc_activity_MD.pdf') 
+#    c=np.mean(routs_mean[cue2,:],axis=1)
+#    plt.plot(c.T,color='r')
+#    plt.xlabel('Neuron #')
+#    plt.ylabel('Mean Activity')
+
+    file = open('files/final/test_numMD10_numContext2_MDFalse_R1.pkl','rb')
+    data = pickle.load(file)
+    routs_all = data['PFCouts_all']
+    cues_all = data['cues_all']
+    a = cues_all[:,0,:]
+    cue1 = np.where(a[:,0]==1)
+    cue2 = np.where(a[:,1]==1)
     
-    c=np.mean(routs_mean[cue2,:],axis=1)
-    plt.plot(c.T,color='r')
+    routs_mean = np.mean(routs_all,axis=1)
+    c=np.mean(routs_mean[cue1,:],axis=1)
+    plt.figure(figsize=(2.4,2.4))
+    plt.plot(c.T)
     plt.xlabel('Neuron #')
-    plt.ylabel('Mean Activity')
+    plt.ylabel('Mean Activity (a.u.)')
+    plt.title('PFC (MD Off)')
+    plt.tight_layout()
+    plt.savefig(FIGUREPATH/'pfc_activity_noMD.pdf') 
     
 if __name__ == '__main__':
-    plotDeltaW()
+    #plotDeltaW()
+    plotRout()
