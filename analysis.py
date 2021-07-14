@@ -24,7 +24,7 @@ def plotDeltaW():
     '''
     # plot delta W 
     '''
-    file = open('files/train_wout_numMD10_numContext2_MDFalse_PFCFalse_R10.pkl','rb')
+    file = open('files/final/train_wout_numMD10_numContext2_MDFalse_PFCFalse_R10.pkl','rb')
     data = pickle.load(file)
     wOuts = data['Wout_all']
     
@@ -59,7 +59,7 @@ def plotDeltaW():
     plt.tight_layout()
     plt.savefig(FIGUREPATH/'deltaW_noMD.pdf') 
     
-    file = open('files/train_wout_numMD10_numContext2_MDTrue_PFCFalse_R10.pkl','rb')
+    file = open('files/final/train_wout_numMD10_numContext2_MDTrue_PFCFalse_R10.pkl','rb')
     data = pickle.load(file)
     wOuts = data['Wout_all']
     
@@ -137,6 +137,51 @@ def plotRout():
     plt.tight_layout()
     plt.savefig(FIGUREPATH/'pfc_activity_noMD.pdf') 
     
+    
+def plotPFCnorm():
+    file=open('files/final/test_numMD10_numContext2_MDFalse_R1.pkl','rb')
+    data=pickle.load(file)
+    cues_all=data['cues_all']
+    a=cues_all[:,0,:]
+    routs_all=data['PFCouts_all']
+    routs_mean = np.mean(routs_all,axis=1)
+    norm_nomd = 0
+    cue1=np.where(a[:,0]==1)
+    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
+    cue1=np.where(a[:,1]==1)
+    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
+    cue1=np.where(a[:,2]==1)
+    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
+    cue1=np.where(a[:,3]==1)
+    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
+    norm_nomd=norm_nomd/4
+    
+    file=open('files/final/test_numMD10_numContext2_MDTrue_R1.pkl','rb')
+    data=pickle.load(file)
+    cues_all=data['cues_all']
+    a=cues_all[:,0,:]
+    routs_all=data['PFCouts_all']
+    routs_mean = np.mean(routs_all,axis=1)
+    norm_md = 0
+    cue1=np.where(a[:,0]==1)
+    norm_md+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
+    cue1=np.where(a[:,1]==1)
+    norm_md+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
+    cue1=np.where(a[:,2]==1)
+    norm_md+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
+    cue1=np.where(a[:,3]==1)
+    norm_md+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
+    norm_md=norm_md/4
+    bars=['Without MD','With MD']
+    plt.figure(figsize=(2.4,2.4))
+    x_pos = np.arange(len(bars))
+    plt.bar(x_pos, [norm_nomd,norm_md], color=['tab:red', 'tab:blue'])
+    plt.xticks(x_pos, bars)
+    plt.ylabel('PFC Mean Activity Norm')
+    plt.tight_layout()
+    plt.savefig(FIGUREPATH/'pfc_norm.pdf') 
+    
 if __name__ == '__main__':
     #plotDeltaW()
-    plotRout()
+    #plotRout()
+    plotPFCnorm()
