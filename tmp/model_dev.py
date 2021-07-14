@@ -929,7 +929,8 @@ class MD_GYM():
         self.tau = 0.02
         self.tau_times = 4
         self.dt = dt
-        self.tau_trace = 750 # unit, time steps
+        self.tau_pretrace = 1000 # unit, time steps
+        self.tau_posttrace = 1000 # unit, time steps
         self.Hebb_learning_rate = 1e-4
         Gbase = 0.75  # determines also the cross-task recurrence
 
@@ -998,8 +999,8 @@ class MD_GYM():
         return MDout
 
     def update_trace(self, rout, MDout):
-        self.MDpreTrace += 1. / self.tau_trace * (-self.MDpreTrace + rout)
-        self.MDpostTrace += 1. / self.tau_trace * (-self.MDpostTrace + MDout)
+        self.MDpreTrace += 1. / self.tau_pretrace * (-self.MDpreTrace + rout)
+        self.MDpostTrace += 1. / self.tau_posttrace * (-self.MDpostTrace + MDout)
         MDoutTrace = self.winner_take_all(self.MDpostTrace)
 
         return MDoutTrace
@@ -1095,6 +1096,14 @@ class CTRNN_MD(nn.Module):
         # initialized as an identity matrix*0.5
         nn.init.eye_(self.h2h.weight)
         self.h2h.weight.data *= 0.5
+
+        # uniform distribution
+        # k = (1./self.hidden_size)**0.5
+        # self.h2h.weight.data += 2*k*torch.rand(self.h2h.weight.data.size()) - k # ~U(leftlim=-k, rightlim=k)
+
+        # normal distribution
+        # k = (1./self.hidden_size)**0.5
+        # self.h2h.weight.data += k*torch.randn(self.h2h.weight.data.size()) # ~N(mean=0, std=1/hidden_size)
 
         # the same as pytorch built-in RNN module
         # used in reservoir
