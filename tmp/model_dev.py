@@ -929,7 +929,8 @@ class MD_GYM():
         self.tau = 0.02
         self.tau_times = 4
         self.dt = dt
-        self.tau_trace = 750 # unit, time steps
+        self.tau_pretrace = 1000 # unit, time steps
+        self.tau_posttrace = 1000 # unit, time steps
         self.Hebb_learning_rate = 1e-4
         Gbase = 0.75  # determines also the cross-task recurrence
 
@@ -998,8 +999,8 @@ class MD_GYM():
         return MDout
 
     def update_trace(self, rout, MDout):
-        self.MDpreTrace += 1. / self.tau_trace * (-self.MDpreTrace + rout)
-        self.MDpostTrace += 1. / self.tau_trace * (-self.MDpostTrace + MDout)
+        self.MDpreTrace += 1. / self.tau_pretrace * (-self.MDpreTrace + rout)
+        self.MDpostTrace += 1. / self.tau_posttrace * (-self.MDpostTrace + MDout)
         MDoutTrace = self.winner_take_all(self.MDpostTrace)
 
         return MDoutTrace
@@ -1016,7 +1017,7 @@ class MD_GYM():
         MDoutTrace = self.update_trace(rout, MDout)
 
         # use OR opertion to get binary pretraces
-        part = int(0.3*len(rout)) 
+        part = int(0.5*len(self.MDpreTrace)) 
         self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[-part:])
         self.MDpreTrace_binary = ((self.MDpreTrace>self.MDpreTrace_threshold) | (rout>self.MDpreTrace_threshold)).astype(float)
         
@@ -1027,7 +1028,7 @@ class MD_GYM():
         # update and clip the PFCMD weights
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
+        self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -1., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0., 7. / self.G)
 
     def winner_take_all(self, MDinp):
@@ -1096,6 +1097,14 @@ class CTRNN_MD(nn.Module):
         nn.init.eye_(self.h2h.weight)
         self.h2h.weight.data *= 0.5
 
+        # uniform distribution
+        # k = (1./self.hidden_size)**0.5
+        # self.h2h.weight.data += 2*k*torch.rand(self.h2h.weight.data.size()) - k # ~U(leftlim=-k, rightlim=k)
+
+        # normal distribution
+        # k = (1./self.hidden_size)**0.5
+        # self.h2h.weight.data += k*torch.randn(self.h2h.weight.data.size()) # ~N(mean=0, std=1/hidden_size)
+
         # the same as pytorch built-in RNN module
         # used in reservoir
         # k = (1./self.hidden_size)**0.5
@@ -1104,7 +1113,11 @@ class CTRNN_MD(nn.Module):
 
     def init_hidden(self, input):
         batch_size = input.shape[1]
-        return torch.zeros(batch_size, self.hidden_size).to(input.device)
+        # as zeros
+        hidden = torch.zeros(batch_size, self.hidden_size)
+        # as uniform noise
+        # hidden = 1/self.hidden_size*torch.rand(batch_size, self.hidden_size)
+        return hidden.to(input.device)
 
     def recurrence(self, input, sub_id, hidden):
         """Recurrence helper."""

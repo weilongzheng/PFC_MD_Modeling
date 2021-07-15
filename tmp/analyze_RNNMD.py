@@ -15,17 +15,17 @@ log = np.load('./files/'+'log_withMD.npy', allow_pickle=True).item()
 
 
 # PFC outputs within a cycle
-if True:
+if False:
     PFCouts_all = log['PFCouts_all']
-    print(PFCouts_all.shape) # (num_cycles, seq_len, batch_size, hidden_size)
+    print(len(PFCouts_all))
     font = {'family':'Times New Roman','weight':'normal', 'size':25}
     label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    for idx_cycle in [0, 1, 149, 150, 151, 152, 153, 199, 200, 250, 399, 400]: # choose the cycle to visualize
-        PFCouts_cycle = log['PFCouts_all'][idx_cycle, :, 0, :]
+    for idx_cycle in [-1]: # choose the cycle to visualize
+        PFCouts_cycle = PFCouts_all[idx_cycle].squeeze()
         for i in range(PFCouts_cycle.shape[0]):
-            meanPFCouts_cycle = np.mean(PFCouts_cycle[i, :])
+            # meanPFCouts_cycle = np.mean(PFCouts_cycle[i, :])
+            # plt.axhline(y=meanPFCouts_cycle, color='r', linestyle='-')
             plt.plot(PFCouts_cycle[i, :])
-            plt.axhline(y=meanPFCouts_cycle, color='r', linestyle='-')
             plt.title(f'PFC outputs Cycle-{idx_cycle}' + ' Step-'+str(i+1), fontdict=font)
             plt.xlabel('PFC neuron index', fontdict=label_font)
             plt.ylabel('PFC activities', fontdict=label_font)
@@ -42,7 +42,7 @@ if True:
         optimize(gif_path)
 
 # Presynaptic traces within a cycle
-if True:
+if False:
     MDpreTraces_all = log['MDpreTraces_all']
     MDpreTrace_threshold_all = log['MDpreTrace_threshold_all']
     font = {'family':'Times New Roman','weight':'normal', 'size':25}
