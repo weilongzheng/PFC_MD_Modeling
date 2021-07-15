@@ -21,16 +21,17 @@ mpl.rcParams['axes.spines.right'] = False
 mpl.rcParams['axes.spines.top'] = False
 mpl.rcParams['axes.spines.bottom'] = True
 
-filename = Path('files\\final')
+filename = Path('files')
 Num_MD = 10
 Ncontexts = 2
-PFClearn = False
-seed_setup = [1,2,3,4,5,6,7,8,9,10]
+PFClearn = True
+#seed_setup = [1,2,3,4,5,6,7,8,9,10]
+seed_setup = [1,3,5]
 
 MDeffect = True
 mse_md = list()
 for RNGSEED in seed_setup:
-    file = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+    file = 'train_mask0.5_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
     file = open(filename / file,'rb')
     data = pickle.load(file)
     mse_md.append(data['mse'])
@@ -40,7 +41,7 @@ mse_md_mean = np.mean(mse_md,axis=0)
 MDeffect = False
 mse_mdoff = list()
 for RNGSEED in seed_setup:
-    file = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+    file = 'train_mask0.5_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
     file = open(filename / file,'rb')
     data = pickle.load(file)
     mse_mdoff.append(data['mse'])
@@ -67,7 +68,7 @@ plt.axvspan(0, 100, ymin=0, ymax=1, alpha=0.1, color='tab:orange')
 plt.axvspan(200, 300, ymin=0, ymax=1, alpha=0.1, color='tab:orange')
 plt.axvspan(100, 200, ymin=0, ymax=1, alpha=0.1, color='tab:green')
 #plt.savefig(filesave/'mse.pdf') 
-plt.savefig(filesave/'mse.pdf', dpi=300) 
+plt.savefig(filesave/'mse_softSwitch.pdf', dpi=300) 
 
 plt.figure(figsize=(2.4,2.4))
 plt.plot(mse_mdoff_mean[200:],'tab:red',label='Without MD')
@@ -80,7 +81,7 @@ plt.xticks(np.arange(0,101,25),np.arange(400,601,50))
 plt.xlabel('Trials'),plt.ylabel('MSE')
 plt.legend(frameon=False)
 plt.tight_layout()
-plt.savefig(filesave/'mse_switch.pdf', dpi=300) 
+plt.savefig(filesave/'mse_softSwitch_switch.pdf', dpi=300) 
 #"""
 #MSE vs. cycles
 #"""
