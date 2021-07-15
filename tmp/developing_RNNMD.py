@@ -8,6 +8,7 @@ import json
 import time
 import math
 import numpy as np
+import random
 import pandas as pd
 from sklearn.decomposition import PCA
 import torch
@@ -84,7 +85,8 @@ config = {
 
 # set random seed
 RNGSEED = config['RNGSEED']
-np.random.seed([RNGSEED])
+random.seed(RNGSEED)
+np.random.seed(RNGSEED)
 torch.manual_seed(RNGSEED)
 
 
