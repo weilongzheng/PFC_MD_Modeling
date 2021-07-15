@@ -1017,7 +1017,7 @@ class MD_GYM():
         MDoutTrace = self.update_trace(rout, MDout)
 
         # use OR opertion to get binary pretraces
-        part = int(0.3*len(rout)) 
+        part = int(0.5*len(self.MDpreTrace)) 
         self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[-part:])
         self.MDpreTrace_binary = ((self.MDpreTrace>self.MDpreTrace_threshold) | (rout>self.MDpreTrace_threshold)).astype(float)
         
@@ -1028,7 +1028,7 @@ class MD_GYM():
         # update and clip the PFCMD weights
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
+        self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -1., 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0., 7. / self.G)
 
     def winner_take_all(self, MDinp):
@@ -1113,7 +1113,11 @@ class CTRNN_MD(nn.Module):
 
     def init_hidden(self, input):
         batch_size = input.shape[1]
-        return torch.zeros(batch_size, self.hidden_size).to(input.device)
+        # as zeros
+        hidden = torch.zeros(batch_size, self.hidden_size)
+        # as uniform noise
+        # hidden = 1/self.hidden_size*torch.rand(batch_size, self.hidden_size)
+        return hidden.to(input.device)
 
     def recurrence(self, input, sub_id, hidden):
         """Recurrence helper."""
