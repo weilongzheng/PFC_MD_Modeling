@@ -96,13 +96,12 @@ tasks = config['tasks']
 print(tasks)
 
 # block training - 2 tasks
-datasets = []
+envs = []
 for task in tasks:
-    schedule = RandomSchedule(1)
-    env = ScheduleEnvs([gym.make(task, **config['env_kwargs'])], schedule=schedule, env_input=False)
-    datasets.append(ngym.Dataset(env, batch_size=config['batch_size'], seq_len=config['seq_len']))
+    env = gym.make(task, **config['env_kwargs'])
+    envs.append(env)
 # get envs for test
-test_envs = [datasets[env_id].env for env_id in range(len(datasets))]
+test_envs = envs
 
 # only for tasks in Yang19 collection
 ob_size = 33
@@ -153,7 +152,7 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 3000
+total_training_cycle = 4000
 print_every_cycle = 50
 save_every_cycle = 50
 save_times = total_training_cycle//save_every_cycle
@@ -164,15 +163,15 @@ log = {
     'stamps': [],
     'fix_perfs': [[], []],
     'act_perfs': [[], []],
-    'PFCouts_all': np.zeros(shape=(save_times, config['seq_len'], config['batch_size'], config['hidden_size'])),
+    'PFCouts_all': [],
 }
 if config['MDeffect']:
     MD_log = {
-        'MDouts_all':               np.zeros(shape=(save_times, config['seq_len'], config['md_size'])),
-        'MDpreTraces_all':          np.zeros(shape=(save_times, config['seq_len'], config['hidden_size'])),
-        'MDpreTraces_binary_all':   np.zeros(shape=(save_times, config['seq_len'], config['hidden_size'])),
-        'MDpreTrace_threshold_all': np.zeros(shape=(save_times, config['seq_len'], 1)),
-        'MDpreTrace_binary_threshold_all': np.zeros(shape=(save_times, config['seq_len'], 1)),
+        'MDouts_all':                      [],
+        'MDpreTraces_all':                 [],
+        'MDpreTraces_binary_all':          [],
+        'MDpreTrace_threshold_all':        [],
+        'MDpreTrace_binary_threshold_all': [],
         'wPFC2MD_list': [],
         'wMD2PFC_list': [],
     }
@@ -195,17 +194,21 @@ for i in range(total_training_cycle):
     task_id = 0
 
     # fetch data
-    dataset = datasets[task_id]
-    inputs, labels = dataset()
-    assert not np.any(np.isnan(inputs))
-    
+    env = envs[task_id]
+    env.new_trial()
+    ob, gt = env.ob, env.gt
+    assert not np.any(np.isnan(ob))
+
     # numpy -> torch
-    inputs = torch.from_numpy(inputs).type(torch.float).to(device)
-    labels = torch.from_numpy(labels).type(torch.long).to(device)
-    # normalize inputs
-    # inputs = inputs / (abs(inputs).max() + 1e-15)
+    inputs = torch.from_numpy(ob).type(torch.float).to(device)
+    labels = torch.from_numpy(gt).type(torch.long).to(device)
+
     # index -> one-hot vector
     labels = (F.one_hot(labels, num_classes=act_size)).float()
+
+    # add batch axis
+    inputs = inputs[:, np.newaxis, :]
+    labels = labels[:, np.newaxis, :]
 
     # zero the parameter gradients
     optimizer.zero_grad()
@@ -273,14 +276,13 @@ for i in range(total_training_cycle):
 
     # save activities
     if i % save_every_cycle == (save_every_cycle - 1):
-        count_save_time = (i+1)//save_every_cycle - 1
-        log['PFCouts_all'][count_save_time, ...] = rnn_activity.cpu().detach().numpy()
+        log['PFCouts_all'].append(rnn_activity.cpu().detach().numpy())
         if config['MDeffect']:
-            log['MDouts_all'][count_save_time, ...] = net.rnn.md.md_output_t
-            log['MDpreTraces_all'][count_save_time, ...] = net.rnn.md.md_preTraces
-            log['MDpreTraces_binary_all'][count_save_time, ...] = net.rnn.md.md_preTraces_binary
-            log['MDpreTrace_threshold_all'][count_save_time, ...] = net.rnn.md.md_preTrace_thresholds
-            log['MDpreTrace_binary_threshold_all'][count_save_time, ...] = net.rnn.md.MDpreTrace_binary_threshold
+            log['MDouts_all'].append(net.rnn.md.md_output_t)
+            log['MDpreTraces_all'].append(net.rnn.md.md_preTraces)
+            log['MDpreTraces_binary_all'].append(net.rnn.md.md_preTraces_binary)
+            log['MDpreTrace_threshold_all'].append(net.rnn.md.md_preTrace_thresholds)
+            log['MDpreTrace_binary_threshold_all'].append(net.rnn.md.MDpreTrace_binary_threshold)
             log['wPFC2MD_list'].append(net.rnn.md.wPFC2MD)
             log['wMD2PFC_list'].append(net.rnn.md.wMD2PFC)
 
@@ -302,7 +304,7 @@ for i in range(total_training_cycle):
         log['stamps'].append(i+1)
         #   fixation & action performance
         print('Performance')
-        for env_id in range(len(datasets)):
+        for env_id in range(len(tasks)):
             fix_perf, act_perf = get_full_performance(net, test_envs[env_id], task_id=env_id, num_task=len(tasks), num_trial=200, device=device) # set large enough num_trial to get good statistics
             log['fix_perfs'][env_id].append(fix_perf)
             log['act_perfs'][env_id].append(act_perf)
@@ -328,7 +330,7 @@ print('Finished Training')
 font = {'family':'Times New Roman','weight':'normal', 'size':25}
 plt.figure()
 plt.plot(np.array(log['losses']))
-plt.xlabel('Training Cycles', fontdict=font)
+plt.xlabel('Trials', fontdict=font)
 plt.ylabel('Training MSE loss', fontdict=font)
 # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
 # plt.ylim([0.0, 1.0])
@@ -341,7 +343,7 @@ plt.show()
 label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
 title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
-for env_id in range(len(datasets)):
+for env_id in range(len(tasks)):
     plt.figure()
     plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
     plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
@@ -349,7 +351,7 @@ for env_id in range(len(datasets)):
     plt.fill_between(x=[2000, 4000], y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
     plt.fill_between(x=[4000, 6000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
     plt.legend(prop=legend_font)
-    plt.xlabel('Training Cycles', fontdict=label_font)
+    plt.xlabel('Trials', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
     plt.title('Task{:d}: '.format(env_id+1)+tasks[env_id], fontdict=title_font)
     # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
