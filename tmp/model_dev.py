@@ -1022,7 +1022,8 @@ class MD_GYM():
         self.MDpreTrace_binary = ((rout>self.MDpreTrace_threshold) | (self.MDpreTrace>self.MDpreTrace_threshold)).astype(float)
         
         # compute thresholds
-        self.MDpreTrace_binary_threshold = np.mean(self.MDpreTrace_binary)
+        # self.MDpreTrace_binary_threshold = np.mean(self.MDpreTrace_binary)
+        self.MDpreTrace_binary_threshold = 0.5
         MDoutTrace_threshold = 0.5
         
         # update and clip the PFCMD weights

@@ -152,9 +152,9 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 4000
-print_every_cycle = 50
-save_every_cycle = 50
+total_training_cycle = 12000
+print_every_cycle = 200
+save_every_cycle = 2000
 save_times = total_training_cycle//save_every_cycle
 running_loss = 0.0
 running_train_time = 0
@@ -185,13 +185,12 @@ for i in range(total_training_cycle):
     train_time_start = time.time()    
 
     # control training paradigm
-    # if i < 2000:
-    #     task_id = 0
-    # elif i >= 2000 and i < 4000:
-    #     task_id = 1
-    # elif i >= 4000:
-    #     task_id = 0
-    task_id = 0
+    if i < 4000:
+        task_id = 0
+    elif i >= 4000 and i < 8000:
+        task_id = 1
+    elif i >= 8000:
+        task_id = 0
 
     # fetch data
     env = envs[task_id]
@@ -217,7 +216,7 @@ for i in range(total_training_cycle):
     outputs, rnn_activity = net(inputs, sub_id=task_id)
 
     # plot during training
-    if i % 200 == 199:
+    if i % 400 == 399:
         font = {'family':'Times New Roman','weight':'normal', 'size':20}
         # PFC activities
         plt.figure()
@@ -347,9 +346,9 @@ for env_id in range(len(tasks)):
     plt.figure()
     plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
     plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
-    plt.fill_between(x=[   0, 2000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
-    plt.fill_between(x=[2000, 4000], y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
-    plt.fill_between(x=[4000, 6000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[   0, 4000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[4000, 8000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
+    plt.fill_between(x=[8000, 12000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
     plt.legend(prop=legend_font)
     plt.xlabel('Trials', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
