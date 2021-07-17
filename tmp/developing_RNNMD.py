@@ -291,7 +291,7 @@ for i in range(total_training_cycle):
     running_train_time += time.time() - train_time_start
     if i % print_every_cycle == (print_every_cycle - 1):
 
-        print('Total step: {:d}'.format(total_training_cycle))
+        print('Total trial: {:d}'.format(total_training_cycle))
         print('Training sample index: {:d}-{:d}'.format(i+1-print_every_cycle, i+1))
 
         # train loss
@@ -349,7 +349,7 @@ for env_id in range(len(tasks)):
     plt.fill_between(x=[   0, 4000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
     plt.fill_between(x=[4000, 8000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
     plt.fill_between(x=[8000, 12000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
-    plt.legend(prop=legend_font)
+    plt.legend(bbox_to_anchor = (1.15, 0.7), prop=legend_font)
     plt.xlabel('Trials', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
     plt.title('Task{:d}: '.format(env_id+1)+tasks[env_id], fontdict=title_font)
