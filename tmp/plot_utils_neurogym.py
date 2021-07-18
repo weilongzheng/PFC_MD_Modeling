@@ -34,7 +34,7 @@ plt.savefig('./animation/'+'CEloss.png')
 plt.show()
 
 # Heatmap wPFC2MD
-font = {'family':'Times New Roman','weight':'normal', 'size':30}
+font = {'family':'Times New Roman', 'weight':'normal', 'size':30}
 ax = plt.figure(figsize=(15, 10))
 ax = sns.heatmap(model.md.wPFC2MD, cmap='Reds')
 ax.set_xticks([0, 999])
