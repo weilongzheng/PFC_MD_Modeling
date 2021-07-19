@@ -1019,8 +1019,8 @@ class MD_GYM():
         # use OR opertion to get binary pretraces
         pretrace_part = int(0.5*len(self.MDpreTrace))
         self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[-pretrace_part:])
-        self.MDpreTrace_binary = ((rout>self.MDpreTrace_threshold) | (self.MDpreTrace>self.MDpreTrace_threshold)).astype(float)
-        
+        self.MDpreTrace_binary = (self.MDpreTrace>self.MDpreTrace_threshold).astype(float)
+
         # compute thresholds
         # self.MDpreTrace_binary_threshold = np.mean(self.MDpreTrace_binary)
         self.MDpreTrace_binary_threshold = 0.5
