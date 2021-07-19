@@ -1017,7 +1017,7 @@ class MD_GYM():
         MDoutTrace = self.update_trace(rout, MDout)
 
         # use OR opertion to get binary pretraces
-        pretrace_part = int(0.5*len(self.MDpreTrace))
+        pretrace_part = int(0.7*len(self.MDpreTrace))
         self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[-pretrace_part:])
         self.MDpreTrace_binary = (self.MDpreTrace>self.MDpreTrace_threshold).astype(float)
 
