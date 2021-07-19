@@ -225,7 +225,7 @@ for i in range(total_training_cycle):
         plt.show()
         if config['MDeffect']:
             # Presynaptic traces
-            plt.figure(figsize=(20, 12))
+            plt.figure(figsize=(22, 12))
             plt.subplot(2, 3, 1)
             plt.plot(net.rnn.md.md_preTraces[-1, :])
             plt.axhline(y=net.rnn.md.md_preTrace_thresholds[-1], color='r', linestyle='-')
@@ -240,7 +240,7 @@ for i in range(total_training_cycle):
             plt.plot(net.rnn.md.md_output_t[-1, :])
             plt.title('MD activities', fontdict=font)
             # Heatmap wPFC2MD
-            ax = plt.subplot(2, 2, 3)
+            ax = plt.subplot(2, 3, 4)
             ax = sns.heatmap(net.rnn.md.wPFC2MD, cmap='Reds')
             ax.set_xticks([0, 255])
             ax.set_xticklabels([1, 256], rotation=0)
@@ -252,7 +252,7 @@ for i in range(total_training_cycle):
             cbar.set_label('connection weight', fontdict=font)
             # Heatmap wMD2PFC
             font = {'family':'Times New Roman','weight':'normal', 'size':20}
-            ax = plt.subplot(2, 2, 4)
+            ax = plt.subplot(2, 3, 5)
             ax = sns.heatmap(net.rnn.md.wMD2PFC, cmap='Blues_r')
             ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
             ax.set_yticks([0, 255])
@@ -262,6 +262,19 @@ for i in range(total_training_cycle):
             ax.set_title('wMD2PFC', fontdict=font)
             cbar = ax.collections[0].colorbar
             cbar.set_label('connection weight', fontdict=font)
+            # Heatmap wMD2PFCMult
+            font = {'family':'Times New Roman','weight':'normal', 'size':20}
+            ax = plt.subplot(2, 3, 6)
+            ax = sns.heatmap(net.rnn.md.wMD2PFCMult, cmap='Reds')
+            ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+            ax.set_yticks([0, 255])
+            ax.set_yticklabels([1, 256], rotation=0)
+            ax.set_xlabel('MD neuron index', fontdict=font)
+            ax.set_ylabel('PFC neuron index', fontdict=font)
+            ax.set_title('wMD2PFCMult', fontdict=font)
+            cbar = ax.collections[0].colorbar
+            cbar.set_label('connection weight', fontdict=font)
+            plt.tight_layout()
             plt.show()
     # check shapes
     # print("inputs.shape: ", inputs.shape)
