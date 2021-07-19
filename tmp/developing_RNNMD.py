@@ -216,7 +216,7 @@ for i in range(total_training_cycle):
     outputs, rnn_activity = net(inputs, sub_id=task_id)
 
     # plot during training
-    if i % 600 == 599:
+    if i % 800 == 799:
         font = {'family':'Times New Roman','weight':'normal', 'size':20}
         # PFC activities
         plt.figure()
