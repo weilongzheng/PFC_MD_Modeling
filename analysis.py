@@ -165,18 +165,19 @@ def plotPFCnorm():
     a=cues_all[:,0,:]
     routs_all=data['PFCouts_all']
     routs_mean = np.mean(routs_all,axis=1)
+    routs_mean_nomd = routs_mean;
     norm_nomd = 0
     cue1=np.where(a[:,0]==1)
-    import pdb;pdb.set_trace()  
-    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
+    
+    norm_nomd+=np.mean(np.linalg.norm(routs_mean[cue1,:],axis=2))
     cue2=np.where(a[:,1]==1)
-    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue2,:],axis=1))
+    norm_nomd+=np.mean(np.linalg.norm(routs_mean[cue2,:],axis=2))
     cue3=np.where(a[:,2]==1)
-    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue3,:],axis=1))
+    norm_nomd+=np.mean(np.linalg.norm(routs_mean[cue3,:],axis=2))
     cue4=np.where(a[:,3]==1)
-    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue4,:],axis=1))
+    norm_nomd+=np.mean(np.linalg.norm(routs_mean[cue4,:],axis=2))
     norm_nomd=norm_nomd/4
-    norm_nomd_std = np.std([np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1)),np.linalg.norm(np.mean(routs_mean[cue2,:],axis=1)),np.linalg.norm(np.mean(routs_mean[cue3,:],axis=1)),np.linalg.norm(np.mean(routs_mean[cue4,:],axis=1))])
+    norm_nomd_std = np.std([np.linalg.norm(routs_mean[cue1,:],axis=2),np.linalg.norm(routs_mean[cue2,:],axis=2),np.linalg.norm(routs_mean[cue3,:],axis=2),np.linalg.norm(routs_mean[cue4,:],axis=2)])
     
     file=open('files/final/test_numMD10_numContext2_MDTrue_R1.pkl','rb')
     data=pickle.load(file)
@@ -184,18 +185,18 @@ def plotPFCnorm():
     a=cues_all[:,0,:]
     routs_all=data['PFCouts_all']
     routs_mean = np.mean(routs_all,axis=1)
+    routs_mean_md = routs_mean;
     norm_md = 0
     cue1=np.where(a[:,0]==1)
-    norm_md+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
+    norm_md+=np.mean(np.linalg.norm(routs_mean[cue1,:],axis=2))
     cue2=np.where(a[:,1]==1)
-    norm_md+=np.linalg.norm(np.mean(routs_mean[cue2,:],axis=1))
+    norm_md+=np.mean(np.linalg.norm(routs_mean[cue2,:],axis=2))
     cue3=np.where(a[:,2]==1)
-    norm_md+=np.linalg.norm(np.mean(routs_mean[cue3,:],axis=1))
+    norm_md+=np.mean(np.linalg.norm(routs_mean[cue3,:],axis=2))
     cue4=np.where(a[:,3]==1)
-    norm_md+=np.linalg.norm(np.mean(routs_mean[cue4,:],axis=1))
+    norm_md+=np.mean(np.linalg.norm(routs_mean[cue4,:],axis=2))
     norm_md=norm_md/4
-    norm_md_std = np.std([np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1)),np.linalg.norm(np.mean(routs_mean[cue2,:],axis=1)),np.linalg.norm(np.mean(routs_mean[cue3,:],axis=1)),np.linalg.norm(np.mean(routs_mean[cue4,:],axis=1))])
-    
+    norm_md_std = np.std([np.linalg.norm(routs_mean[cue1,:],axis=2),np.linalg.norm(routs_mean[cue2,:],axis=2),np.linalg.norm(routs_mean[cue3,:],axis=2),np.linalg.norm(routs_mean[cue4,:],axis=2)])
     
     bars=['Without MD','With MD']
     plt.figure(figsize=(1.8,2.4))
@@ -206,7 +207,16 @@ def plotPFCnorm():
     plt.tight_layout()
     plt.savefig(FIGUREPATH/'pfc_norm.pdf') 
     
+    import pdb;pdb.set_trace()  
+    plt.figure(figsize=(2.4,2.4))
+    bins = np.arange(0,1,0.1)
+    data_plot = np.array([routs_mean_nomd.flatten(),routs_mean_md[:400,:].flatten()])
+    #sns.distplot(routs_mean_nomd.flatten(), hist=True, kde=True, color = 'tab:red', kde_kws = {'linewidth': 2});
+    sns.histplot(data=data_plot, stat = 'probability', bins = bins, kde=False)
+    plt.legend(['Without MD','With MD'])
+    plt.legend(frameon=False)
+    
 if __name__ == '__main__':
     #plotDeltaW()
-    plotRout()
+    #plotRout()
     plotPFCnorm()
