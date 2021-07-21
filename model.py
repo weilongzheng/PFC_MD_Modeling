@@ -749,7 +749,7 @@ class PytorchMD(nn.Module):
         self.MDpreTrace = torch.zeros((self.Nneur))
         self.MDpostTrace = torch.zeros((self.Num_MD))
         self.MDpreTrace_threshold = 0
-
+        
         # Choose G based on the type of activation function
         # unclipped activation requires lower G than clipped activation,
         #  which in turn requires lower G than shifted tanh activation.
@@ -947,7 +947,7 @@ class PytorchMD(nn.Module):
 
 
 class PytorchPFCMD(nn.Module):
-    def __init__(self, Num_PFC, n_neuron_per_cue, Num_MD, num_active, num_output, pfcNoise, MDeffect=True, noisePresent = False, noiseInput = False):
+    def __init__(self, Num_PFC, n_neuron_per_cue, n_cues, Num_MD, num_active, num_output, pfcNoise, MDeffect=True, noisePresent = False, noiseInput = False):
         super().__init__()
         """
         additional noise input neuron if noiseInput is true
@@ -956,7 +956,7 @@ class PytorchPFCMD(nn.Module):
         if noiseInput==False:
             self.sensory2pfc = SensoryInputLayer(
                 n_sub=n_neuron_per_cue,
-                n_cues=4,
+                n_cues=n_cues,
                 n_output=Num_PFC)
             self.sensory2pfc.torch(use_torch=True)
             # try learnable input weights
@@ -964,7 +964,7 @@ class PytorchPFCMD(nn.Module):
         else:
             self.sensory2pfc = SensoryInputLayer_NoiseNeuro(
                 n_sub=n_neuron_per_cue,
-                n_cues=4,
+                n_cues=n_cues,
                 n_output=Num_PFC)
             self.sensory2pfc.torch(use_torch=True)
 
@@ -982,6 +982,7 @@ class PytorchPFCMD(nn.Module):
             index = np.random.permutation(Num_MD)
             self.md_output[index[:num_active]] = 1 # randomly set part of md_output to 1
             self.md_output_t = np.array([])
+            
         
 
         self.num_output = num_output
@@ -1009,6 +1010,9 @@ class PytorchPFCMD(nn.Module):
         self.pfc_outputs = torch.zeros((n_time, self.pfc.Nneur))
         self.md_preTraces = np.zeros(shape=(n_time, self.pfc.Nneur))
         self.md_preTrace_thresholds = np.zeros(shape=(n_time, 1))
+        
+        self.wPFC2MDs_all = np.zeros(shape=(n_time,self.md.Num_MD,self.pfc.Nneur))
+        self.wMD2PFCs_all = np.zeros(shape=(n_time,self.pfc.Nneur,self.md.Num_MD))
         
         if self.MDeffect:
             self.md_output_t *= 0
@@ -1044,6 +1048,8 @@ class PytorchPFCMD(nn.Module):
                 self.pfc_outputs[i, :] = pfc_output_t
                 self.md_preTraces[i, :] = self.md.MDpreTrace
                 self.md_preTrace_thresholds[i, :] = self.md.MDpreTrace_threshold
+                self.wPFC2MDs_all[i,:,:] = torch.from_numpy(self.md.wPFC2MD)
+                self.wMD2PFCs_all[i,:,:] = torch.from_numpy(self.md.wMD2PFC)
                 
 #                pfc_output = self.pfc(input2pfc, torch.from_numpy(md2pfc)).detach().numpy()
 #                pfc_output_t = pfc_output.reshape((1, pfc_output.shape[0]))

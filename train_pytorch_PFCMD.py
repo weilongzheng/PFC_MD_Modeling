@@ -21,27 +21,29 @@ RNGSEED = 10 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-Ntrain = 100            # number of training cycles for each context
-Nextra = 100            # add cycles to show if block1
-Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
+Ntrain = 10            # number of training cycles for each context
+Nextra = 10            # add cycles to show if block1
+Ncontexts = 3           # number of cueing contexts (e.g. auditory cueing context)
 inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
 dataset = RikhyeTask(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=True)
 
 # Model settings
-n_neuron = 1000
 n_neuron_per_cue = 200
 Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
+n_cues = Ncontexts*inpsPerConext
+n_neuron = n_neuron_per_cue*n_cues+200
 noiseSD = 1e-1
-MDeffect = False
+MDeffect = True
 PFClearn = False
 noiseInput = False # additional noise input neuron 
 pfcNoise = 1e-2 
 noisePresent = False # recurrent noise
+activity_record = True
 
-model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, pfcNoise = pfcNoise,\
+model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, n_cues = n_cues, Num_MD=Num_MD, num_active=num_active, num_output=n_output, pfcNoise = pfcNoise,\
     MDeffect=MDeffect, noisePresent = noisePresent, noiseInput = noiseInput)
 
 # Training
@@ -72,13 +74,17 @@ model_name = 'model-' + str(int(time.time()))
 savemodel = False
 log = defaultdict(list)
 MDpreTraces = np.zeros(shape=(total_step,n_neuron))
-#MDouts_all = np.zeros(shape=(total_step,Num_MD))
-#PFCouts_all = np.zeros(shape=(total_step,n_neuron))
+
 tsteps = 200
 MDouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,Num_MD))
 PFCouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
 outputs_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,2))
 Wout_all = np.zeros(shape=(total_step,n_output,n_neuron))
+
+wPFC2MDs_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,Num_MD,n_neuron))
+wMD2PFCs_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron,Num_MD))
+MDpreTraces_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
+
 for i in range(total_step):
 
     train_time_start = time.time()
@@ -107,6 +113,9 @@ for i in range(total_step):
         outputs_all[i*inpsPerConext+tstart,:,:] = outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
         if  MDeffect == True:
             MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+            MDpreTraces_all[i*inpsPerConext+tstart,:,:] = model.md_preTraces[tstart*tsteps:(tstart+1)*tsteps,:]
+            wPFC2MDs_all[i*inpsPerConext+tstart,:,:,:] = model.wPFC2MDs_all[tstart*tsteps:(tstart+1)*tsteps,:]
+            wMD2PFCs_all[i*inpsPerConext+tstart,:,:,:] = model.wMD2PFCs_all[tstart*tsteps:(tstart+1)*tsteps,:]
         tstart += 1
 
     loss = criterion(outputs, labels)
@@ -165,10 +174,13 @@ if  MDeffect == True:
 
 filename = Path('files')
 os.makedirs(filename, exist_ok=True)
-file_training = 'train_wout_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
-with open(filename / file_training, 'wb') as f:
-    pickle.dump({'log':log,'Wout_all':Wout_all,'PFCouts_all':PFCouts_all}, f)
-    
+file_training = 'train_allVarT_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+if activity_record:
+    with open(filename / file_training, 'wb') as f:
+        pickle.dump({'log':log,'Ntrain':Ntrain,'Nextra':Nextra,'wPFC2MDs_all':wPFC2MDs_all,'wMD2PFCs_all':wMD2PFCs_all,'MDpreTraces_all':MDpreTraces_all,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all}, f)
+else:
+    with open(filename / file_training, 'wb') as f:
+        pickle.dump({'log':log})
 # Plot MSE curve
 plt.plot(log['mse'], label='With MD')
 plt.xlabel('Cycles')
