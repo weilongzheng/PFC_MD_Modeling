@@ -10,6 +10,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib 
 from matplotlib import ticker
+from pathlib import Path
+import pickle
+import numpy as np
+
 FIGUREPATH = Path('./results')
 mpl.rcParams['font.size'] = 7
 mpl.rcParams['pdf.fonttype'] = 42
@@ -108,18 +112,20 @@ def plotRout():
     routs_mean = np.mean(routs_all,axis=1)
     c=np.mean(routs_mean[cue1,:],axis=1)
     plt.figure(figsize=(2.4,2.4))
-    plt.plot(c.T,color='tab:blue')
+    plt.plot(c.T,color='tab:blue',linewidth=1)
     plt.xlabel('Neuron #')
     plt.ylabel('Mean Activity (a.u.)')
     plt.title('PFC (MD On)')
+    plt.ylim(0,0.9)
     plt.tight_layout()
     plt.savefig(FIGUREPATH/'pfc_activity_MD.pdf') 
     c=np.mean(routs_mean[cue2,:],axis=1)
     plt.figure(figsize=(2.4,2.4))
-    plt.plot(c.T,color='tab:blue')
+    plt.plot(c.T,color='tab:blue',linewidth=1)
     plt.xlabel('Neuron #')
     plt.ylabel('Mean Activity')
     plt.title('PFC (MD On)')
+    plt.ylim(0,0.9)
     plt.tight_layout()
     plt.savefig(FIGUREPATH/'pfc_activity2_MD.pdf') 
 
@@ -134,18 +140,20 @@ def plotRout():
     routs_mean = np.mean(routs_all,axis=1)
     c=np.mean(routs_mean[cue1,:],axis=1)
     plt.figure(figsize=(2.4,2.4))
-    plt.plot(c.T,color='tab:red')
+    plt.plot(c.T,color='tab:red',linewidth=0.5)
     plt.xlabel('Neuron #')
     plt.ylabel('Mean Activity (a.u.)')
     plt.title('PFC (MD Off)')
+    plt.ylim(0,0.9)
     plt.tight_layout()
     plt.savefig(FIGUREPATH/'pfc_activity_noMD.pdf') 
     c=np.mean(routs_mean[cue2,:],axis=1)
     plt.figure(figsize=(2.4,2.4))
-    plt.plot(c.T,color='tab:red')
+    plt.plot(c.T,color='tab:red',linewidth=0.5)
     plt.xlabel('Neuron #')
     plt.ylabel('Mean Activity')
-    plt.title('PFC (MD On)')
+    plt.title('PFC (MD Off)')
+    plt.ylim(0,0.9)
     plt.tight_layout()
     plt.savefig(FIGUREPATH/'pfc_activity2_noMD.pdf') 
     
@@ -159,14 +167,16 @@ def plotPFCnorm():
     routs_mean = np.mean(routs_all,axis=1)
     norm_nomd = 0
     cue1=np.where(a[:,0]==1)
+    import pdb;pdb.set_trace()  
     norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
-    cue1=np.where(a[:,1]==1)
-    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
-    cue1=np.where(a[:,2]==1)
-    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
-    cue1=np.where(a[:,3]==1)
-    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
+    cue2=np.where(a[:,1]==1)
+    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue2,:],axis=1))
+    cue3=np.where(a[:,2]==1)
+    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue3,:],axis=1))
+    cue4=np.where(a[:,3]==1)
+    norm_nomd+=np.linalg.norm(np.mean(routs_mean[cue4,:],axis=1))
     norm_nomd=norm_nomd/4
+    norm_nomd_std = np.std([np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1)),np.linalg.norm(np.mean(routs_mean[cue2,:],axis=1)),np.linalg.norm(np.mean(routs_mean[cue3,:],axis=1)),np.linalg.norm(np.mean(routs_mean[cue4,:],axis=1))])
     
     file=open('files/final/test_numMD10_numContext2_MDTrue_R1.pkl','rb')
     data=pickle.load(file)
@@ -177,17 +187,20 @@ def plotPFCnorm():
     norm_md = 0
     cue1=np.where(a[:,0]==1)
     norm_md+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
-    cue1=np.where(a[:,1]==1)
-    norm_md+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
-    cue1=np.where(a[:,2]==1)
-    norm_md+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
-    cue1=np.where(a[:,3]==1)
-    norm_md+=np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1))
+    cue2=np.where(a[:,1]==1)
+    norm_md+=np.linalg.norm(np.mean(routs_mean[cue2,:],axis=1))
+    cue3=np.where(a[:,2]==1)
+    norm_md+=np.linalg.norm(np.mean(routs_mean[cue3,:],axis=1))
+    cue4=np.where(a[:,3]==1)
+    norm_md+=np.linalg.norm(np.mean(routs_mean[cue4,:],axis=1))
     norm_md=norm_md/4
+    norm_md_std = np.std([np.linalg.norm(np.mean(routs_mean[cue1,:],axis=1)),np.linalg.norm(np.mean(routs_mean[cue2,:],axis=1)),np.linalg.norm(np.mean(routs_mean[cue3,:],axis=1)),np.linalg.norm(np.mean(routs_mean[cue4,:],axis=1))])
+    
+    
     bars=['Without MD','With MD']
-    plt.figure(figsize=(2.4,2.4))
+    plt.figure(figsize=(1.8,2.4))
     x_pos = np.arange(len(bars))
-    plt.bar(x_pos, [norm_nomd,norm_md], color=['tab:red', 'tab:blue'])
+    plt.bar(x_pos, [norm_nomd,norm_md], yerr=[norm_nomd_std, norm_md_std], color=['tab:red', 'tab:blue'])
     plt.xticks(x_pos, bars)
     plt.ylabel('PFC Mean Activity Norm')
     plt.tight_layout()
