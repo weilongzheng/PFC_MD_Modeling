@@ -77,10 +77,10 @@ config = {
     'lr': 1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
     'batch_size': 1,
     'seq_len': 50,
-    # 'tasks': ngym.get_collection('yang19')
-    'tasks': ['yang19.go-v0', 'yang19.rtgo-v0']
-    # 'tasks': ['yang19.go-v0', 'yang19.dm1-v0']
-    # 'tasks': ['yang19.dm1-v0', 'yang19.go-v0']
+    # 'tasks': ngym.get_collection('yang19'),
+    'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
+    # 'tasks': ['yang19.go-v0', 'yang19.dm1-v0'],
+    # 'tasks': ['yang19.dm1-v0', 'yang19.go-v0'],
 }
 
 # set random seed
