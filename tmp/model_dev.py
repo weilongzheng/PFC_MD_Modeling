@@ -1095,20 +1095,26 @@ class CTRNN_MD(nn.Module):
             self.md.md_output_t = np.array([])
 
     def reset_parameters(self):
-        # initialized as an identity matrix*0.5
+        # identity*0.5
         nn.init.eye_(self.h2h.weight)
         self.h2h.weight.data *= 0.5
 
-        # uniform distribution
+        # identity*other value
+        # nn.init.eye_(self.h2h.weight)
+        # self.h2h.weight.data *= 0.2
+
+        # random orthogonal noise
+        # nn.init.orthogonal_(self.h2h.weight, gain=0.5)
+
+        # all uniform noise
         # k = (1./self.hidden_size)**0.5
         # self.h2h.weight.data += 2*k*torch.rand(self.h2h.weight.data.size()) - k # ~U(leftlim=-k, rightlim=k)
 
-        # normal distribution
+        # all normal noise
         # k = (1./self.hidden_size)**0.5
         # self.h2h.weight.data += k*torch.randn(self.h2h.weight.data.size()) # ~N(mean=0, std=1/hidden_size)
 
-        # the same as pytorch built-in RNN module
-        # used in reservoir
+        # the same as pytorch built-in RNN module, used in reservoir
         # k = (1./self.hidden_size)**0.5
         # nn.init.uniform_(self.h2h.weight, a=-k, b=k)
         # nn.init.uniform_(self.h2h.bias, a=-k, b=k)

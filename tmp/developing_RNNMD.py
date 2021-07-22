@@ -116,7 +116,7 @@ model_config = {
     'hidden_size': 256,
     'sub_size': 128,
     'output_size': act_size,
-    'MDeffect': True,
+    'MDeffect': False,
     'md_size': 10,
     'md_active_size': 5,
     'md_dt': 0.001,
