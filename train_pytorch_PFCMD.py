@@ -31,7 +31,7 @@ dataset = RikhyeTask(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerC
 # Model settings
 n_neuron_per_cue = 200
 Num_MD = 10
-num_active = 5  # num MD active per context
+num_active = int(np.round(Num_MD/Ncontexts))  # num MD active per context
 n_output = 2
 n_cues = Ncontexts*inpsPerConext
 n_neuron = n_neuron_per_cue*n_cues+200

@@ -236,20 +236,20 @@ def plotPFCnorm():
     plt.show()
 
 def plotWevolution():
-    file = open('files/train_allVarT_numMD10_numContext2_MDTrue_PFCFalse_R10.pkl','rb')
+    file = open('files/train_allVarT_numMD10_numContext3_MDTrue_PFCFalse_R10.pkl','rb')
     data = pickle.load(file)
     wPFC2MDs_all = data['wPFC2MDs_all']
     wMD2PFCs_all = data['wMD2PFCs_all']
     Ntrain = data['Ntrain']
     
-    for i in np.arange(0,3):
+    for i in np.arange(0,4):
 
-        wPFC2MD = wPFC2MDs_all[(i)*Ntrain*2+10,199,:,:]
-        wMD2PFC = wMD2PFCs_all[(i)*Ntrain*2+10,199,:,:]
+        wPFC2MD = wPFC2MDs_all[(i+1)*Ntrain*2-1,199,:,:]
+        wMD2PFC = wMD2PFCs_all[(i+1)*Ntrain*2-1,199,:,:]
         ax = plt.figure(figsize=(2.4,2))
         ax = sns.heatmap(wPFC2MD, cmap='Reds')
-        ax.set_xticks([0, 399, 799, 999])
-        ax.set_xticklabels([1, 400, 800, 1000], rotation=0)
+        ax.set_xticks([0, 399, 799, 1199, 1399])
+        ax.set_xticklabels([1, 400, 800, 1200, 1400], rotation=0)
         ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
         ax.set_xlabel('PFC Index')
         ax.set_ylabel('MD Index')
@@ -257,24 +257,86 @@ def plotWevolution():
         cbar = ax.collections[0].colorbar
         plt.tight_layout()
         plt.show()
-        plt.savefig(FIGUREPATH/['wPFC2MD_t'+str(i+1)+'.pdf']) 
+        file_name = 'wPFC2MD_t'+str(i+1)+'.pdf'
+        plt.savefig(FIGUREPATH/file_name) 
 
         # Heatmap wMD2PFC
         ax = plt.figure(figsize=(2.4,2))
         ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
         ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-        ax.set_yticks([0, 399, 799, 999])
-        ax.set_yticklabels([1, 400, 800, 1000], rotation=0)
+        ax.set_yticks([0, 399, 799, 1199, 1399])
+        ax.set_yticklabels([1, 400, 800, 1200, 1400], rotation=0)
         ax.set_xlabel('MD Index')
         ax.set_ylabel('PFC Index')
         ax.set_title('wMD2PFC')
         cbar = ax.collections[0].colorbar
         plt.tight_layout()
         plt.show()
-        plt.savefig(FIGUREPATH/['wMD2PFC_t'+str(i+1)+'.pdf']) 
+        file_name = 'wMD2PFC_t'+str(i+1)+'.pdf'
+        plt.savefig(FIGUREPATH/file_name) 
+
+def plotMDpretraces():
+    file = open('files/train_allVarT_numMD10_numContext2_MDTrue_PFCFalse_R10.pkl','rb')
+    data = pickle.load(file)
+    wPFC2MDs_all = data['wPFC2MDs_all']
+    wMD2PFCs_all = data['wMD2PFCs_all']
+    MDpreTraces_all = data['MDpreTraces_all']
+    MDouts_all = data['MDouts_all']
+    
+    plot_t = 30 #10 30
+    ax = plt.figure(figsize=(2.4,2))
+    ax = sns.heatmap(MDpreTraces_all[plot_t,:,:].T, cmap='hot')
+    ax.set_yticks([0, 399, 799, 999])
+    ax.set_yticklabels([1, 400, 800, 1000], rotation=0)
+    ax.set_xticks([0, 49, 99, 149, 199])
+    ax.set_xticklabels([1, 50, 100, 150, 200], rotation=0)
+    ax.set_xlabel('Time Steps')
+    ax.set_ylabel('PFC Index')
+    ax.set_title('MD Presynaptic Trace')
+    plt.tight_layout()
+    plt.show()
+    file_name = 'MDpreTraces_t'+str(plot_t)+'.pdf'
+    plt.savefig(FIGUREPATH/file_name) 
+    
+    ax = plt.figure(figsize=(2.4,2))
+    ax = sns.heatmap(MDouts_all[plot_t,:,:].T, cmap='Blues')
+    ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+    ax.set_xticks([0, 49, 99, 149, 199])
+    ax.set_xticklabels([1, 50, 100, 150, 200], rotation=0)
+    ax.set_xlabel('Time Steps')
+    ax.set_ylabel('PFC Index')
+    ax.set_title('MD Outputs')
+    plt.tight_layout()
+    plt.show()
+    file_name = 'MDouts_t'+str(plot_t)+'.pdf'
+    plt.savefig(FIGUREPATH/file_name) 
+    
+    #import pdb;pdb.set_trace() 
+    ax = plt.figure(figsize=(1.8,2))
+    temp = wPFC2MDs_all[plot_t,:,:,:]
+    wPFC2MDs = np.mean(temp[:,4,:400],axis=1)
+    ax = plt.plot(wPFC2MDs,'g-',label='Cxt 1 to MD A')
+    temp = wPFC2MDs_all[plot_t,:,:,:]
+    wPFC2MDs = np.mean(temp[:,1,:400],axis=1)
+    ax = plt.plot(wPFC2MDs,'g--',label='Cxt 1 to MD B')
+    temp = wPFC2MDs_all[plot_t,:,:,:]
+    wPFC2MDs = np.mean(temp[:,4,400:800],axis=1)
+    ax = plt.plot(wPFC2MDs,'-',color='tab:orange',label='Cxt 2 to MD A')
+    temp = wPFC2MDs_all[plot_t,:,:,:]
+    wPFC2MDs = np.mean(temp[:,1,400:800],axis=1)
+    ax = plt.plot(wPFC2MDs,'--',color='tab:orange',label='Cxt 2 to MD B')
+    plt.xlabel('Time Steps')
+    plt.ylabel('Mean Weights')
+    plt.title('Weight Learning')
+    plt.legend(frameon=False)
+    plt.tight_layout()
+    plt.show()
+    file_name = 'Weights_t'+str(plot_t)+'.pdf'
+    plt.savefig(FIGUREPATH/file_name) 
     
 if __name__ == '__main__':
     #plotDeltaW()
     #plotRout()
     #plotPFCnorm()
-    plotWevolution()
+    #plotWevolution()
+    plotMDpretraces()
