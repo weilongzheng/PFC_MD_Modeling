@@ -116,7 +116,7 @@ model_config = {
     'hidden_size': 256,
     'sub_size': 128,
     'output_size': act_size,
-    'MDeffect': False,
+    'MDeffect': True,
     'md_size': 10,
     'md_active_size': 5,
     'md_dt': 0.001,
@@ -313,6 +313,8 @@ for i in range(total_training_cycle):
         
         # test during training
         test_time_start = time.time()
+        if config['MDeffect']:
+            net.rnn.md.learn = False
         log['stamps'].append(i+1)
         #   fixation & action performance
         print('Performance')
@@ -322,6 +324,8 @@ for i in range(total_training_cycle):
             log['act_perfs'][env_id].append(act_perf)
             print('  fix performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, fix_perf))
             print('  act performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, act_perf))
+        if config['MDeffect']:
+            net.rnn.md.learn = True
         running_test_time = time.time() - test_time_start
 
         # left training time

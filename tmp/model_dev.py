@@ -993,8 +993,6 @@ class MD_GYM():
         if self.learn:
             # update PFC-MD weights
             self.update_weights(input, MDout)
-            # update PFC activities in the previous step
-            self.prev_PFCout = input
 
         return MDout
 
