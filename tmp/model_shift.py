@@ -243,7 +243,8 @@ class MD():
         
         # Decaying PFC-MD weights version 1
         '''
-        Increase the Hebbian learning rate because we want to PFC-MD weights are large enough (we use ODE here).
+        Increase the Hebbian learning rate because we want to PFC-MD weights are large enough
+        (we use ODE here, so the steady state of PFC-MD weights are dependnet on the Hebbian learning rate).
         '''
         wPFC2MDdelta = 30000 * 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)
         self.wPFC2MD += 1. / self.tsteps / 5. * (-1.0 * self.wPFC2MD + 1.0 * wPFC2MDdelta)
