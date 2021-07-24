@@ -1060,12 +1060,13 @@ class CTRNN_MD(nn.Module):
         hidden: (batch, hidden_size), initial hidden activity
     """
 
-    def __init__(self, input_size, hidden_size, sub_size, output_size, MDeffect, md_size, md_active_size, md_dt, dt=None, **kwargs):
+    def __init__(self, input_size, hidden_size, sub_size, output_size, num_task, MDeffect, md_size, md_active_size, md_dt, dt=None, **kwargs):
         super().__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.sub_size = sub_size
         self.output_size = output_size
+        self.num_task = num_task
         self.md_size = md_size
 
         self.tau = 100
@@ -1101,16 +1102,37 @@ class CTRNN_MD(nn.Module):
         # nn.init.eye_(self.h2h.weight)
         # self.h2h.weight.data *= 0.2
 
+        # block identity + positive uniform noise
+        # weights = []
+        # for i in range(self.num_task):
+        #     k = 1e-1*(1./self.hidden_size)**0.5
+        #     weights.append(torch.eye(self.sub_size)*0.5 + k*torch.rand(self.sub_size, self.sub_size)) # noise ~ U(leftlim=-k, rightlim=k)
+        # self.h2h.weight.data = torch.block_diag(*weights)
+
+        # block identity + uniform noise
+        # weights = []
+        # for i in range(self.num_task):
+        #     k = (1./self.hidden_size)**0.5
+        #     weights.append(torch.eye(self.sub_size) + 2*k*torch.rand(self.sub_size, self.sub_size) - k) # noise ~ U(leftlim=-k, rightlim=k)
+        # self.h2h.weight.data = torch.block_diag(*weights)
+
+        # block identity + normal noise
+        # weights = []
+        # for i in range(self.num_task):
+        #     k = (1./self.hidden_size)**0.5
+        #     weights.append(torch.eye(self.sub_size) + k*torch.randn(self.sub_size, self.sub_size)) # noise ~ N(mean=0, std=1/hidden_size)
+        # self.h2h.weight.data = torch.block_diag(*weights)
+
         # random orthogonal noise
         # nn.init.orthogonal_(self.h2h.weight, gain=0.5)
 
         # all uniform noise
         # k = (1./self.hidden_size)**0.5
-        # self.h2h.weight.data += 2*k*torch.rand(self.h2h.weight.data.size()) - k # ~U(leftlim=-k, rightlim=k)
+        # self.h2h.weight.data += 2*k*torch.rand(self.h2h.weight.data.size()) - k # noise ~ U(leftlim=-k, rightlim=k)
 
         # all normal noise
         # k = (1./self.hidden_size)**0.5
-        # self.h2h.weight.data += k*torch.randn(self.h2h.weight.data.size()) # ~N(mean=0, std=1/hidden_size)
+        # self.h2h.weight.data += k*torch.randn(self.h2h.weight.data.size()) # noise ~ N(mean=0, std=1/hidden_size)
 
         # the same as pytorch built-in RNN module, used in reservoir
         # k = (1./self.hidden_size)**0.5
@@ -1211,10 +1233,10 @@ class RNN_MD(nn.Module):
         rnn: str, type of RNN, lstm, rnn, ctrnn, or eirnn
     """
 
-    def __init__(self, input_size, hidden_size, sub_size, output_size, MDeffect, md_size, md_active_size, md_dt, **kwargs):
+    def __init__(self, input_size, hidden_size, sub_size, output_size, num_task, MDeffect, md_size, md_active_size, md_dt, **kwargs):
         super().__init__()
 
-        self.rnn = CTRNN_MD(input_size, hidden_size, sub_size, output_size, MDeffect, md_size, md_active_size, md_dt, **kwargs)
+        self.rnn = CTRNN_MD(input_size, hidden_size, sub_size, output_size, num_task, MDeffect, md_size, md_active_size, md_dt, **kwargs)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, sub_id):
