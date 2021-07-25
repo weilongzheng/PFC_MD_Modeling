@@ -1170,13 +1170,27 @@ class CTRNN_MD(nn.Module):
             assert hidden.shape[0] == 1, 'batch size should be 1'
             assert rec_input.shape[0] == 1, 'batch size should be 1'
 
-            self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
+            # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
+            # self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
+            # rec_inp = rec_input.cpu().detach().numpy()[0, :]
+            # md2pfc_weights = (self.md.MD2PFCMult/self.md.Num_MD)
+            # md2pfc = md2pfc_weights * rec_inp
+            # md2pfc += np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
+            # md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
-            self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
+            # ideal MD inputs analysis
+            self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
             rec_inp = rec_input.cpu().detach().numpy()[0, :]
-            md2pfc_weights = (self.md.MD2PFCMult/self.md.Num_MD)
-            md2pfc = md2pfc_weights * rec_inp
-            md2pfc += np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
+            #  ideal multiplicative inputs
+            md2pfc_weights = np.zeros(shape=(self.hidden_size))
+            md2pfc_weights[sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 0.5
+            md2pfcMult = md2pfc_weights * rec_inp
+            #  ideal additive inputs
+            md2pfcAdd = np.ones(shape=(self.hidden_size))*(-0.5)
+            md2pfcAdd[sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 0
+            #  ideal inputs
+            # md2pfc = md2pfcMult + md2pfcAdd
+            md2pfc = md2pfcAdd
             md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             if self.md.sendinputs:
