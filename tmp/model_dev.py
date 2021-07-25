@@ -1028,7 +1028,7 @@ class MD_GYM():
         # update and clip the PFCMD weights
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(self.wMD2PFC + wPFC2MDdelta.T, -1., 0.)
+        self.wMD2PFC = np.clip(self.wMD2PFC + 2*wPFC2MDdelta.T, -1, 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + wPFC2MDdelta.T, 0., 1.)
 
     def winner_take_all(self, MDinp):
