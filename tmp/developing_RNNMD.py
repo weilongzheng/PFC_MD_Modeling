@@ -290,15 +290,15 @@ for i in range(total_training_cycle):
 
     # save activities
     if i % save_every_cycle == (save_every_cycle - 1):
-        log['PFCouts_all'].append(rnn_activity.cpu().detach().numpy())
+        log['PFCouts_all'].append(rnn_activity.cpu().detach().numpy().copy())
         if config['MDeffect']:
-            log['MDouts_all'].append(net.rnn.md.md_output_t)
-            log['MDpreTraces_all'].append(net.rnn.md.md_preTraces)
-            log['MDpreTraces_binary_all'].append(net.rnn.md.md_preTraces_binary)
-            log['MDpreTrace_threshold_all'].append(net.rnn.md.md_preTrace_thresholds)
+            log['MDouts_all'].append(net.rnn.md.md_output_t.copy())
+            log['MDpreTraces_all'].append(net.rnn.md.md_preTraces.copy())
+            log['MDpreTraces_binary_all'].append(net.rnn.md.md_preTraces_binary.copy())
+            log['MDpreTrace_threshold_all'].append(net.rnn.md.md_preTrace_thresholds.copy())
             log['MDpreTrace_binary_threshold_all'].append(net.rnn.md.MDpreTrace_binary_threshold)
-            log['wPFC2MD_list'].append(net.rnn.md.wPFC2MD)
-            log['wMD2PFC_list'].append(net.rnn.md.wMD2PFC)
+            log['wPFC2MD_list'].append(net.rnn.md.wPFC2MD.copy())
+            log['wMD2PFC_list'].append(net.rnn.md.wMD2PFC.copy())
 
     # print statistics
     log['losses'].append(loss.item())
