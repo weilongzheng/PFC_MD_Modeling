@@ -204,7 +204,7 @@ def plotPFCnorm():
     plt.bar(x_pos, [norm_nomd,norm_md], yerr=[norm_nomd_std, norm_md_std], color=['tab:orange', 'tab:blue'])
     plt.xticks(x_pos, bars)
     plt.ylabel('PFC Mean Activity Norm')
-    plt.title('PFC Avtivity Norm')
+    plt.title('PFC Activity Norm')
     plt.tight_layout()
     plt.savefig(FIGUREPATH/'pfc_norm.pdf') 
     
@@ -304,7 +304,7 @@ def plotMDpretraces():
     ax.set_xticks([0, 49, 99, 149, 199])
     ax.set_xticklabels([1, 50, 100, 150, 200], rotation=0)
     ax.set_xlabel('Time Steps')
-    ax.set_ylabel('PFC Index')
+    ax.set_ylabel('MD Index')
     ax.set_title('MD Outputs')
     plt.tight_layout()
     plt.show()
