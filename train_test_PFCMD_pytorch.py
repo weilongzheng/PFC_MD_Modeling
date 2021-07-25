@@ -28,26 +28,27 @@ inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds o
                          # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
                          
 # Model settings
-n_neuron = 1000
 n_neuron_per_cue = 200
 Num_MD = 10
 num_active = 5  # num MD active per context
 n_output = 2
+n_cues = Ncontexts*inpsPerConext
+n_neuron = n_neuron_per_cue*n_cues+200
 noiseSD = 1e-1
-MDeffect = False
+MDeffect = True
 PFClearn = False
-noiseInput = False # additional noise input neuron 
+noiseInput = True # additional noise input neuron 
 noisePresent = False # recurrent noise
 pfcNoise = 1e-2 #[1e-3,1e-2,1e-1,1e0,1e1] [0.3,0.5,0.7,0.9,1.5] #input noise SD
 #config = [1e-2,1e-1,1e0,1e1,0.3,0.5,0.7,0.9,1.5] # pfc noise std range
-config = [1e-2]
+config = [1e-2,1e-1,1e0,1e1,0.5,5] # input noise std range
 
 ###############################
-for pfcNoise in config:
+for configPara in config:
     
     dataset = RikhyeTask(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=True)
     
-    model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, Num_MD=Num_MD, num_active=num_active, num_output=n_output, pfcNoise = pfcNoise,\
+    model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, n_cues = n_cues, Num_MD=Num_MD, num_active=num_active, num_output=n_output, pfcNoise = pfcNoise,\
     MDeffect=MDeffect, noisePresent = noisePresent, noiseInput = noiseInput)
     
     # Training
@@ -91,6 +92,7 @@ for pfcNoise in config:
         # extract data
         inputs, labels = dataset()
         if noiseInput == True:
+            noiseSD = configPara
             inputs = np.hstack((inputs,np.random.normal(size=(inputs.shape[0],1)) * noiseSD))
     
         #import pdb;pdb.set_trace()    
@@ -181,40 +183,40 @@ for pfcNoise in config:
     plt.show()
     
     ## plot pfc2md and md2pfc weights
-    if  MDeffect == True: 
-        ## plot pfc2md weights
-        wPFC2MD = log['wPFC2MD']
-        wMD2PFC = log['wMD2PFC']
-        ax = plt.figure()
-        ax = sns.heatmap(wPFC2MD, cmap='Reds')
-        ax.set_xticks([0, 999])
-        ax.set_xticklabels([1, 1000], rotation=0)
-        ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-        ax.set_xlabel('PFC neuron index')
-        ax.set_ylabel('MD neuron index')
-        ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn))
-        cbar = ax.collections[0].colorbar
-        cbar.set_label('connection weight')
-        plt.tight_layout()
-        plt.show()
-        
-        # Heatmap wMD2PFC
-        ax = plt.figure()
-        ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
-        ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-        ax.set_yticks([0, 999])
-        ax.set_yticklabels([1, 1000], rotation=0)
-        ax.set_xlabel('MD neuron index')
-        ax.set_ylabel('PFC neuron index')
-        ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn))
-        cbar = ax.collections[0].colorbar
-        cbar.set_label('connection weight')
-        plt.tight_layout()
-        plt.show()
+#    if  MDeffect == True: 
+#        ## plot pfc2md weights
+#        wPFC2MD = log['wPFC2MD']
+#        wMD2PFC = log['wMD2PFC']
+#        ax = plt.figure()
+#        ax = sns.heatmap(wPFC2MD, cmap='Reds')
+#        ax.set_xticks([0, 999])
+#        ax.set_xticklabels([1, 1000], rotation=0)
+#        ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+#        ax.set_xlabel('PFC neuron index')
+#        ax.set_ylabel('MD neuron index')
+#        ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn))
+#        cbar = ax.collections[0].colorbar
+#        cbar.set_label('connection weight')
+#        plt.tight_layout()
+#        plt.show()
+#        
+#        # Heatmap wMD2PFC
+#        ax = plt.figure()
+#        ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
+#        ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+#        ax.set_yticks([0, 999])
+#        ax.set_yticklabels([1, 1000], rotation=0)
+#        ax.set_xlabel('MD neuron index')
+#        ax.set_ylabel('PFC neuron index')
+#        ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn))
+#        cbar = ax.collections[0].colorbar
+#        cbar.set_label('connection weight')
+#        plt.tight_layout()
+#        plt.show()
         
         
     ## Testing
-    Ntest = 100
+    Ntest = 50
     Nextra = 0
     tsteps = 200
     test_set = RikhyeTask(Ntrain=Ntest, Nextra = Nextra, Ncontexts=Ncontexts, inpsPerConext = inpsPerConext, blockTrain=False)
@@ -257,7 +259,7 @@ for pfcNoise in config:
         
     filename = Path('files/final') 
     os.makedirs(filename, exist_ok=True)
-    file_training = 'test'+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
+    file_training = 'test'+'_noiseN'+str(noiseSD)+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
     with open(filename / file_training, 'wb') as f:
         pickle.dump({'log':log,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all,'cues_all':cues_all}, f, protocol = 4)
     
