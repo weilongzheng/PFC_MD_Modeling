@@ -1106,7 +1106,7 @@ class CTRNN_MD(nn.Module):
         # weights = []
         # for i in range(self.num_task):
         #     k = 1e-1*(1./self.hidden_size)**0.5
-        #     weights.append(torch.eye(self.sub_size)*0.5 + k*torch.rand(self.sub_size, self.sub_size)) # noise ~ U(leftlim=-k, rightlim=k)
+        #     weights.append(torch.eye(self.sub_size)*0.5 + k*torch.rand(self.sub_size, self.sub_size)) # noise ~ U(leftlim=0, rightlim=k)
         # self.h2h.weight.data = torch.block_diag(*weights)
 
         # block identity + uniform noise
@@ -1121,6 +1121,13 @@ class CTRNN_MD(nn.Module):
         # for i in range(self.num_task):
         #     k = (1./self.hidden_size)**0.5
         #     weights.append(torch.eye(self.sub_size) + k*torch.randn(self.sub_size, self.sub_size)) # noise ~ N(mean=0, std=1/hidden_size)
+        # self.h2h.weight.data = torch.block_diag(*weights)
+
+        # block positive uniform noise
+        # weights = []
+        # for i in range(self.num_task):
+        #     k = 1e-1*(1./self.hidden_size)**0.5
+        #     weights.append(k*torch.rand(self.sub_size, self.sub_size)) # noise ~ U(leftlim=0, rightlim=k)
         # self.h2h.weight.data = torch.block_diag(*weights)
 
         # random orthogonal noise
