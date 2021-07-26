@@ -154,7 +154,7 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 12000
+total_training_cycle = 18000
 print_every_cycle = 200
 save_every_cycle = 2000
 save_times = total_training_cycle//save_every_cycle
@@ -187,11 +187,11 @@ for i in range(total_training_cycle):
     train_time_start = time.time()    
 
     # control training paradigm
-    if i < 4000:
+    if i < 6000:
         task_id = 0
-    elif i >= 4000 and i < 8000:
+    elif i >= 6000 and i < 12000:
         task_id = 1
-    elif i >= 8000:
+    elif i >= 12000:
         task_id = 0
 
     # fetch data
@@ -218,7 +218,7 @@ for i in range(total_training_cycle):
     outputs, rnn_activity = net(inputs, sub_id=task_id)
 
     # plot during training
-    if i % 1000 == 999:
+    if i % 2000 == 1999:
         font = {'family':'Times New Roman','weight':'normal', 'size':20}
         # PFC activities
         plt.figure()
@@ -321,7 +321,7 @@ for i in range(total_training_cycle):
         #   fixation & action performance
         print('Performance')
         for env_id in range(len(tasks)):
-            fix_perf, act_perf = get_full_performance(net, test_envs[env_id], task_id=env_id, num_task=len(tasks), num_trial=200, device=device) # set large enough num_trial to get good statistics
+            fix_perf, act_perf = get_full_performance(net, test_envs[env_id], task_id=env_id, num_task=len(tasks), num_trial=100, device=device) # set large enough num_trial to get good statistics
             log['fix_perfs'][env_id].append(fix_perf)
             log['act_perfs'][env_id].append(act_perf)
             print('  fix performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, fix_perf))
@@ -365,9 +365,9 @@ for env_id in range(len(tasks)):
     plt.figure()
     plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
     plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
-    plt.fill_between(x=[   0, 4000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
-    plt.fill_between(x=[4000, 8000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
-    plt.fill_between(x=[8000, 12000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[   0,  6000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[6000,  12000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
+    plt.fill_between(x=[12000, 18000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
     plt.legend(bbox_to_anchor = (1.15, 0.7), prop=legend_font)
     plt.xlabel('Trials', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
@@ -381,7 +381,7 @@ for env_id in range(len(tasks)):
     plt.show()
 
 # Task performance with MD & no MD
-log_noMD = np.load('./files/'+'log_noMD.npy', allow_pickle=True).item()
+log_noMD = np.load('./files/'+'log_noMD_trials18000.npy', allow_pickle=True).item()
 label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
 title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
@@ -389,9 +389,9 @@ for env_id in range(len(tasks)):
     plt.figure()
     plt.plot(log_noMD['stamps'], log_noMD['act_perfs'][env_id], color='grey', label='$ MD- $')
     plt.plot(log['stamps'], log['act_perfs'][env_id], color='red', label='$ MD+ $')
-    plt.fill_between(x=[   0, 4000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
-    plt.fill_between(x=[4000, 8000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
-    plt.fill_between(x=[8000, 12000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[   0,  6000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[6000,  12000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
+    plt.fill_between(x=[12000, 18000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
     plt.legend(bbox_to_anchor = (1.25, 0.7), prop=legend_font)
     plt.xlabel('Trials', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
