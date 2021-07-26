@@ -155,7 +155,7 @@ optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
 total_training_cycle = 18000
-print_every_cycle = 200
+print_every_cycle = 400
 save_every_cycle = 2000
 save_times = total_training_cycle//save_every_cycle
 running_loss = 0.0
@@ -218,7 +218,7 @@ for i in range(total_training_cycle):
     outputs, rnn_activity = net(inputs, sub_id=task_id)
 
     # plot during training
-    if i % 2000 == 1999:
+    if i % 3000 == 2999:
         font = {'family':'Times New Roman','weight':'normal', 'size':20}
         # PFC activities
         plt.figure()
