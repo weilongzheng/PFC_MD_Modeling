@@ -37,12 +37,13 @@ n_neuron = n_neuron_per_cue*n_cues+200
 noiseSD = 1e-1
 MDeffect = True
 PFClearn = False
-noiseInput = True # additional noise input neuron 
+noiseInput = False # additional noise input neuron 
 noisePresent = False # recurrent noise
 pfcNoise = 1e-2 #[1e-3,1e-2,1e-1,1e0,1e1] [0.3,0.5,0.7,0.9,1.5] #input noise SD
 #config = [1e-2,1e-1,1e0,1e1,0.3,0.5,0.7,0.9,1.5] # pfc noise std range
-config = [1e-2,1e-1,1e0,1e1,0.5,5] # input noise std range
-
+#config = [1e-2,1e-1,1e0,1e1,0.5,5] # input noise std range
+config = [30] # [50 100 150 75 125] overlap W size
+#config = [1e-2]
 ###############################
 for configPara in config:
     
@@ -259,7 +260,7 @@ for configPara in config:
         
     filename = Path('files/final') 
     os.makedirs(filename, exist_ok=True)
-    file_training = 'test'+'_noiseN'+str(noiseSD)+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
+    file_training = 'test'+'_overlapW'+str(configPara)+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
     with open(filename / file_training, 'wb') as f:
         pickle.dump({'log':log,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all,'cues_all':cues_all}, f, protocol = 4)
     

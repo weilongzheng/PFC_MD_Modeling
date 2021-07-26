@@ -409,7 +409,7 @@ class SensoryInputLayer():
         self.Nneur = n_output
         self.positiveRates = True
         self.weightNoise = False
-        self.weightOverlap = False
+        self.weightOverlap = True
 
         self.wIn = np.zeros((self.Nneur, self.Ncues))
         self.cueFactor = 1.5
@@ -429,17 +429,19 @@ class SensoryInputLayer():
         # Input weights have overlops (mix neurons)
         if self.weightOverlap == True:
             ''' overlap across rules'''
-            for cuei in np.arange(self.Ncues):
-                self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1)+int(self.Nsub/2), cuei] = \
-                    np.random.uniform(lowcue, highcue, size=self.Nsub+int(self.Nsub/2)) \
-                    * self.cueFactor
+#            for cuei in np.arange(self.Ncues):
+#                N_overlap = int(self.Nsub/2)
+#                N_overlap = 200
+#                self.wIn[self.Nsub * cuei:self.Nsub * (cuei + 1)+N_overlap, cuei] = \
+#                    np.random.uniform(lowcue, highcue, size=self.Nsub+N_overlap) \
+#                    * self.cueFactor
 ##                    
 #            ''' overlap across context'''
-#            N_overlap = 15
-#            self.wIn[400:400+N_overlap,0] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
-#            self.wIn[600:600+N_overlap,1] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
-#            self.wIn[0:0+N_overlap,2] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
-#            self.wIn[200:200+N_overlap,3] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+            N_overlap = 30 # 15
+            self.wIn[400:400+N_overlap,0] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+            self.wIn[600:600+N_overlap,1] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+            self.wIn[0:0+N_overlap,2] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+            self.wIn[200:200+N_overlap,3] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
       
         ## plot Win
 #        import seaborn as sns
