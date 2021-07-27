@@ -437,10 +437,18 @@ class SensoryInputLayer():
 #                    * self.cueFactor
 ##                    
 #            ''' overlap across context'''
-            N_overlap = 30 # 15
+            N_overlap = 125# 15
             self.wIn[400:400+N_overlap,0] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+#            self.wIn[400:400+N_overlap,1] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+#            self.wIn[400:400+N_overlap,3] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+#            self.wIn[600:600+N_overlap,0] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
             self.wIn[600:600+N_overlap,1] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+#            self.wIn[600:600+N_overlap,2] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+#            self.wIn[0:0+N_overlap,1] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
             self.wIn[0:0+N_overlap,2] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+#            self.wIn[0:0+N_overlap,3] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+#            self.wIn[200:200+N_overlap,0] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
+#            self.wIn[200:200+N_overlap,2] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
             self.wIn[200:200+N_overlap,3] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
       
         ## plot Win

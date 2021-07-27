@@ -42,7 +42,7 @@ noisePresent = False # recurrent noise
 pfcNoise = 1e-2 #[1e-3,1e-2,1e-1,1e0,1e1] [0.3,0.5,0.7,0.9,1.5] #input noise SD
 #config = [1e-2,1e-1,1e0,1e1,0.3,0.5,0.7,0.9,1.5] # pfc noise std range
 #config = [1e-2,1e-1,1e0,1e1,0.5,5] # input noise std range
-config = [30] # [50 100 150 75 125] overlap W size
+config = [125] # [50 100 150 75 125] overlap W size
 #config = [1e-2]
 ###############################
 for configPara in config:
@@ -184,36 +184,36 @@ for configPara in config:
     plt.show()
     
     ## plot pfc2md and md2pfc weights
-#    if  MDeffect == True: 
-#        ## plot pfc2md weights
-#        wPFC2MD = log['wPFC2MD']
-#        wMD2PFC = log['wMD2PFC']
-#        ax = plt.figure()
-#        ax = sns.heatmap(wPFC2MD, cmap='Reds')
-#        ax.set_xticks([0, 999])
-#        ax.set_xticklabels([1, 1000], rotation=0)
-#        ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-#        ax.set_xlabel('PFC neuron index')
-#        ax.set_ylabel('MD neuron index')
-#        ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn))
-#        cbar = ax.collections[0].colorbar
-#        cbar.set_label('connection weight')
-#        plt.tight_layout()
-#        plt.show()
-#        
-#        # Heatmap wMD2PFC
-#        ax = plt.figure()
-#        ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
-#        ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-#        ax.set_yticks([0, 999])
-#        ax.set_yticklabels([1, 1000], rotation=0)
-#        ax.set_xlabel('MD neuron index')
-#        ax.set_ylabel('PFC neuron index')
-#        ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn))
-#        cbar = ax.collections[0].colorbar
-#        cbar.set_label('connection weight')
-#        plt.tight_layout()
-#        plt.show()
+    if  MDeffect == True: 
+        ## plot pfc2md weights
+        wPFC2MD = log['wPFC2MD']
+        wMD2PFC = log['wMD2PFC']
+        ax = plt.figure()
+        ax = sns.heatmap(wPFC2MD, cmap='Reds')
+        ax.set_xticks([0, 999])
+        ax.set_xticklabels([1, 1000], rotation=0)
+        ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+        ax.set_xlabel('PFC neuron index')
+        ax.set_ylabel('MD neuron index')
+        ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn))
+        cbar = ax.collections[0].colorbar
+        cbar.set_label('connection weight')
+        plt.tight_layout()
+        plt.show()
+        
+        # Heatmap wMD2PFC
+        ax = plt.figure()
+        ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
+        ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+        ax.set_yticks([0, 999])
+        ax.set_yticklabels([1, 1000], rotation=0)
+        ax.set_xlabel('MD neuron index')
+        ax.set_ylabel('PFC neuron index')
+        ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn))
+        cbar = ax.collections[0].colorbar
+        cbar.set_label('connection weight')
+        plt.tight_layout()
+        plt.show()
         
         
     ## Testing

@@ -54,7 +54,7 @@ def plotActivity(x, legend_use, color_use='Reds'):
     plt.show()
     
 def decodingOverlapW():
-    config = [50, 75, 100, 125, 150, 175]
+    config = [10,50,100,150]
     tsteps = 200
     acc_rule_pfc_all = np.zeros([len(config),round(tsteps/2)])
     acc_rule_md_all = np.zeros([len(config),round(tsteps/2)])
@@ -98,8 +98,6 @@ def decodingOverlapW():
             X_train, X_test = X[:n_train],X[n_train:]
             y_train, y_test = y[:n_train],y[n_train:]
             
-            #import pdb;pdb.set_trace()
-            #clf = LinearSVC()
             clf = LinearDiscriminantAnalysis()
             clf.fit(X_train, y_train)
             score = clf.score(X_test, y_test)
@@ -158,8 +156,8 @@ def decodingOverlapW():
         md_std = np.std(acc_context_md_all[:,10:50:10],axis=1)
         plt.plot(config,pfc_mean,'-v',color='tab:red',label='PFC')
         plt.plot(config,md_mean,'-s',color='tab:blue',label='MD')
-        plt.fill_between(config, pfc_mean - pfc_std,pfc_mean + pfc_std, alpha=0.2,color='tab:red')
-        plt.fill_between(config, md_mean - md_std,md_mean + md_std, alpha=0.2,color='tab:blue')
+        plt.fill_between(config, pfc_mean - pfc_std,np.clip(pfc_mean + pfc_std,0,1), alpha=0.2,color='tab:red')
+        plt.fill_between(config, md_mean - md_std,np.clip(md_mean + md_std,0,1), alpha=0.2,color='tab:blue')
         plt.legend(frameon=False)
         plt.xlabel('Input Noise STD') 
         plt.title('Cue Period')
@@ -174,8 +172,8 @@ def decodingOverlapW():
         md_std = np.std(acc_context_md_all[:,60:100:10],axis=1)
         plt.plot(config,pfc_mean,'-v',color='tab:red',label='PFC')
         plt.plot(config,md_mean,'-s',color='tab:blue',label='MD')
-        plt.fill_between(config, pfc_mean - pfc_std,pfc_mean + pfc_std, alpha=0.2,color='tab:red')
-        plt.fill_between(config, md_mean - md_std,md_mean + md_std, alpha=0.2,color='tab:blue')
+        plt.fill_between(config, pfc_mean - pfc_std,np.clip(pfc_mean + pfc_std,0,1), alpha=0.2,color='tab:red')
+        plt.fill_between(config, md_mean - md_std,np.clip(md_mean + md_std,0,1), alpha=0.2,color='tab:blue')
         plt.legend(frameon=False)
         plt.xlabel('Input Noise STD')
         plt.ylabel('Decoding Context')
