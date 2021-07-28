@@ -148,7 +148,7 @@ for tasks in itertools.permutations(config['tasks'], 2):
         optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
         # training
-        total_training_cycle = 20
+        total_training_cycle = 18000
         print_every_cycle = 400
         save_every_cycle = 2000
         running_loss = 0.0
@@ -301,6 +301,3 @@ for tasks in itertools.permutations(config['tasks'], 2):
         plt.tight_layout()
         plt.savefig('./files/'+f'{count}_performance_task_{env_id}.png')
         plt.close()
-    
-    if count == 1:
-        break
