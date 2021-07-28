@@ -35,18 +35,18 @@ n_output = 2
 n_cues = Ncontexts*inpsPerConext
 n_neuron = n_neuron_per_cue*n_cues+200
 noiseSD = 1e-1
-MDeffect = True
+MDeffect = False
 PFClearn = False
-noiseInput = False # additional noise input neuron 
+noiseInput = True # additional noise input neuron 
 noisePresent = False # recurrent noise
-pfcNoise = 1e-2 #[1e-3,1e-2,1e-1,1e0,1e1] [0.3,0.5,0.7,0.9,1.5] #input noise SD
+pfcNoise = 1e-1 #[1e-3,1e-2,1e-1,1e0,1e1] [0.3,0.5,0.7,0.9,1.5] #input noise SD
 #config = [1e-2,1e-1,1e0,1e1,0.3,0.5,0.7,0.9,1.5] # pfc noise std range
 #config = [1e-2,1e-1,1e0,1e1,0.5,5] # input noise std range
-config = [125] # [50 100 150 75 125] overlap W size
-#config = [1e-2]
+#config = [125] # [50 100 150 75 125] overlap W size
+config = [1,3,5]
 ###############################
-for configPara in config:
-    
+#for configPara in config:
+for RNGSEED in config:    
     dataset = RikhyeTask(Ntrain=Ntrain, Nextra=Nextra, Ncontexts=Ncontexts, inpsPerConext=inpsPerConext, blockTrain=True)
     
     model = PytorchPFCMD(Num_PFC=n_neuron, n_neuron_per_cue=n_neuron_per_cue, n_cues = n_cues, Num_MD=Num_MD, num_active=num_active, num_output=n_output, pfcNoise = pfcNoise,\
@@ -93,7 +93,7 @@ for configPara in config:
         # extract data
         inputs, labels = dataset()
         if noiseInput == True:
-            noiseSD = configPara
+            #noiseSD = configPara
             inputs = np.hstack((inputs,np.random.normal(size=(inputs.shape[0],1)) * noiseSD))
     
         #import pdb;pdb.set_trace()    
@@ -169,11 +169,11 @@ for configPara in config:
         log['wMD2PFC'] = model.md.wMD2PFC
         log['wMD2PFCMult'] = model.md.wMD2PFCMult
     
-    #filename = Path('files/final')
-    #os.makedirs(filename, exist_ok=True)
-    #file_training = 'train_noiseJ_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
-    #with open(filename / file_training, 'wb') as f:
-    #    pickle.dump(log, f)
+    filename = Path('files/final')
+    os.makedirs(filename, exist_ok=True)
+    file_training = 'train_noiseN_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+    with open(filename / file_training, 'wb') as f:
+        pickle.dump(log, f)
         
     # Plot MSE curve
     plt.plot(log['mse'], label='With MD')
@@ -216,51 +216,51 @@ for configPara in config:
         plt.show()
         
         
-    ## Testing
-    Ntest = 50
-    Nextra = 0
-    tsteps = 200
-    test_set = RikhyeTask(Ntrain=Ntest, Nextra = Nextra, Ncontexts=Ncontexts, inpsPerConext = inpsPerConext, blockTrain=False)
-    
-    log = defaultdict(list)
-    
-    num_cycle_test = Ntest+Nextra
-    mses = list()
-    cues_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps, inpsPerConext*Ncontexts))
-    if noiseInput == True:
-        cues_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps, inpsPerConext*Ncontexts+1))
-        
-    MDouts_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps,Num_MD))
-    PFCouts_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps,n_neuron))
-    for i in range(num_cycle_test):
-        print('testing '+str(i))
-        input, target = test_set()
-        if noiseInput == True:
-            input = np.hstack((input,np.random.normal(size=(input.shape[0],1)) * noiseSD))
-    
-        input = torch.from_numpy(input).type(torch.float)
-        target = torch.from_numpy(target).type(torch.float)
-        
-        output = model(input, target)
-        
-        tstart = 0
-        for itrial in range(inpsPerConext*Ncontexts): 
-            PFCouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
-            if MDeffect == True: 
-                MDouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
-            cues_all[i*inpsPerConext*Ncontexts+tstart,:,:] = input[tstart*tsteps:(tstart+1)*tsteps,:]
-            tstart += 1
-       
-        mse = loss.item()
-        log['mse'].append(mse)
-    
-    log['wPFC2MD'] = model.md.wPFC2MD
-    log['wMD2PFC'] = model.md.wMD2PFC
-    log['wMD2PFCMult'] = model.md.wMD2PFCMult
-        
-    filename = Path('files/final') 
-    os.makedirs(filename, exist_ok=True)
-    file_training = 'test'+'_overlapW'+str(configPara)+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
-    with open(filename / file_training, 'wb') as f:
-        pickle.dump({'log':log,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all,'cues_all':cues_all}, f, protocol = 4)
+#    ## Testing
+#    Ntest = 50
+#    Nextra = 0
+#    tsteps = 200
+#    test_set = RikhyeTask(Ntrain=Ntest, Nextra = Nextra, Ncontexts=Ncontexts, inpsPerConext = inpsPerConext, blockTrain=False)
+#    
+#    log = defaultdict(list)
+#    
+#    num_cycle_test = Ntest+Nextra
+#    mses = list()
+#    cues_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps, inpsPerConext*Ncontexts))
+#    if noiseInput == True:
+#        cues_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps, inpsPerConext*Ncontexts+1))
+#        
+#    MDouts_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps,Num_MD))
+#    PFCouts_all = np.zeros(shape=(num_cycle_test*inpsPerConext*Ncontexts,tsteps,n_neuron))
+#    for i in range(num_cycle_test):
+#        print('testing '+str(i))
+#        input, target = test_set()
+#        if noiseInput == True:
+#            input = np.hstack((input,np.random.normal(size=(input.shape[0],1)) * noiseSD))
+#    
+#        input = torch.from_numpy(input).type(torch.float)
+#        target = torch.from_numpy(target).type(torch.float)
+#        
+#        output = model(input, target)
+#        
+#        tstart = 0
+#        for itrial in range(inpsPerConext*Ncontexts): 
+#            PFCouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
+#            if MDeffect == True: 
+#                MDouts_all[i*inpsPerConext*Ncontexts+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
+#            cues_all[i*inpsPerConext*Ncontexts+tstart,:,:] = input[tstart*tsteps:(tstart+1)*tsteps,:]
+#            tstart += 1
+#       
+#        mse = loss.item()
+#        log['mse'].append(mse)
+#    
+#    log['wPFC2MD'] = model.md.wPFC2MD
+#    log['wMD2PFC'] = model.md.wMD2PFC
+#    log['wMD2PFCMult'] = model.md.wMD2PFCMult
+#        
+#    filename = Path('files/final') 
+#    os.makedirs(filename, exist_ok=True)
+#    file_training = 'test'+'_overlapW'+str(configPara)+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
+#    with open(filename / file_training, 'wb') as f:
+#        pickle.dump({'log':log,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all,'cues_all':cues_all}, f, protocol = 4)
     

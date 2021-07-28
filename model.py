@@ -409,7 +409,7 @@ class SensoryInputLayer():
         self.Nneur = n_output
         self.positiveRates = True
         self.weightNoise = False
-        self.weightOverlap = True
+        self.weightOverlap = False
 
         self.wIn = np.zeros((self.Nneur, self.Ncues))
         self.cueFactor = 1.5
@@ -437,7 +437,7 @@ class SensoryInputLayer():
 #                    * self.cueFactor
 ##                    
 #            ''' overlap across context'''
-            N_overlap = 125# 15
+            N_overlap = 50# 15
             self.wIn[400:400+N_overlap,0] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
 #            self.wIn[400:400+N_overlap,1] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
 #            self.wIn[400:400+N_overlap,3] = np.random.uniform(lowcue, highcue, size=N_overlap) * self.cueFactor
@@ -1021,11 +1021,10 @@ class PytorchPFCMD(nn.Module):
         self.md_preTraces = np.zeros(shape=(n_time, self.pfc.Nneur))
         self.md_preTrace_thresholds = np.zeros(shape=(n_time, 1))
         
-        self.wPFC2MDs_all = np.zeros(shape=(n_time,self.md.Num_MD,self.pfc.Nneur))
-        self.wMD2PFCs_all = np.zeros(shape=(n_time,self.pfc.Nneur,self.md.Num_MD))
-        
         if self.MDeffect:
             self.md_output_t *= 0
+            self.wPFC2MDs_all = np.zeros(shape=(n_time,self.md.Num_MD,self.pfc.Nneur))
+            self.wMD2PFCs_all = np.zeros(shape=(n_time,self.pfc.Nneur,self.md.Num_MD))
 
         for i in range(n_time):
             input_t = input[i]
