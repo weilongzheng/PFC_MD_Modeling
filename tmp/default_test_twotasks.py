@@ -33,6 +33,11 @@ import seaborn as sns
 import imageio
 from pygifsicle import optimize
 
+'''
+source activate pytorch
+cd tmp
+nohup python -u default_test_twotasks.py > default_test_twotasks.log 2>&1 &
+'''
 
 ###--------------------------Helper functions--------------------------###
 
@@ -66,12 +71,6 @@ def get_full_performance(net, env, task_id, num_task, num_trial=1000, device='cp
 
 
 ###--------------------------Training configs--------------------------###
-
-# iterate different task combinations
-## no MD
-### save log, fig
-## with MD
-### save log, fig
 
 # set config
 config = {
@@ -149,7 +148,7 @@ for tasks in itertools.permutations(config['tasks'], 2):
         optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
         # training
-        total_training_cycle = 18000
+        total_training_cycle = 20
         print_every_cycle = 400
         save_every_cycle = 2000
         running_loss = 0.0
@@ -270,7 +269,7 @@ for tasks in itertools.permutations(config['tasks'], 2):
 
 
         # Cross Entropy loss
-        font = {'family':'Times New Roman','weight':'normal', 'size':25}
+        font = {'family':'Times New Roman','weight':'normal', 'size':20}
         plt.figure()
         plt.plot(np.array(log['losses']))
         plt.xlabel('Trials', fontdict=font)
@@ -282,8 +281,8 @@ for tasks in itertools.permutations(config['tasks'], 2):
     # Task performance with MD & no MD
     log_noMD = np.load('./files/'+f'{count}_log_noMD.npy', allow_pickle=True).item()
     log_withMD = np.load('./files/'+f'{count}_log_withMD.npy', allow_pickle=True).item()
-    label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
     for env_id in range(len(tasks)):
         plt.figure()
@@ -302,3 +301,6 @@ for tasks in itertools.permutations(config['tasks'], 2):
         plt.tight_layout()
         plt.savefig('./files/'+f'{count}_performance_task_{env_id}.png')
         plt.close()
+    
+    if count == 1:
+        break
