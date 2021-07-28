@@ -137,7 +137,7 @@ for tasks in itertools.permutations(config['tasks'], 2):
                      md_active_size = config['md_active_size'],
                      md_dt          = config['md_dt'],).to(device)
         net = net.to(device)
-        print(net, '\n')
+        print(net)
 
         # criterion & optimizer
         criterion = nn.MSELoss()
@@ -149,7 +149,7 @@ for tasks in itertools.permutations(config['tasks'], 2):
         optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
         # training
-        total_training_cycle = 20
+        total_training_cycle = 18000
         print_every_cycle = 400
         save_every_cycle = 2000
         running_loss = 0.0
@@ -300,5 +300,5 @@ for tasks in itertools.permutations(config['tasks'], 2):
         plt.ylim([0.0, 1.01])
         plt.yticks([0.1*i for i in range(11)])
         plt.tight_layout()
-        plt.savefig('./files/'+f'{count}_performance.png')
+        plt.savefig('./files/'+f'{count}_performance_task_{env_id}.png')
         plt.close()
