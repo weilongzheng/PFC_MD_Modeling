@@ -1028,7 +1028,7 @@ class MD_GYM():
         # update and clip the PFCMD weights
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(self.wMD2PFC + 1.6*wPFC2MDdelta.T, -2, 0.)
+        self.wMD2PFC = np.clip(self.wMD2PFC + wPFC2MDdelta.T, -1, 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + wPFC2MDdelta.T, 0., 1.)
 
     def winner_take_all(self, MDinp):
@@ -1095,19 +1095,19 @@ class CTRNN_MD(nn.Module):
 
     def reset_parameters(self):
         # identity*0.5
-        # nn.init.eye_(self.h2h.weight)
-        # self.h2h.weight.data *= 0.5
+        nn.init.eye_(self.h2h.weight)
+        self.h2h.weight.data *= 0.5
 
         # identity*other value
         # nn.init.eye_(self.h2h.weight)
         # self.h2h.weight.data *= 0.2
 
         # block identity + positive uniform noise
-        weights = []
-        for i in range(self.num_task):
-            k = 1e-1*(1./self.hidden_size)**0.5
-            weights.append(torch.eye(self.sub_size)*0.5 + k*torch.rand(self.sub_size, self.sub_size)) # noise ~ U(leftlim=0, rightlim=k)
-        self.h2h.weight.data = torch.block_diag(*weights)
+        # weights = []
+        # for i in range(self.num_task):
+        #     k = 1e-1*(1./self.hidden_size)**0.5
+        #     weights.append(torch.eye(self.sub_size)*0.5 + k*torch.rand(self.sub_size, self.sub_size)) # noise ~ U(leftlim=0, rightlim=k)
+        # self.h2h.weight.data = torch.block_diag(*weights)
 
         # block identity + uniform noise
         # weights = []
@@ -1171,18 +1171,18 @@ class CTRNN_MD(nn.Module):
             assert rec_input.shape[0] == 1, 'batch size should be 1'
 
             # original MD inputs
-            # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
-            # self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
-            # rec_inp = rec_input.cpu().detach().numpy()[0, :]
-            # md2pfc_weights = (self.md.MD2PFCMult/self.md.Num_MD)
-            # md2pfc = md2pfc_weights * rec_inp
-            # md2pfc += np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
-            # md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
+            self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
+            self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
+            rec_inp = rec_input.cpu().detach().numpy()[0, :]
+            md2pfc_weights = (self.md.MD2PFCMult/self.md.Num_MD)
+            md2pfc = md2pfc_weights * rec_inp
+            md2pfc += np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
+            md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             # only MD additive inputs
-            self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
-            md2pfc = np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
-            md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
+            # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
+            # md2pfc = np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
+            # md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             # ideal MD inputs analysis
             # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
