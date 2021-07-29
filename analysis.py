@@ -342,7 +342,7 @@ def plotMDpretraces3Cxt():
     MDpreTraces_all = data['MDpreTraces_all']
     MDouts_all = data['MDouts_all']
     
-    plot_t = 1 #10 30
+    plot_t = 33 #10 30
     ax = plt.figure(figsize=(2.4,2))
     ax = sns.heatmap(MDpreTraces_all[plot_t,:,:].T, cmap='hot')
     ax.set_yticks([0, 399, 799, 1199, 1399])
