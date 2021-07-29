@@ -1198,8 +1198,8 @@ class CTRNN_MD(nn.Module):
             # md2pfc = md2pfcAdd
             # md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
-            # if self.md.sendinputs:
-            #     pre_activation += md2pfc
+            if self.md.sendinputs:
+                pre_activation += md2pfc
         
         h_new = torch.relu(hidden * self.oneminusalpha + pre_activation * self.alpha)
         
