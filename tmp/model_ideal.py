@@ -300,7 +300,7 @@ class CTRNN_MD(nn.Module):
             # self.md.MDpreTrace_binary = np.zeros(shape=(self.hidden_size))
             # self.md.MDpreTrace_binary[sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 1
             # imperfect pretraces
-            wrong_ratio = 0.2
+            wrong_ratio = 0.4
             flag = np.random.rand(self.hidden_size)
             self.md.MDpreTrace_binary = (flag < wrong_ratio).astype(float)
             flag = np.random.rand(self.sub_size)
@@ -312,8 +312,7 @@ class CTRNN_MD(nn.Module):
             md2pfc_weights = (self.md.MD2PFCMult/self.md.Num_MD)
             md2pfcMult = md2pfc_weights * rec_inp
             md2pfcAdd  = np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
-            # md2pfc = md2pfcAdd + md2pfcMult
-            md2pfc = md2pfcMult
+            md2pfc = md2pfcAdd + md2pfcMult
             md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             if self.md.sendinputs:
