@@ -19,8 +19,8 @@ import gym
 import neurogym as ngym
 from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
-# from model_dev import RNN_MD
-from model_ideal import RNN_MD
+from model_dev import RNN_MD
+# from model_ideal import RNN_MD
 import matplotlib as mpl
 mpl.rcParams['axes.spines.left'] = True
 mpl.rcParams['axes.spines.right'] = False
