@@ -1015,8 +1015,11 @@ class MD_GYM():
         MDoutTrace = self.update_trace(rout, MDout)
 
         # use OR opertion to get binary pretraces
-        pretrace_part = int(1.0*len(self.MDpreTrace))
-        self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[-pretrace_part:])
+        pretrace_part = int(0.8*len(self.MDpreTrace))
+        # original mean
+        # self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[-pretrace_part:])
+        self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[0:pretrace_part])
+        # median
         # self.MDpreTrace_threshold = np.median(np.sort(self.MDpreTrace)[-pretrace_part:])
         self.MDpreTrace_binary = (self.MDpreTrace>self.MDpreTrace_threshold).astype(float)
 
@@ -1171,18 +1174,18 @@ class CTRNN_MD(nn.Module):
             assert rec_input.shape[0] == 1, 'batch size should be 1'
 
             # original MD inputs
-            self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
-            self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
-            rec_inp = rec_input.cpu().detach().numpy()[0, :]
-            md2pfc_weights = (self.md.MD2PFCMult/self.md.Num_MD)
-            md2pfc = md2pfc_weights * rec_inp
-            md2pfc += np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
-            md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
+            # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
+            # self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
+            # rec_inp = rec_input.cpu().detach().numpy()[0, :]
+            # md2pfc_weights = (self.md.MD2PFCMult/self.md.Num_MD)
+            # md2pfc = md2pfc_weights * rec_inp
+            # md2pfc += np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
+            # md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             # only MD additive inputs
-            # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
-            # md2pfc = np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
-            # md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
+            self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
+            md2pfc = np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
+            md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             # ideal MD inputs analysis
             # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
