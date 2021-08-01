@@ -21,18 +21,18 @@ RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-config = [10,20,30,40,50]
+config = [2,3,4,5,6]
 for configPara in config:
     
-    Ntrain = 100            # number of training cycles for each context
-    Nextra = 100            # add cycles to show if block1
+    Ntrain = 50            # number of training cycles for each context
+    Nextra = 0            # add cycles to show if block1
     Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
-    inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
+    inpsPerConext = configPara       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                              # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
                              
     # Model settings
     n_neuron_per_cue = 200
-    Num_MD = configPara
+    Num_MD = 10
     num_active = int(Num_MD/Ncontexts)#5  # num MD active per context
     n_output = 2
     n_cues = Ncontexts*inpsPerConext
@@ -263,7 +263,7 @@ for configPara in config:
         
     filename = Path('files/final') 
     os.makedirs(filename, exist_ok=True)
-    file_training = 'test_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
+    file_training = 'test_inpsPerConext'+str(configPara)+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
     with open(filename / file_training, 'wb') as f:
         pickle.dump({'log':log,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all,'cues_all':cues_all}, f, protocol = 4)
     
