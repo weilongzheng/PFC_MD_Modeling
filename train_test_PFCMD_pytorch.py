@@ -21,7 +21,7 @@ RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-config = [2,3,4,5,6]
+config = [3,4,5,6]
 for configPara in config:
     
     Ntrain = 50            # number of training cycles for each context
@@ -220,7 +220,7 @@ for configPara in config:
         
         
 #    ## Testing
-    Ntest = 25
+    Ntest = 20
     Nextra = 0
     tsteps = 200
     test_set = RikhyeTask(Ntrain=Ntest, Nextra = Nextra, Ncontexts=Ncontexts, inpsPerConext = inpsPerConext, blockTrain=False)

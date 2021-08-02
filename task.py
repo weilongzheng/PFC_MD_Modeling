@@ -60,20 +60,30 @@ class RikhyeTask():
     def get_cues_order(self, cues):
         cues_order = np.random.permutation(cues)
         return cues_order
-
-    def get_cue_target(self, taski, cuei):
+    
+    def get_cue_target(self,taski,cuei):
         cue = np.zeros(self.Ncues)
-        inpBase = taski * 2
-        if cuei in (0, 1):
-            cue[inpBase + cuei] = 1.
-        elif cuei == 3:
-            cue[inpBase:inpBase + 2] = 1
-
-        if cuei == 0:
-            target = np.array((1., 0.))
+        inpBase = taski*self.inpsPerConext
+        cue[inpBase+cuei] = 1.
+        if (cuei % 2) == 0:
+            target = np.array((1.,0.))
         else:
-            target = np.array((0., 1.))
+            target = np.array((0.,1.))
         return cue, target
+    
+#    def get_cue_target_old(self, taski, cuei):
+#        cue = np.zeros(self.Ncues)
+#        inpBase = taski * 2
+#        if cuei in (0, 1):
+#            cue[inpBase + cuei] = 1.
+#        elif cuei == 3:
+#            cue[inpBase:inpBase + 2] = 1
+#
+#        if cuei == 0:
+#            target = np.array((1., 0.))
+#        else:
+#            target = np.array((0., 1.))
+#        return cue, target
 
     def get_cue_list(self,taski=None):
         if taski is not None:
@@ -149,18 +159,14 @@ class RikhyeTaskMultiCues():
         cues_order = np.random.permutation(cues)
         return cues_order
 
-    def get_cue_target(self, taski, cuei):
+    def get_cue_target(self,taski,cuei):
         cue = np.zeros(self.Ncues)
-        inpBase = taski * 2
-        if cuei in (0, 1):
-            cue[inpBase + cuei] = 1.
-        elif cuei == 3:
-            cue[inpBase:inpBase + 2] = 1
-
-        if cuei == 0:
-            target = np.array((1., 0.))
+        inpBase = taski*self.inpsPerConext
+        cue[inpBase+cuei] = 1.
+        if (cuei % 2) == 0:
+            target = np.array((1.,0.))
         else:
-            target = np.array((0., 1.))
+            target = np.array((0.,1.))
         return cue, target
 
     def get_cue_list(self,taski=None):

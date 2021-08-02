@@ -804,7 +804,7 @@ class PytorchMD(nn.Module):
         return MDout
 
     def update_trace(self, rout, MDout):
-        # MD presynaptic traces filtered over 10 trials
+        # MD presynaptic traces filtered over 5/10 trials
         # Ideally one should weight them with MD syn weights,
         #  but syn plasticity just uses pre!
         self.MDpreTrace += 1. / self.tsteps / 5. * \
