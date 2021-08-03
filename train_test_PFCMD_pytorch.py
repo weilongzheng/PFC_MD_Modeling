@@ -24,7 +24,7 @@ torch.manual_seed(RNGSEED)
 config = [3,4,5,6]
 for configPara in config:
     
-    Ntrain = 50            # number of training cycles for each context
+    Ntrain = 100            # number of training cycles for each context
     Nextra = 0            # add cycles to show if block1
     Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
     inpsPerConext = configPara       # in a cueing context, there are <inpsPerConext> kinds of stimuli

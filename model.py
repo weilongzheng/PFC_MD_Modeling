@@ -807,9 +807,9 @@ class PytorchMD(nn.Module):
         # MD presynaptic traces filtered over 5/10 trials
         # Ideally one should weight them with MD syn weights,
         #  but syn plasticity just uses pre!
-        self.MDpreTrace += 1. / self.tsteps / 5. * \
+        self.MDpreTrace += 1. / self.tsteps / 30. * \
                            (-self.MDpreTrace + rout)
-        self.MDpostTrace += 1. / self.tsteps / 5. * \
+        self.MDpostTrace += 1. / self.tsteps / 30. * \
                             (-self.MDpostTrace + MDout)
         # MDoutTrace =  self.MDpostTrace
 
