@@ -32,7 +32,7 @@ for configPara in config:
                              
     # Model settings
     n_neuron_per_cue = 200
-    Num_MD = 24
+    Num_MD = 12
     num_active = int(Num_MD/Ncontexts)#5  # num MD active per context
     n_output = 2
     n_cues = Ncontexts*inpsPerConext

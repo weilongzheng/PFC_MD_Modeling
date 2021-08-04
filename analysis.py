@@ -394,8 +394,7 @@ def plotMDpretraces3Cxt():
     temp = wPFC2MDs_tmp
     wPFC2MDs = np.mean(temp[:,0,400:800],axis=1)
     ax = plt.plot(wPFC2MDs,':',color='tab:orange',label='Cxt 2 to MD C')
-    ax.set_xticks([0, 199, 399, 599, 799])
-    ax.set_xticklabels([0, 1, 2, 3, 4], rotation=0)
+    plt.xticks([0, 199, 399, 599, 799], [0, 1, 2, 3, 4], rotation=0)
     plt.xlabel('Trials')
     plt.ylabel('Mean Weights')
     plt.title('Weight Learning')
