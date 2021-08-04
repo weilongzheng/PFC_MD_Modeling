@@ -369,11 +369,10 @@ def decodingNumcycles():
         context_label = np.zeros(num_trial)   
         for i_time in range(num_trial):
             
-            temp = np.array( [sum(cues_all[i_time,0,i:i+2]) for i in range(0,len(cues_all[i_time,0,:]),2)])
+            temp = np.array( [sum(cues_all[i_time,0,i:i+itau]) for i in range(0,len(cues_all[i_time,0,:]),itau)])
             temp_index = np.where(temp==1)
-            #import pdb;pdb.set_trace()
             context_label[i_time] = temp_index[0]
-        
+            
         ## decode rule from pfc
         acc_rule_pfc = list()
         n_train = int(0.8 * num_trial)
@@ -474,7 +473,7 @@ if __name__ == '__main__':
     #config = [1e-2,1e-1,0.3,0.5,0.7,0.9,1e0,1.5,1e1]
     #config = [1e-2,1e-1,0.5,1e0,5,1e1] # input noise std range
     
-    #config = [1]
+    config = [1]
     #Tau_times.extend(range(2,12,2))
     #Hebb_LR = [0,0.0001,0.001,0.01,0.1]
     #num_MD = [10,20,30,40,50]

@@ -21,18 +21,18 @@ RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-config = [3,4,5,6]
+config = [6]#[3,4,5,6]
 for configPara in config:
     
-    Ntrain = 100            # number of training cycles for each context
+    Ntrain = 50            # number of training cycles for each context
     Nextra = 0            # add cycles to show if block1
-    Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
-    inpsPerConext = configPara       # in a cueing context, there are <inpsPerConext> kinds of stimuli
+    Ncontexts = configPara           # number of cueing contexts (e.g. auditory cueing context)
+    inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                              # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
                              
     # Model settings
     n_neuron_per_cue = 200
-    Num_MD = 10
+    Num_MD = 12
     num_active = int(Num_MD/Ncontexts)#5  # num MD active per context
     n_output = 2
     n_cues = Ncontexts*inpsPerConext
@@ -99,7 +99,7 @@ for configPara in config:
             #noiseSD = configPara
             inputs = np.hstack((inputs,np.random.normal(size=(inputs.shape[0],1)) * noiseSD))
     
-        #import pdb;pdb.set_trace()    
+        # 
         inputs = torch.from_numpy(inputs).type(torch.float)
         labels = torch.from_numpy(labels).type(torch.float)
     
@@ -186,39 +186,39 @@ for configPara in config:
 #    plt.tight_layout()
 #    plt.show()
 #    
-#    ## plot pfc2md and md2pfc weights
-#    if  MDeffect == True: 
-#        ## plot pfc2md weights
-#        wPFC2MD = log['wPFC2MD']
-#        wMD2PFC = log['wMD2PFC']
-#        ax = plt.figure()
-#        ax = sns.heatmap(wPFC2MD, cmap='Reds')
-#        ax.set_xticks([0, 999])
-#        ax.set_xticklabels([1, 1000], rotation=0)
-#        ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-#        ax.set_xlabel('PFC neuron index')
-#        ax.set_ylabel('MD neuron index')
-#        ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn))
-#        cbar = ax.collections[0].colorbar
-#        cbar.set_label('connection weight')
-#        plt.tight_layout()
-#        plt.show()
-#        
-#        # Heatmap wMD2PFC
-#        ax = plt.figure()
-#        ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
-#        ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-#        ax.set_yticks([0, 999])
-#        ax.set_yticklabels([1, 1000], rotation=0)
-#        ax.set_xlabel('MD neuron index')
-#        ax.set_ylabel('PFC neuron index')
-#        ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn))
-#        cbar = ax.collections[0].colorbar
-#        cbar.set_label('connection weight')
-#        plt.tight_layout()
-#        plt.show()
+    ## plot pfc2md and md2pfc weights
+    if  MDeffect == True: 
+        ## plot pfc2md weights
+        wPFC2MD = log['wPFC2MD']
+        wMD2PFC = log['wMD2PFC']
+        ax = plt.figure()
+        ax = sns.heatmap(wPFC2MD, cmap='Reds')
+        ax.set_xticks([0, 999])
+        ax.set_xticklabels([1, 1000], rotation=0)
+        ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+        ax.set_xlabel('PFC neuron index')
+        ax.set_ylabel('MD neuron index')
+        ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn))
+        cbar = ax.collections[0].colorbar
+        cbar.set_label('connection weight')
+        plt.tight_layout()
+        plt.show()
         
+        # Heatmap wMD2PFC
+        ax = plt.figure()
+        ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
+        ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+        ax.set_yticks([0, 999])
+        ax.set_yticklabels([1, 1000], rotation=0)
+        ax.set_xlabel('MD neuron index')
+        ax.set_ylabel('PFC neuron index')
+        ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn))
+        cbar = ax.collections[0].colorbar
+        cbar.set_label('connection weight')
+        plt.tight_layout()
+        plt.show()
         
+    import pdb;pdb.set_trace()       
 #    ## Testing
     Ntest = 20
     Nextra = 0
@@ -263,7 +263,7 @@ for configPara in config:
         
     filename = Path('files/final') 
     os.makedirs(filename, exist_ok=True)
-    file_training = 'test_inpsPerConext'+str(configPara)+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
+    file_training = 'test_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
     with open(filename / file_training, 'wb') as f:
         pickle.dump({'log':log,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all,'cues_all':cues_all}, f, protocol = 4)
     
