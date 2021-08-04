@@ -846,8 +846,8 @@ class PytorchMD(nn.Module):
 
         # Update and clip the weights
         self.wPFC2MD = torch.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = torch.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
-        self.wMD2PFCMult = torch.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0., 7. / self.G)
+        self.wMD2PFC = torch.clip(self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.) # 0.1
+        self.wMD2PFCMult = torch.clip(self.wMD2PFCMult + (wPFC2MDdelta.T), 0., 7. / self.G) # 0.1
 
     def winner_take_all(self, MDinp):
         '''Winner take all on the MD
