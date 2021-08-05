@@ -342,40 +342,40 @@ def plotMDpretraces3Cxt():
     MDpreTraces_all = data['MDpreTraces_all']
     MDouts_all = data['MDouts_all']
     # 
-    plot_t = 33 #10 30
+    plot_t = 0 #0 30
     MDpreTraces = np.reshape(MDpreTraces_all[plot_t:plot_t+4,:,:],(MDpreTraces_all.shape[1]*4,MDpreTraces_all.shape[2]))
     MDouts = np.reshape(MDouts_all[plot_t:plot_t+4,:,:],(MDouts_all.shape[1]*4,MDouts_all.shape[2]))
 
-    ax = plt.figure(figsize=(3.6,2))
-    ax = sns.heatmap(MDpreTraces.T, cmap='hot')
-    ax.set_yticks([0, 399, 799, 1199, 1399])
-    ax.set_yticklabels([1, 400, 800, 1200, 1400], rotation=0)
-    ax.set_xticks([0, 199, 399, 599, 799])
-    ax.set_xticklabels([0, 1, 2, 3, 4], rotation=0)
-    ax.set_xlabel('Trials')
-    ax.set_ylabel('PFC Index')
-    ax.set_title('MD Presynaptic Trace')
-    plt.tight_layout()
-    plt.show()
-    file_name = 'MDpreTraces_t.pdf'
-    plt.savefig(FIGUREPATH/file_name,dpi=150) 
-    
-    ax = plt.figure(figsize=(3.6,2))
-    ax = sns.heatmap(MDouts.T, cmap='Blues')
-    ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-    ax.set_xticks([0, 199, 399, 599, 799])
-    ax.set_xticklabels([0, 1, 2, 3, 4], rotation=0)
-    ax.set_xlabel('Trials')
-    ax.set_ylabel('MD Index')
-    ax.set_title('MD Outputs')
-    plt.tight_layout()
-    plt.show()
-    file_name = 'MDouts_t.pdf'
-    plt.savefig(FIGUREPATH/file_name) 
+#    ax = plt.figure(figsize=(3.6,2))
+#    ax = sns.heatmap(MDpreTraces.T, cmap='hot')
+#    ax.set_yticks([0, 399, 799, 1199, 1399])
+#    ax.set_yticklabels([1, 400, 800, 1200, 1400], rotation=0)
+#    ax.set_xticks([0, 199, 399, 599, 799])
+#    ax.set_xticklabels([30, 31, 32, 33, 34], rotation=0)
+#    ax.set_xlabel('Trials')
+#    ax.set_ylabel('PFC Index')
+#    ax.set_title('MD Presynaptic Trace')
+#    plt.tight_layout()
+#    plt.show()
+#    file_name = 'MDpreTraces_t1.pdf'
+#    plt.savefig(FIGUREPATH/file_name,dpi=150) 
+#    
+#    ax = plt.figure(figsize=(3.6,2))
+#    ax = sns.heatmap(MDouts.T, cmap='Blues')
+#    ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+#    ax.set_xticks([0, 199, 399, 599, 799])
+#    ax.set_xticklabels([30, 31, 32, 33, 34], rotation=0)
+#    ax.set_xlabel('Trials')
+#    ax.set_ylabel('MD Index')
+#    ax.set_title('MD Outputs')
+#    plt.tight_layout()
+#    plt.show()
+#    file_name = 'MDouts_t1.pdf'
+#    plt.savefig(FIGUREPATH/file_name) 
     
     #import pdb;pdb.set_trace()
     wPFC2MDs_tmp = np.reshape(wPFC2MDs_all[plot_t:plot_t+4,:,:,:],(wPFC2MDs_all.shape[1]*4,wPFC2MDs_all.shape[2],wPFC2MDs_all.shape[3]))
-    ax = plt.figure(figsize=(3.6,2))
+    ax = plt.figure(figsize=(3.0,2))
     temp = wPFC2MDs_tmp
     wPFC2MDs = np.mean(temp[:,3,:400],axis=1)
     ax = plt.plot(wPFC2MDs,'g-',label='Cxt 1 to MD A')
@@ -401,7 +401,7 @@ def plotMDpretraces3Cxt():
     plt.legend(frameon=False)
     plt.tight_layout()
     plt.show()
-    file_name = 'Weights_t.pdf'
+    file_name = 'Weights_t1.pdf'
     plt.savefig(FIGUREPATH/file_name) 
     
 if __name__ == '__main__':

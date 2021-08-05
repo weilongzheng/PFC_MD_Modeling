@@ -24,7 +24,7 @@ torch.manual_seed(RNGSEED)
 config = [6]#[3,4,5,6]
 for configPara in config:
     
-    Ntrain = 50            # number of training cycles for each context
+    Ntrain = 100            # number of training cycles for each context
     Nextra = 0            # add cycles to show if block1
     Ncontexts = configPara           # number of cueing contexts (e.g. auditory cueing context)
     inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -109,9 +109,9 @@ for configPara in config:
         # forward + backward + optimize
         outputs = model(inputs, labels)
         #PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
-    #    if  MDeffect == True:
-    #        MDouts_all[i,:] = model.md_output
-    #        MDpreTraces[i,:] = model.md.MDpreTrace
+        if  MDeffect == True:
+#            MDouts_all[i,:] = model.md_output
+            MDpreTraces[i,:] = model.md.MDpreTrace
         tstart = 0
         for itrial in range(inpsPerConext): 
             PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
@@ -218,7 +218,7 @@ for configPara in config:
         plt.tight_layout()
         plt.show()
         
-    import pdb;pdb.set_trace()       
+    #import pdb;pdb.set_trace()       
 #    ## Testing
     Ntest = 20
     Nextra = 0
