@@ -21,10 +21,10 @@ RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-config = [6]#[3,4,5,6]
+config = [2,3,4,5,6]
 for configPara in config:
     
-    Ntrain = 100            # number of training cycles for each context
+    Ntrain = 50            # number of training cycles for each context
     Nextra = 0            # add cycles to show if block1
     Ncontexts = configPara           # number of cueing contexts (e.g. auditory cueing context)
     inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
@@ -95,6 +95,7 @@ for configPara in config:
     
         # extract data
         inputs, labels = dataset()
+        #import pdb;pdb.set_trace()
         if noiseInput == True:
             #noiseSD = configPara
             inputs = np.hstack((inputs,np.random.normal(size=(inputs.shape[0],1)) * noiseSD))
@@ -187,40 +188,40 @@ for configPara in config:
 #    plt.show()
 #    
     ## plot pfc2md and md2pfc weights
-    if  MDeffect == True: 
-        ## plot pfc2md weights
-        wPFC2MD = log['wPFC2MD']
-        wMD2PFC = log['wMD2PFC']
-        ax = plt.figure()
-        ax = sns.heatmap(wPFC2MD, cmap='Reds')
-        ax.set_xticks([0, 999])
-        ax.set_xticklabels([1, 1000], rotation=0)
-        ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-        ax.set_xlabel('PFC neuron index')
-        ax.set_ylabel('MD neuron index')
-        ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn))
-        cbar = ax.collections[0].colorbar
-        cbar.set_label('connection weight')
-        plt.tight_layout()
-        plt.show()
-        
-        # Heatmap wMD2PFC
-        ax = plt.figure()
-        ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
-        ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-        ax.set_yticks([0, 999])
-        ax.set_yticklabels([1, 1000], rotation=0)
-        ax.set_xlabel('MD neuron index')
-        ax.set_ylabel('PFC neuron index')
-        ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn))
-        cbar = ax.collections[0].colorbar
-        cbar.set_label('connection weight')
-        plt.tight_layout()
-        plt.show()
+#    if  MDeffect == True: 
+#        ## plot pfc2md weights
+#        wPFC2MD = log['wPFC2MD']
+#        wMD2PFC = log['wMD2PFC']
+#        ax = plt.figure()
+#        ax = sns.heatmap(wPFC2MD, cmap='Reds')
+#        ax.set_xticks([0, 999])
+#        ax.set_xticklabels([1, 1000], rotation=0)
+#        ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+#        ax.set_xlabel('PFC neuron index')
+#        ax.set_ylabel('MD neuron index')
+#        ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn))
+#        cbar = ax.collections[0].colorbar
+#        cbar.set_label('connection weight')
+#        plt.tight_layout()
+#        plt.show()
+#        
+#        # Heatmap wMD2PFC
+#        ax = plt.figure()
+#        ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
+#        ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+#        ax.set_yticks([0, 999])
+#        ax.set_yticklabels([1, 1000], rotation=0)
+#        ax.set_xlabel('MD neuron index')
+#        ax.set_ylabel('PFC neuron index')
+#        ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn))
+#        cbar = ax.collections[0].colorbar
+#        cbar.set_label('connection weight')
+#        plt.tight_layout()
+#        plt.show()
         
     #import pdb;pdb.set_trace()       
 #    ## Testing
-    Ntest = 20
+    Ntest = 50
     Nextra = 0
     tsteps = 200
     test_set = RikhyeTask(Ntrain=Ntest, Nextra = Nextra, Ncontexts=Ncontexts, inpsPerConext = inpsPerConext, blockTrain=False)

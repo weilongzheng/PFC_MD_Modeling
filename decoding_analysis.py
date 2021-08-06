@@ -466,8 +466,8 @@ def decodingNumcycles():
         
 if __name__ == '__main__':
 #    decodingOverlapW()
-    decodingNumcycles()
-    import pdb;pdb.set_trace()
+#    decodingNumMD()
+#    import pdb;pdb.set_trace()
     #Tau_times = [1/2, 1/4, 1/6, 1/8, 1/10]
     # RNGs = [1]
     #config = [1e-2,1e-1,0.3,0.5,0.7,0.9,1e0,1.5,1e1]
