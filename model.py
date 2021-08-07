@@ -334,7 +334,7 @@ class MD():
 
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + (wPFC2MDdelta.T), -10., 0.)
-        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0.,7. / self.G)
+        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0.,7. / self.G) 
         
         # slow-decaying PFC-MD weights
 #        wPFC2MDdelta = 30000 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold,self.MDpreTrace - self.MDpreTrace_threshold)
@@ -363,6 +363,7 @@ class MD():
         # num_active = np.round(self.Num_MD / self.Ntasks)
 
         MDthreshold = np.mean(MDinp_sorted[-int(self.num_active) * 2:])
+        #MDthreshold = MDinp_sorted[-int(self.num_active)]
         # MDthreshold  = np.mean(MDinp)
         index_pos = np.where(MDinp >= MDthreshold)
         index_neg = np.where(MDinp < MDthreshold)
@@ -804,7 +805,7 @@ class PytorchMD(nn.Module):
         return MDout
 
     def update_trace(self, rout, MDout):
-        # MD presynaptic traces filtered over 10 trials
+        # MD presynaptic traces filtered over 5/10 trials
         # Ideally one should weight them with MD syn weights,
         #  but syn plasticity just uses pre!
         self.MDpreTrace += 1. / self.tsteps / 5. * \
@@ -846,8 +847,8 @@ class PytorchMD(nn.Module):
 
         # Update and clip the weights
         self.wPFC2MD = torch.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = torch.clip(self.wMD2PFC + 0.1 * (wPFC2MDdelta.T), -10., 0.)
-        self.wMD2PFCMult = torch.clip(self.wMD2PFCMult + 0.1 * (wPFC2MDdelta.T), 0., 7. / self.G)
+        self.wMD2PFC = torch.clip(self.wMD2PFC + 0.1*(wPFC2MDdelta.T), -10., 0.) # 0.1
+        self.wMD2PFCMult = torch.clip(self.wMD2PFCMult + 0.1*(wPFC2MDdelta.T), 0., 7. / self.G) # 0.1
 
     def winner_take_all(self, MDinp):
         '''Winner take all on the MD
@@ -859,6 +860,7 @@ class PytorchMD(nn.Module):
         # num_active = np.round(self.Num_MD / self.Ntasks)
 
         MDthreshold = torch.mean(MDinp_sorted[-int(self.num_active) * 2:])
+        #MDthreshold = MDinp_sorted[-int(self.num_active)]
         # MDthreshold  = np.mean(MDinp)
         index_pos = torch.where(MDinp >= MDthreshold)
         index_neg = torch.where(MDinp < MDthreshold)

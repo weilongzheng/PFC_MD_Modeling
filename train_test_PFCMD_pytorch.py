@@ -21,18 +21,18 @@ RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
-config = [10,20,30,40,50]
+config = [2,3,4,5,6]
 for configPara in config:
     
-    Ntrain = 100            # number of training cycles for each context
-    Nextra = 100            # add cycles to show if block1
-    Ncontexts = 2           # number of cueing contexts (e.g. auditory cueing context)
+    Ntrain = 50            # number of training cycles for each context
+    Nextra = 0            # add cycles to show if block1
+    Ncontexts = configPara           # number of cueing contexts (e.g. auditory cueing context)
     inpsPerConext = 2       # in a cueing context, there are <inpsPerConext> kinds of stimuli
                              # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
                              
     # Model settings
     n_neuron_per_cue = 200
-    Num_MD = configPara
+    Num_MD = 12
     num_active = int(Num_MD/Ncontexts)#5  # num MD active per context
     n_output = 2
     n_cues = Ncontexts*inpsPerConext
@@ -95,11 +95,12 @@ for configPara in config:
     
         # extract data
         inputs, labels = dataset()
+        #import pdb;pdb.set_trace()
         if noiseInput == True:
             #noiseSD = configPara
             inputs = np.hstack((inputs,np.random.normal(size=(inputs.shape[0],1)) * noiseSD))
     
-        #import pdb;pdb.set_trace()    
+        # 
         inputs = torch.from_numpy(inputs).type(torch.float)
         labels = torch.from_numpy(labels).type(torch.float)
     
@@ -109,9 +110,9 @@ for configPara in config:
         # forward + backward + optimize
         outputs = model(inputs, labels)
         #PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
-    #    if  MDeffect == True:
-    #        MDouts_all[i,:] = model.md_output
-    #        MDpreTraces[i,:] = model.md.MDpreTrace
+        if  MDeffect == True:
+#            MDouts_all[i,:] = model.md_output
+            MDpreTraces[i,:] = model.md.MDpreTrace
         tstart = 0
         for itrial in range(inpsPerConext): 
             PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
@@ -186,7 +187,7 @@ for configPara in config:
 #    plt.tight_layout()
 #    plt.show()
 #    
-#    ## plot pfc2md and md2pfc weights
+    ## plot pfc2md and md2pfc weights
 #    if  MDeffect == True: 
 #        ## plot pfc2md weights
 #        wPFC2MD = log['wPFC2MD']
@@ -217,10 +218,9 @@ for configPara in config:
 #        cbar.set_label('connection weight')
 #        plt.tight_layout()
 #        plt.show()
-        
-        
+             
 #    ## Testing
-    Ntest = 25
+    Ntest = 50
     Nextra = 0
     tsteps = 200
     test_set = RikhyeTask(Ntrain=Ntest, Nextra = Nextra, Ncontexts=Ncontexts, inpsPerConext = inpsPerConext, blockTrain=False)

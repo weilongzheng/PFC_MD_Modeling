@@ -209,14 +209,271 @@ def decodingOverlapW():
     plt.tight_layout()
     #plt.savefig(FIGUREPATH/'decoding_context_noiseN.pdf') 
 
+def decodingNumMD():
+    #config = [10,20,30,40,50]
+    config = [2,3,4,5,6]
+    tsteps = 200
+    acc_rule_pfc_all = np.zeros([len(config),round(tsteps/2)])
+    acc_rule_md_all = np.zeros([len(config),round(tsteps/2)])
+    acc_context_pfc_all = np.zeros([len(config),round(tsteps/2)])
+    acc_context_md_all = np.zeros([len(config),round(tsteps/2)])
+    
+    for i,itau in enumerate(config):
+        pickle_in = open('files/final/test_numMD'+str(12)+'_numContext'+str(itau)+'_MD'+str(True)+'_R'+str(1)+'.pkl','rb')
+        data = pickle.load(pickle_in)
+        
+        cues_all = data['cues_all']
+        routs_all = data['PFCouts_all']
+        MDouts_all = data['MDouts_all']
+        
+        MDouts_all += np.random.normal(0,0.01,size = MDouts_all.shape)
+        
+        [num_trial,tsteps,num_cues] = cues_all.shape
+        # context
+        rule_label = np.zeros(num_trial)
+        for i_time in range(num_trial):
+            
+            temp = sum(cues_all[i_time,0,0::2])
+            
+            if temp==1:
+                rule_label[i_time] = 0
+            else:
+                rule_label[i_time] = 1
+        context_label = np.zeros(num_trial)   
+        for i_time in range(num_trial):
+            
+            temp = np.array( [sum(cues_all[i_time,0,i:i+2]) for i in range(0,len(cues_all[i_time,0,:]),2)])
+            temp_index = np.where(temp==1)
+            context_label[i_time] = temp_index[0]
+        
+        ## decode rule from pfc
+        acc_rule_pfc = list()
+        n_train = int(0.8 * num_trial)
+        for i_time in range(0,tsteps,2):
+            X, y = sklearn.utils.shuffle(routs_all[:,i_time,:],rule_label)
+            X_train, X_test = X[:n_train],X[n_train:]
+            y_train, y_test = y[:n_train],y[n_train:]
+            
+            clf = LinearDiscriminantAnalysis()
+            clf.fit(X_train, y_train)
+            score = clf.score(X_test, y_test)
+            acc_rule_pfc.append(score)
+        
+        ## decode rule from md
+        acc_rule_md = list()
+        for i_time in range(0,tsteps,2):
+            X, y = sklearn.utils.shuffle(MDouts_all[:,i_time,:],rule_label)
+            X_train, X_test = X[:n_train],X[n_train:]
+            y_train, y_test = y[:n_train],y[n_train:]
+            #import pdb;pdb.set_trace()
+            #clf = LinearSVC()
+            clf = LinearDiscriminantAnalysis()
+            clf.fit(X_train, y_train)
+            score = clf.score(X_test, y_test)
+            acc_rule_md.append(score)
+            
+        ## decode context from pfc
+        acc_context_pfc = list()
+        for i_time in range(0,tsteps,2):
+            X, y = sklearn.utils.shuffle(routs_all[:,i_time,:],context_label)
+            X_train, X_test = X[:n_train],X[n_train:]
+            y_train, y_test = y[:n_train],y[n_train:]
+            
+            #clf = LinearSVC()
+            clf = LinearDiscriminantAnalysis()
+            clf.fit(X_train, y_train)
+            score = clf.score(X_test, y_test)
+            acc_context_pfc.append(score)
+            
+        ## decode context from md
+        acc_context_md = list()
+        for i_time in range(0,tsteps,2):
+            X, y = sklearn.utils.shuffle(MDouts_all[:,i_time,:],context_label)
+            X_train, X_test = X[:n_train],X[n_train:]
+            y_train, y_test = y[:n_train],y[n_train:]
+            
+            #clf = LinearSVC()
+            clf = LinearDiscriminantAnalysis()
+            clf.fit(X_train, y_train)
+            score = clf.score(X_test, y_test)
+            acc_context_md.append(score)
+        
+        acc_rule_pfc_all[i,:] = acc_rule_pfc
+        acc_rule_md_all[i,:] = acc_rule_md
+        acc_context_pfc_all[i,:] = acc_context_pfc
+        acc_context_md_all[i,:] = acc_context_md
+    
+    plot_decoding_vs_para = True
+    if plot_decoding_vs_para == True:
+        plt.figure(figsize=(2.4,2.4))
+        md_context_mean = np.mean(acc_context_md_all[:,10:50:10],axis=1)
+        md_context_std = np.std(acc_context_md_all[:,10:50:10],axis=1)
+        md_rule_mean = np.mean(acc_rule_md_all[:,10:50:10],axis=1)
+        md_rule_std = np.std(acc_rule_md_all[:,10:50:10],axis=1)  
+        plt.plot(config,md_context_mean,'-o',color='tab:orange',label='Context')
+        plt.plot(config,md_rule_mean,'-d',color='tab:green',label='Rule')
+        plt.fill_between(config, md_context_mean - md_context_std,np.clip(md_context_mean + md_context_std,0,1), alpha=0.2,color='tab:orange')
+        plt.fill_between(config, md_rule_mean - md_rule_std,np.clip(md_rule_mean + md_rule_std,0,1), alpha=0.2,color='tab:green')
+        plt.legend(frameon=False)
+        plt.xlabel('Num Context') 
+        plt.title('Cue Period')
+        plt.ylabel('Decoding Performance')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'decoding_numCXT_cue.pdf')
+        
+        plt.figure(figsize=(2.4,2.4))
+        md_context_mean = np.mean(acc_context_md_all[:,60:100:10],axis=1)
+        md_context_std = np.std(acc_context_md_all[:,60:100:10],axis=1)
+        md_rule_mean = np.mean(acc_rule_md_all[:,60:100:10],axis=1)
+        md_rule_std = np.std(acc_rule_md_all[:,60:100:10],axis=1)  
+        plt.plot(config,md_context_mean,'-o',color='tab:orange',label='Context')
+        plt.plot(config,md_rule_mean,'-d',color='tab:green',label='Rule')
+        plt.fill_between(config, md_context_mean - md_context_std,np.clip(md_context_mean + md_context_std,0,1), alpha=0.2,color='tab:orange')
+        plt.fill_between(config, md_rule_mean - md_rule_std,np.clip(md_rule_mean + md_rule_std,0,1), alpha=0.2,color='tab:green')
+        plt.legend(frameon=False)
+        plt.xlabel('Num Context') 
+        plt.title('Delay Period')
+        plt.ylabel('Decoding Performance')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'decoding_numCXT_delay.pdf')
+
+def decodingNumcycles():
+    config = [2,3,4,5,6]
+    tsteps = 200
+    acc_rule_pfc_all = np.zeros([len(config),round(tsteps/2)])
+    acc_rule_md_all = np.zeros([len(config),round(tsteps/2)])
+    acc_context_pfc_all = np.zeros([len(config),round(tsteps/2)])
+    acc_context_md_all = np.zeros([len(config),round(tsteps/2)])
+    
+    for i,itau in enumerate(config):
+        pickle_in = open('files/final/test_inpsPerConext'+str(itau)+'_numMD'+str(10)+'_numContext'+str(2)+'_MD'+str(True)+'_R'+str(1)+'.pkl','rb')
+        data = pickle.load(pickle_in)
+        
+        cues_all = data['cues_all']
+        routs_all = data['PFCouts_all']
+        MDouts_all = data['MDouts_all']
+        
+        MDouts_all += np.random.normal(0,0.01,size = MDouts_all.shape)
+        
+        [num_trial,tsteps,num_cues] = cues_all.shape
+        # context
+        rule_label = np.zeros(num_trial)
+        for i_time in range(num_trial):
+            
+            temp = sum(cues_all[i_time,0,0::2])
+            
+            if temp==1:
+                rule_label[i_time] = 0
+            else:
+                rule_label[i_time] = 1
+        context_label = np.zeros(num_trial)   
+        for i_time in range(num_trial):
+            
+            temp = np.array( [sum(cues_all[i_time,0,i:i+itau]) for i in range(0,len(cues_all[i_time,0,:]),itau)])
+            temp_index = np.where(temp==1)
+            context_label[i_time] = temp_index[0]
+            
+        ## decode rule from pfc
+        acc_rule_pfc = list()
+        n_train = int(0.8 * num_trial)
+        for i_time in range(0,tsteps,2):
+            X, y = sklearn.utils.shuffle(routs_all[:,i_time,:],rule_label)
+            X_train, X_test = X[:n_train],X[n_train:]
+            y_train, y_test = y[:n_train],y[n_train:]
+            
+            clf = LinearDiscriminantAnalysis()
+            clf.fit(X_train, y_train)
+            score = clf.score(X_test, y_test)
+            acc_rule_pfc.append(score)
+        
+        ## decode rule from md
+        acc_rule_md = list()
+        for i_time in range(0,tsteps,2):
+            X, y = sklearn.utils.shuffle(MDouts_all[:,i_time,:],rule_label)
+            X_train, X_test = X[:n_train],X[n_train:]
+            y_train, y_test = y[:n_train],y[n_train:]
+            #import pdb;pdb.set_trace()
+            #clf = LinearSVC()
+            clf = LinearDiscriminantAnalysis()
+            clf.fit(X_train, y_train)
+            score = clf.score(X_test, y_test)
+            acc_rule_md.append(score)
+            
+        ## decode context from pfc
+        acc_context_pfc = list()
+        for i_time in range(0,tsteps,2):
+            X, y = sklearn.utils.shuffle(routs_all[:,i_time,:],context_label)
+            X_train, X_test = X[:n_train],X[n_train:]
+            y_train, y_test = y[:n_train],y[n_train:]
+            
+            #clf = LinearSVC()
+            clf = LinearDiscriminantAnalysis()
+            clf.fit(X_train, y_train)
+            score = clf.score(X_test, y_test)
+            acc_context_pfc.append(score)
+            
+        ## decode context from md
+        acc_context_md = list()
+        for i_time in range(0,tsteps,2):
+            X, y = sklearn.utils.shuffle(MDouts_all[:,i_time,:],context_label)
+            X_train, X_test = X[:n_train],X[n_train:]
+            y_train, y_test = y[:n_train],y[n_train:]
+            
+            #clf = LinearSVC()
+            clf = LinearDiscriminantAnalysis()
+            clf.fit(X_train, y_train)
+            score = clf.score(X_test, y_test)
+            acc_context_md.append(score)
+        
+        acc_rule_pfc_all[i,:] = acc_rule_pfc
+        acc_rule_md_all[i,:] = acc_rule_md
+        acc_context_pfc_all[i,:] = acc_context_pfc
+        acc_context_md_all[i,:] = acc_context_md
+    
+    plot_decoding_vs_para = True
+    if plot_decoding_vs_para == True:
+        plt.figure(figsize=(2.4,2.4))
+        md_context_mean = np.mean(acc_context_md_all[:,10:50:5],axis=1)
+        md_context_std = np.std(acc_context_md_all[:,10:50:5],axis=1)
+        md_rule_mean = np.mean(acc_rule_md_all[:,10:50:5],axis=1)
+        md_rule_std = np.std(acc_rule_md_all[:,10:50:5],axis=1)  
+        plt.plot(config,md_context_mean,'-o',color='tab:orange',label='Context')
+        plt.plot(config,md_rule_mean,'-d',color='tab:green',label='Rule')
+        plt.fill_between(config, md_context_mean - md_context_std,np.clip(md_context_mean + md_context_std,0,1), alpha=0.2,color='tab:orange')
+        plt.fill_between(config, md_rule_mean - md_rule_std,np.clip(md_rule_mean + md_rule_std,0,1), alpha=0.2,color='tab:green')
+        plt.legend(frameon=False)
+        plt.xlabel('Num Cues per Context') 
+        plt.title('Cue Period')
+        plt.ylabel('Decoding Performance')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'decoding_inpsPerConex_cue.pdf')
+        
+        plt.figure(figsize=(2.4,2.4))
+        md_context_mean = np.mean(acc_context_md_all[:,60:100:5],axis=1)
+        md_context_std = np.std(acc_context_md_all[:,60:100:5],axis=1)
+        md_rule_mean = np.mean(acc_rule_md_all[:,60:100:5],axis=1)
+        md_rule_std = np.std(acc_rule_md_all[:,60:100:5],axis=1)  
+        plt.plot(config,md_context_mean,'-o',color='tab:orange',label='Context')
+        plt.plot(config,md_rule_mean,'-d',color='tab:green',label='Rule')
+        plt.fill_between(config, md_context_mean - md_context_std,np.clip(md_context_mean + md_context_std,0,1), alpha=0.2,color='tab:orange')
+        plt.fill_between(config, md_rule_mean - md_rule_std,np.clip(md_rule_mean + md_rule_std,0,1), alpha=0.2,color='tab:green')
+        plt.legend(frameon=False)
+        plt.xlabel('Num Cues per Context') 
+        plt.title('Delay Period')
+        plt.ylabel('Decoding Performance')
+        plt.tight_layout()
+        plt.savefig(FIGUREPATH/'decoding_inpsPerConex_delay.pdf')
+        
 if __name__ == '__main__':
 #    decodingOverlapW()
+#    decodingNumMD()
 #    import pdb;pdb.set_trace()
     #Tau_times = [1/2, 1/4, 1/6, 1/8, 1/10]
     # RNGs = [1]
     #config = [1e-2,1e-1,0.3,0.5,0.7,0.9,1e0,1.5,1e1]
-    config = [1e-2,1e-1,0.5,1e0,5,1e1] # input noise std range
-    #config = [1]
+    #config = [1e-2,1e-1,0.5,1e0,5,1e1] # input noise std range
+    
+    config = [1]
     #Tau_times.extend(range(2,12,2))
     #Hebb_LR = [0,0.0001,0.001,0.01,0.1]
     #num_MD = [10,20,30,40,50]
