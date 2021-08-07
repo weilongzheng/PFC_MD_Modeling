@@ -946,6 +946,7 @@ class MD_GYM():
                                             size=(self.Nneur, self.Num_MD))
         # initialize activities
         self.MDpreTrace = np.zeros(shape=(self.Nneur))
+        self.MDpreTrace_filtered = np.zeros(shape=(self.Nneur))
         self.MDpreTrace_binary = np.zeros(shape=(self.Nneur))
         self.MDpostTrace = np.zeros(shape=(self.Num_MD))
         self.MDpreTrace_threshold = 0
@@ -1011,18 +1012,33 @@ class MD_GYM():
             MDout: activity of MD
         """
 
-        # MD outputs
-        MDoutTrace = self.update_trace(rout, MDout)
+        # compute MD outputs
+        # 1. non-filtered rout
+        # MDoutTrace = self.update_trace(rout, MDout)
+        # 2. filtered rout
+        kernel = np.ones(shape=(5,))/5
+        rout_filtered = np.convolve(rout, kernel, mode='same')
+        MDoutTrace = self.update_trace(rout_filtered, MDout)
 
-        # use OR opertion to get binary pretraces
+        # compute binary pretraces        
+        # 1. mean of small part
         pretrace_part = int(0.8*len(self.MDpreTrace))
-        # original mean
-        # self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[-pretrace_part:])
         self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[0:pretrace_part])
-        # median
-        # self.MDpreTrace_threshold = np.median(np.sort(self.MDpreTrace)[-pretrace_part:])
         self.MDpreTrace_binary = (self.MDpreTrace>self.MDpreTrace_threshold).astype(float)
-
+        # 2. mean of big part
+        # pretrace_part = int(0.8*len(self.MDpreTrace))
+        # self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[-pretrace_part:])
+        # self.MDpreTrace_binary = (self.MDpreTrace>self.MDpreTrace_threshold).astype(float)
+        # 3. median
+        # pretrace_part = int(0.8*len(self.MDpreTrace))
+        # self.MDpreTrace_threshold = np.median(np.sort(self.MDpreTrace)[-pretrace_part:])
+        # self.MDpreTrace_binary = (self.MDpreTrace>self.MDpreTrace_threshold).astype(float)
+        # 4. filtered pretraces
+        # kernel = np.ones(shape=(5,))/5
+        # self.MDpreTrace_filtered = np.convolve(self.MDpreTrace, kernel, mode='same')
+        # self.MDpreTrace_threshold = np.mean(self.MDpreTrace_filtered)
+        # self.MDpreTrace_binary = (self.MDpreTrace_filtered>self.MDpreTrace_threshold).astype(float)
+        
         # compute thresholds
         # self.MDpreTrace_binary_threshold = np.mean(self.MDpreTrace_binary)
         self.MDpreTrace_binary_threshold = 0.5
