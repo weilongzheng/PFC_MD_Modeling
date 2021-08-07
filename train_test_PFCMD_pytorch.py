@@ -218,8 +218,7 @@ for configPara in config:
 #        cbar.set_label('connection weight')
 #        plt.tight_layout()
 #        plt.show()
-        
-    #import pdb;pdb.set_trace()       
+             
 #    ## Testing
     Ntest = 50
     Nextra = 0
