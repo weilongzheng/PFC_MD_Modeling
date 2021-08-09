@@ -26,8 +26,15 @@ class ElasticWeightConsolidation:
         for i, (input, target) in enumerate(dl):
             if i > num_batch:
                 break
-            output = F.log_softmax(self.model(input), dim=1)
-            log_liklihoods.append(output[:, target])
+            model_outputs = torch.zeros_like(target)
+            for isample in range(input.shape[0]):
+                model_outputs[isample,:] = self.model(input[isample,:])
+            #import pdb;pdb.set_trace()
+            output = F.mse_loss(model_outputs,target).item()
+            log_liklihoods.append(-output)
+            
+#            output = F.log_softmax(model_outputs, dim=1)
+#            log_liklihoods.append(output[:, target])
         log_likelihood = torch.cat(log_liklihoods).mean()
         grad_log_liklihood = autograd.grad(log_likelihood, self.model.parameters())
         _buff_param_names = [param[0].replace('.', '__') for param in self.model.named_parameters()]
