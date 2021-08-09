@@ -5,8 +5,9 @@ from elastic_weight_consolidation import ElasticWeightConsolidation
 from task import RikhyeTask
 from task import RikhyeTaskBatch
 import time
+from collections import defaultdict
 from torch.utils.data import Dataset, DataLoader
-from torchvision import datasets, transforms
+import matplotlib.pyplot as plt
 
 class Elman(nn.Module):
     
@@ -62,7 +63,7 @@ class Elman_model(nn.Module):
         self.fc = nn.Linear(hidden_size, output_size)
 
 
-    def forward(self, input, target):
+    def forward(self, input):
         
         n_time = input.shape[0]
         batch_size = input.shape[1]
@@ -72,7 +73,6 @@ class Elman_model(nn.Module):
         
         for t in range(n_time):
             input_t = input[t, ...].unsqueeze(dim=0)
-            target_t = target[t, ...].unsqueeze(dim=0)
 
             RNN_hidden_t = self.rnn(input_t, RNN_hidden_t)
             RNN_output[t, :, :] = RNN_hidden_t
@@ -81,17 +81,34 @@ class Elman_model(nn.Module):
         model_out = torch.tanh(model_out)
 
         return model_out
-
-Ntrain = 50
-Nextra = 0 
-Ncontexts = 2
-inpsPerConext = 2
+    
+class TrainingDataset(Dataset):
+    
+    def __init__(self, input, output):
+            self.output = output
+            self.input = input
+            
+    def __len__(self):
+            return len(self.output)
+        
+    def __getitem__(self, idx):
+            output = self.output[idx]
+            input = self.input[idx]
+            sample = {"Text": input, "Class": output}
+            return sample
+    
+#Ntrain = 50
+#Nextra = 0 
+#Ncontexts = 2
+#inpsPerConext = 2
 
 input_size = 4          # 4 cues
 hidden_size = 256      # number of PFC neurons
 output_size = 2         # 2 rules
 nonlinearity = 'tanh'
 model = Elman_model(input_size=input_size, hidden_size=hidden_size, output_size=output_size, nonlinearity=nonlinearity)
+crit = nn.MSELoss()
+ewc = ElasticWeightConsolidation(model, crit=crit, lr=1e-4)
 
 num_cueingcontext = 2
 num_cue = 2
@@ -108,19 +125,45 @@ dataset = RikhyeTaskBatch(num_cueingcontext=num_cueingcontext, num_cue=num_cue, 
                           tsteps=tsteps, cuesteps=cuesteps, batch_size=batch_size)
 
 
-total_step = Ntrain*Ncontexts+Nextra
+total_step = sum(blocklen)//batch_size
 
 tsteps = 200
-for i in range(total_step):
+log = defaultdict(list)
 
-    train_time_start = time.time()
+#import pdb;pdb.set_trace()
+for iblock in range(3):
+    print('Training {:d} block'.format(iblock))
+    inputs_all = torch.zeros((blocklen[iblock],400,1,4))
+    outputs_all = torch.zeros((blocklen[iblock],400,1,2))
     
-    # extract data
-    inputs, labels = dataset()
-    inputs = torch.from_numpy(inputs).type(torch.float)
-    labels = torch.from_numpy(labels).type(torch.float)
+    for i in range(blocklen[iblock]):
     
+        train_time_start = time.time()
+        
+        # extract data
+        inputs, labels = dataset()
+        inputs = torch.from_numpy(inputs).type(torch.float)
+        labels = torch.from_numpy(labels).type(torch.float)
+        inputs_all[i,:] = inputs
+        outputs_all[i,:] = labels
+        
+        ewc.forward_backward_update(inputs, labels)
+        
+        outputs = ewc.model(inputs)    
+        loss = crit(outputs, labels)
+        mse = loss.item()
+        log['mse'].append(mse)
     
-    
-    
-    
+    dataset_ewc = TrainingDataset(inputs_all,outputs_all)
+    ewc.register_ewc_params(dataset_ewc, 1, blocklen[iblock])
+        
+# Plot MSE curve
+plt.plot(log['mse'], label='With MD')
+plt.xlabel('Cycles')
+plt.ylabel('MSE loss')
+plt.legend()
+plt.tight_layout()
+plt.show()        
+        
+        
+        
