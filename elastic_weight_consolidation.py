@@ -35,8 +35,9 @@ class ElasticWeightConsolidation:
             
 #            output = F.log_softmax(model_outputs, dim=1)
 #            log_liklihoods.append(output[:, target])
-        log_likelihood = torch.cat(log_liklihoods).mean()
-        grad_log_liklihood = autograd.grad(log_likelihood, self.model.parameters())
+        log_likelihood = np.array([np.mean(log_liklihoods)])
+        #log_likelihood = torch.cat(log_liklihoods).mean()
+        grad_log_liklihood = autograd.grad(torch.from_numpy(log_likelihood), self.model.parameters())
         _buff_param_names = [param[0].replace('.', '__') for param in self.model.named_parameters()]
         for _buff_param_name, param in zip(_buff_param_names, grad_log_liklihood):
             self.model.register_buffer(_buff_param_name+'_estimated_fisher', param.data.clone() ** 2)
