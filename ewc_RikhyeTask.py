@@ -65,6 +65,8 @@ class Elman_model(nn.Module):
 
     def forward(self, input):
         
+        
+        
         n_time = input.shape[0]
         batch_size = input.shape[1]
 
@@ -94,8 +96,7 @@ class TrainingDataset(Dataset):
     def __getitem__(self, idx):
             output = self.output[idx]
             input = self.input[idx]
-            sample = {"Text": input, "Class": output}
-            return sample
+            return input,output
     
 #Ntrain = 50
 #Nextra = 0 
