@@ -19,8 +19,8 @@ import gym
 import neurogym as ngym
 from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
-# from model_dev import RNN_MD
-from model_ideal import RNN_MD
+from model_dev import RNN_MD
+# from model_ideal import RNN_MD
 import matplotlib as mpl
 mpl.rcParams['axes.spines.left'] = True
 mpl.rcParams['axes.spines.right'] = False
@@ -81,7 +81,7 @@ config = {
     'seq_len': 50,
     # 'tasks': ngym.get_collection('yang19'),
     'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
-    # 'tasks': ['yang19.go-v0', 'yang19.dlydm1-v0'],
+    # 'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
     # 'tasks': ['yang19.dm1-v0', 'yang19.dms-v0'],
 }
 
@@ -160,8 +160,8 @@ optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
 total_training_cycle = 18000
-print_every_cycle = 400
-save_every_cycle = 2000
+print_every_cycle = 500
+save_every_cycle = 10000
 save_times = total_training_cycle//save_every_cycle
 running_loss = 0.0
 running_train_time = 0
@@ -192,11 +192,11 @@ for i in range(total_training_cycle):
     train_time_start = time.time()    
 
     # control training paradigm
-    if i < 6000:
+    if i == 0:
         task_id = 0
-    elif i >= 6000 and i < 12000:
+    elif i == 6000:
         task_id = 1
-    elif i >= 12000:
+    elif i == 12000:
         task_id = 0
 
     # fetch data
