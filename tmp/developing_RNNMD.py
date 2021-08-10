@@ -56,7 +56,8 @@ def get_full_performance(net, env, task_id, num_task, num_trial=1000, device='cp
         fix_perf += sum(action_pred[:fix_len, 0] == 0)/fix_len
         if act_len != 0:
             assert all(gt[fix_len:] == gt[-1])
-            act_perf += sum(action_pred[fix_len:, 0] == gt[-1])/act_len
+            # act_perf += sum(action_pred[fix_len:, 0] == gt[-1])/act_len
+            act_perf += (action_pred[-1, 0] == gt[-1])
         else: # no action in this trial
             num_no_act_trial += 1
 
