@@ -1097,7 +1097,7 @@ class CTRNN_MD(nn.Module):
         self.oneminusalpha = 1 - alpha
 
         # sensory input layer
-        self.input2h = nn.Linear(input_size, sub_size)
+        self.input2h = nn.Linear(input_size, hidden_size)
 
         # hidden layer
         self.h2h = nn.Linear(hidden_size, hidden_size)
@@ -1178,11 +1178,12 @@ class CTRNN_MD(nn.Module):
         ext_input = self.input2h(input)
         rec_input = self.h2h(hidden)
 
-        # expand inputs
-        ext_input_expanded = torch.zeros_like(rec_input)
-        ext_input_expanded[:, sub_id*self.sub_size:(sub_id+1)*self.sub_size] = ext_input
+        # mask external inputs
+        ext_input_mask = torch.zeros_like(rec_input)
+        ext_input_mask[:, sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 1
+        ext_input = ext_input.mul(ext_input_mask)
 
-        pre_activation = ext_input_expanded + rec_input
+        pre_activation = ext_input + rec_input
 
         # md inputs
         if self.MDeffect:
