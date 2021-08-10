@@ -268,13 +268,13 @@ class CTRNN_MD(nn.Module):
             assert rec_input.shape[0] == 1, 'batch size should be 1'
 
             # original MD inputs
-            self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
-            self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
-            rec_inp = rec_input.cpu().detach().numpy()[0, :]
-            md2pfc_weights = (self.md.MD2PFCMult/self.md.Num_MD)
-            md2pfc = md2pfc_weights * rec_inp
-            md2pfc += np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
-            md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
+            # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
+            # self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
+            # rec_inp = rec_input.cpu().detach().numpy()[0, :]
+            # md2pfc_weights = (self.md.MD2PFCMult/self.md.Num_MD)
+            # md2pfc = md2pfc_weights * rec_inp
+            # md2pfc += np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
+            # md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             # only MD additive inputs
             # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
@@ -298,23 +298,24 @@ class CTRNN_MD(nn.Module):
             # hard-coded MD pretraces
             #  remember to turn off the update of MDpreTrace_binary in MD class
             # perfect pretraces
-            # self.md.MDpreTrace_binary = np.zeros(shape=(self.hidden_size))
-            # self.md.MDpreTrace_binary[sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 1
+            self.md.MDpreTrace_binary = np.zeros(shape=(self.hidden_size))
+            self.md.MDpreTrace_binary[sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 1
             # imperfect pretraces
             # wrong_ratio = 0.4
             # flag = np.random.rand(self.hidden_size)
             # self.md.MDpreTrace_binary = (flag < wrong_ratio).astype(float)
             # flag = np.random.rand(self.sub_size)
             # self.md.MDpreTrace_binary[sub_id*self.sub_size:(sub_id+1)*self.sub_size] = (flag > wrong_ratio).astype(float)
-            # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
-            # self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
-            # rec_inp = rec_input.cpu().detach().numpy()[0, :]
-            # md2pfc_weights = (self.md.MD2PFCMult/self.md.Num_MD)
-            # md2pfcMult = md2pfc_weights * rec_inp
-            # md2pfcAdd  = np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
-            # # md2pfc = md2pfcAdd + md2pfcMult
-            # md2pfc = md2pfcAdd
-            # md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
+            # compute md inputs
+            self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
+            self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md.md_output)
+            rec_inp = rec_input.cpu().detach().numpy()[0, :]
+            md2pfc_weights = (self.md.MD2PFCMult/self.md.Num_MD)
+            md2pfcMult = md2pfc_weights * rec_inp
+            md2pfcAdd  = np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
+            # md2pfc = md2pfcAdd + md2pfcMult
+            md2pfc = md2pfcAdd
+            md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             if self.md.sendinputs:
                 pre_activation += md2pfc
@@ -322,9 +323,9 @@ class CTRNN_MD(nn.Module):
         h_new = torch.relu(hidden * self.oneminusalpha + pre_activation * self.alpha)
         
         # shutdown analysis
-        shutdown_mask = torch.zeros_like(h_new)
-        shutdown_mask[:, sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 1
-        h_new = h_new.mul(shutdown_mask)
+        # shutdown_mask = torch.zeros_like(h_new)
+        # shutdown_mask[:, sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 1
+        # h_new = h_new.mul(shutdown_mask)
 
         return h_new
 
