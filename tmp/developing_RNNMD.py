@@ -140,6 +140,9 @@ net = RNN_MD(input_size     = config['input_size' ],
 net = net.to(device)
 print(net, '\n')
 
+# init_inweight = net.rnn.input2h.weight.clone()
+# init_recweight = net.rnn.h2h.weight.clone()
+# init_outweight = net.fc.weight.clone()
 
 ###--------------------------Train network--------------------------###
 
