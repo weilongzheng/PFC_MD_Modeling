@@ -134,7 +134,8 @@ class MD_GYM():
         MDout = np.zeros(self.Num_MD)
         MDinp_sorted = np.sort(MDinp)
 
-        MDthreshold = np.mean(MDinp_sorted[-int(self.num_active) * 2:])
+        MDthreshold = np.median(MDinp_sorted[-int(self.num_active) * 2:])
+        # MDthreshold = np.mean(MDinp_sorted[-int(self.num_active) * 2:])
         # MDthreshold  = np.mean(MDinp)
         index_pos = np.where(MDinp >= MDthreshold)
         index_neg = np.where(MDinp < MDthreshold)
