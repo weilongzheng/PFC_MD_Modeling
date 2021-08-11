@@ -20,8 +20,8 @@ import neurogym as ngym
 from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
 from utils import get_full_performance
-from model_dev import RNN_MD
-# from model_ideal import RNN_MD
+# from model_dev import RNN_MD
+from model_ideal import RNN_MD
 import matplotlib as mpl
 mpl.rcParams['axes.spines.left'] = True
 mpl.rcParams['axes.spines.right'] = False
@@ -49,9 +49,10 @@ config = {
     'batch_size': 1,
     'seq_len': 50,
     # 'tasks': ngym.get_collection('yang19'),
-    'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
+    # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
     # 'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
-    # 'tasks': ['yang19.dm1-v0', 'yang19.dms-v0'],
+    # 'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
+    'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
 }
 
 # set random seed
@@ -128,7 +129,7 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 18000
+total_training_cycle = 40000
 print_every_cycle = 500
 save_every_cycle = 10000
 save_times = total_training_cycle//save_every_cycle
@@ -163,9 +164,9 @@ for i in range(total_training_cycle):
     # control training paradigm
     if i == 0:
         task_id = 0
-    elif i == 6000:
+    elif i == 15000:
         task_id = 1
-    elif i == 12000:
+    elif i == 30000:
         task_id = 0
 
     # fetch data
@@ -192,7 +193,7 @@ for i in range(total_training_cycle):
     outputs, rnn_activity = net(inputs, sub_id=task_id)
 
     # plot during training
-    if i % 2000 == 1999:
+    if i % 4000 == 3999:
         font = {'family':'Times New Roman','weight':'normal', 'size':20}
         # PFC activities
         plt.figure()
@@ -294,17 +295,20 @@ for i in range(total_training_cycle):
         
         # test during training
         test_time_start = time.time()
+        net.eval()
         if config['MDeffect']:
             net.rnn.md.learn = False
-        log['stamps'].append(i+1)
-        #   fixation & action performance
-        print('Performance')
-        for env_id in range(len(tasks)):
-            fix_perf, act_perf = get_full_performance(net, test_envs[env_id], task_id=env_id, num_task=len(tasks), num_trial=100, device=device) # set large enough num_trial to get good statistics
-            log['fix_perfs'][env_id].append(fix_perf)
-            log['act_perfs'][env_id].append(act_perf)
-            print('  fix performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, fix_perf))
-            print('  act performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, act_perf))
+        with torch.no_grad():
+            log['stamps'].append(i+1)
+            #   fixation & action performance
+            print('Performance')
+            for env_id in range(len(tasks)):
+                fix_perf, act_perf = get_full_performance(net, test_envs[env_id], task_id=env_id, num_task=len(tasks), num_trial=100, device=device) # set large enough num_trial to get good statistics
+                log['fix_perfs'][env_id].append(fix_perf)
+                log['act_perfs'][env_id].append(act_perf)
+                print('  fix performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, fix_perf))
+                print('  act performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, act_perf))
+        net.train()
         if config['MDeffect']:
             net.rnn.md.learn = True
         running_test_time = time.time() - test_time_start
@@ -344,9 +348,9 @@ for env_id in range(len(tasks)):
     plt.figure()
     plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
     plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
-    plt.fill_between(x=[   0,  6000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
-    plt.fill_between(x=[6000,  12000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
-    plt.fill_between(x=[12000, 18000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[   0,  15000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[15000, 30000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
+    plt.fill_between(x=[30000, 40000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
     plt.legend(bbox_to_anchor = (1.15, 0.7), prop=legend_font)
     plt.xlabel('Trials', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
