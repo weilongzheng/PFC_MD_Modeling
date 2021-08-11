@@ -42,7 +42,7 @@ class CTRNN_MD(nn.Module):
         self.oneminusalpha = 1 - alpha
 
         # sensory input layer
-        self.input2h = nn.Linear(input_size, sub_size)
+        self.input2h = nn.Linear(input_size, hidden_size)
 
         # hidden layer
         self.h2h = nn.Linear(hidden_size, hidden_size)
@@ -62,12 +62,7 @@ class CTRNN_MD(nn.Module):
         """Recurrence helper."""
         ext_input = self.input2h(input)
         rec_input = self.h2h(hidden)
-
-        # expand inputs
-        ext_input_expanded = torch.zeros_like(rec_input)
-        ext_input_expanded[:, sub_id*self.sub_size:(sub_id+1)*self.sub_size] = ext_input
-
-        pre_activation = ext_input_expanded + rec_input
+        pre_activation = ext_input + rec_input
         h_new = torch.relu(hidden * self.oneminusalpha + pre_activation * self.alpha)
 
         return h_new
@@ -116,7 +111,6 @@ class RNN_MD(nn.Module):
 
 
 class ElasticWeightConsolidation:
-
     def __init__(self, model, crit, optimizer, parameters, named_parameters, lr=0.001, weight=1000000, device='cpu'):
         self.model = model
         self.weight = weight

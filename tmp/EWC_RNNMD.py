@@ -47,8 +47,12 @@ config = {
     'lr': 1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
     'batch_size': 1,
     'seq_len': 50,
+    'EWC': True,
+    'importance': 5e6,
+
     # 'tasks': ngym.get_collection('yang19'),
-    'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
+    # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
+    'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
     # 'tasks': ['yang19.go-v0', 'yang19.dlydm1-v0'],
     # 'tasks': ['yang19.dm1-v0', 'yang19.dms-v0'],
 }
@@ -119,13 +123,13 @@ ewc = ElasticWeightConsolidation(net,
                                  parameters=training_params,
                                  named_parameters=named_training_params,
                                  lr=config['lr'],
-                                 weight=1e6,
+                                 weight=config['importance'],
                                  device=device)
 
 ###--------------------------Train network--------------------------###
 
-total_training_cycle = 12000
-print_every_cycle = 400
+total_training_cycle = 40000
+print_every_cycle = 500
 save_every_cycle = 2000
 save_times = total_training_cycle//save_every_cycle
 running_loss = 0.0
@@ -146,11 +150,12 @@ for i in range(total_training_cycle):
     # control training paradigm
     if i == 0:
         task_id = 0
-    elif i == 6000:
+    elif i == 15000:
         task_id = 1
         ewc.register_ewc_params(dataset=envs[0], task_id=task_id, num_batches=600)
-    elif i == 12000:
+    elif i == 30000:
         task_id = 0
+        ewc.register_ewc_params(dataset=envs[1], task_id=task_id, num_batches=600)
 
     # fetch data
     env = envs[task_id]
@@ -184,7 +189,11 @@ for i in range(total_training_cycle):
         plt.title('PFC activities', fontdict=font)
         plt.show()
 
-    loss = criterion(outputs, labels) + ewc._compute_consolidation_loss(weight=5e6)
+    if config['EWC']:
+        loss = criterion(outputs, labels) + ewc._compute_consolidation_loss(weight=config['importance'])
+    else:
+        loss = criterion(outputs, labels)
+    
     loss.backward()
     # torch.nn.utils.clip_grad_norm_(training_params, 1.0) # clip the norm of gradients
     optimizer.step()
@@ -257,9 +266,9 @@ for env_id in range(len(tasks)):
     plt.figure()
     plt.plot(log['stamps'], log['fix_perfs'][env_id], label='fix')
     plt.plot(log['stamps'], log['act_perfs'][env_id], label='act')
-    plt.fill_between(x=[   0,  6000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
-    plt.fill_between(x=[6000,  12000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
-    plt.fill_between(x=[12000, 18000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[   0,  15000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[15000, 30000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
+    plt.fill_between(x=[30000, 40000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
     plt.legend(bbox_to_anchor = (1.15, 0.7), prop=legend_font)
     plt.xlabel('Trials', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
@@ -281,9 +290,9 @@ for env_id in range(len(tasks)):
     plt.figure()
     plt.plot(log_noMD['stamps'], log_noMD['act_perfs'][env_id], color='grey', label='$ MD- $')
     plt.plot(log['stamps'], log['act_perfs'][env_id], color='red', label='$ EWC $')
-    plt.fill_between(x=[   0,  6000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
-    plt.fill_between(x=[6000,  12000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
-    plt.fill_between(x=[12000, 18000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[   0,  15000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[15000, 30000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
+    plt.fill_between(x=[30000, 40000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
     plt.legend(bbox_to_anchor = (1.25, 0.7), prop=legend_font)
     plt.xlabel('Trials', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
