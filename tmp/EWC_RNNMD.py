@@ -208,15 +208,18 @@ for i in range(total_training_cycle):
         
         # test during training
         test_time_start = time.time()
-        log['stamps'].append(i+1)
-        #   fixation & action performance
-        print('Performance')
-        for env_id in range(len(tasks)):
-            fix_perf, act_perf = get_full_performance(net, test_envs[env_id], task_id=env_id, num_task=len(tasks), num_trial=100, device=device) # set large enough num_trial to get good statistics
-            log['fix_perfs'][env_id].append(fix_perf)
-            log['act_perfs'][env_id].append(act_perf)
-            print('  fix performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, fix_perf))
-            print('  act performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, act_perf))
+        net.eval()
+        with torch.no_grad():
+            log['stamps'].append(i+1)
+            #   fixation & action performance
+            print('Performance')
+            for env_id in range(len(tasks)):
+                fix_perf, act_perf = get_full_performance(net, test_envs[env_id], task_id=env_id, num_task=len(tasks), num_trial=100, device=device) # set large enough num_trial to get good statistics
+                log['fix_perfs'][env_id].append(fix_perf)
+                log['act_perfs'][env_id].append(act_perf)
+                print('  fix performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, fix_perf))
+                print('  act performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, act_perf))
+        net.train()
         running_test_time = time.time() - test_time_start
 
         # left training time
