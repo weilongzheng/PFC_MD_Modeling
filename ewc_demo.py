@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from elastic_weight_consolidation import ElasticWeightConsolidation
+from elastic_weight_consolidation import ElasticWeightConsolidationOriginal
 
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
@@ -42,7 +42,7 @@ class BaseModel(nn.Module):
         return self.lin3(self.lin2(self.lin1(self.f1(x))))
 
 crit = nn.CrossEntropyLoss()
-ewc = ElasticWeightConsolidation(BaseModel(28 * 28, 100, 10), crit=crit, lr=1e-4)
+ewc = ElasticWeightConsolidationOriginal(BaseModel(28 * 28, 100, 10), crit=crit, lr=1e-4)
 from tqdm import tqdm
 
 for _ in range(4):
