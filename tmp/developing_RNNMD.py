@@ -20,8 +20,8 @@ import neurogym as ngym
 from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
 from utils import get_full_performance
-# from model_dev import RNN_MD
-from model_ideal import RNN_MD
+from model_dev import RNN_MD
+# from model_ideal import RNN_MD
 import matplotlib as mpl
 mpl.rcParams['axes.spines.left'] = True
 mpl.rcParams['axes.spines.right'] = False
@@ -50,9 +50,9 @@ config = {
     'seq_len': 50,
     # 'tasks': ngym.get_collection('yang19'),
     # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
-    # 'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
+    'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
     # 'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
-    'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
+    # 'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
 }
 
 # set random seed
@@ -168,6 +168,9 @@ for i in range(total_training_cycle):
         task_id = 1
     elif i == 30000:
         task_id = 0
+    
+    if i >= 15000:
+        net.rnn.md.learn = False
 
     # fetch data
     env = envs[task_id]
@@ -364,7 +367,7 @@ for env_id in range(len(tasks)):
     plt.show()
 
 # Task performance with MD & no MD
-log_noMD = np.load('./files/'+'log_noMD_trials18000.npy', allow_pickle=True).item()
+log_noMD = np.load('./files/'+'log_noMD_dlygodnmc.npy', allow_pickle=True).item()
 label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
 title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
