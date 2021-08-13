@@ -11,7 +11,7 @@ import imageio
 from pygifsicle import optimize
 
 
-log = np.load('./files/'+'log_withMD.npy', allow_pickle=True).item()
+# log = np.load('./files/'+'log_withMD.npy', allow_pickle=True).item()
 
 
 # PFC outputs within a cycle
@@ -103,13 +103,46 @@ if False:
         plt.show()
 
 # recurrent weights
-# font = {'family':'Times New Roman','weight':'normal', 'size':15}
-# plt.figure()
-# ms = plt.matshow(net.rnn.h2h.weight.cpu().detach(), cmap='Reds')
-# plt.xlabel('PFC neuron index', fontdict=font)
-# plt.ylabel('PFC neuron index', fontdict=font)
-# plt.xticks(ticks=[0, 255], labels=[1, 256])
-# plt.yticks(ticks=[0, 255], labels=[1, 256])
-# plt.title('Recurrent weights', fontdict=font)
-# plt.colorbar(ms)
-# plt.show()
+if False:
+    font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    plt.figure()
+    ms = plt.matshow(net.rnn.h2h.weight.cpu().detach(), cmap='Reds')
+    plt.xlabel('PFC neuron index', fontdict=font)
+    plt.ylabel('PFC neuron index', fontdict=font)
+    plt.xticks(ticks=[0, 255], labels=[1, 256])
+    plt.yticks(ticks=[0, 255], labels=[1, 256])
+    plt.title('Recurrent weights', fontdict=font)
+    plt.colorbar(ms)
+    plt.show()
+
+# compare MD+ with MD-; Elman+EWC; Elman
+if True:
+    FILE_PATH = './files/comparison/'
+    # tasks, TASK_NAME = ['yang19.go-v0', 'yang19.rtgo-v0'], 'gortgo'
+    # tasks, TASK_NAME = ['yang19.dms-v0', 'yang19.dmc-v0'], 'dmsdmc'
+    # tasks, TASK_NAME = ['yang19.dnms-v0', 'yang19.dnmc-v0'], 'dnmsdnmc'
+    tasks, TASK_NAME = ['yang19.dlygo-v0', 'yang19.dnmc-v0'], 'dlygodnmc'
+    settings = ['withMD', 'noMD', 'Elman', 'ElmanEWC']
+    colors = ['red', 'grey', 'black', 'blue']
+    linewidths = [2, 1, 1, 1]
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    for env_id in range(len(tasks)):
+        plt.figure()
+        for i in range(4): # 4 settings
+            PATH = FILE_PATH + 'log_' + TASK_NAME + '_' + settings[i] + '.npy'
+            log = np.load(PATH, allow_pickle=True).item()
+            plt.plot(log['stamps'], log['act_perfs'][env_id], linewidth=linewidths[i], color=colors[i], label=settings[i])
+            plt.fill_between(x=[   0,  15000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.02)
+            plt.fill_between(x=[15000, 30000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.02)
+            plt.fill_between(x=[30000, 40000], y1=0.0, y2=1.01, facecolor='red', alpha=0.02)
+            plt.legend(bbox_to_anchor = (1.3, 0.7), prop=legend_font)
+            plt.xlabel('Trials', fontdict=label_font)
+            plt.ylabel('Performance', fontdict=label_font)
+            plt.title('Task{:d}: '.format(env_id+1)+tasks[env_id], fontdict=title_font)
+            plt.xlim([0.0, None])
+            plt.ylim([0.0, 1.01])
+            plt.yticks([0.1*i for i in range(11)])
+            plt.tight_layout()
+        plt.show()
