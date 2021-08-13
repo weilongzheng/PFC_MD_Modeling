@@ -944,6 +944,9 @@ class MD_GYM():
         self.wMD2PFCMult = np.random.normal(0,
                                             1 / np.sqrt(self.Num_MD * self.Nneur),
                                             size=(self.Nneur, self.Num_MD))
+        self.wPFC2MDdelta_mask = np.ones(shape=(self.Num_MD, self.Nneur))
+        self.MD_mask = np.array([])
+        self.PFC_mask = np.array([])
         # initialize activities
         self.MDpreTrace = np.zeros(shape=(self.Nneur))
         self.MDpreTrace_filtered = np.zeros(shape=(self.Nneur))
@@ -1046,6 +1049,7 @@ class MD_GYM():
         
         # update and clip the PFCMD weights
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
+        wPFC2MDdelta = wPFC2MDdelta * self.wPFC2MDdelta_mask
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
         self.wMD2PFC = np.clip(self.wMD2PFC + wPFC2MDdelta.T, -1, 0.)
         self.wMD2PFCMult = np.clip(self.wMD2PFCMult + wPFC2MDdelta.T, 0., 1.)
@@ -1067,6 +1071,17 @@ class MD_GYM():
         MDout[index_neg] = 0
 
         return MDout
+
+    def update_mask(self):
+        MD_mask_new = np.where(self.MDpostTrace > np.mean(self.MDpostTrace))[0]
+        PFC_mask_new = np.where(np.mean(self.wPFC2MD[MD_mask_new, :], axis=0) > 0.5)[0] # the threshold here is dependent on <self.wMD2PFC = np.clip(self.wMD2PFC + wPFC2MDdelta.T, -1, 0.)>
+        self.MD_mask = np.concatenate((self.MD_mask, MD_mask_new)).astype(int)
+        self.PFC_mask = np.concatenate((self.PFC_mask, PFC_mask_new)).astype(int)
+        if len(self.MD_mask) > 0:
+            self.wPFC2MDdelta_mask[self.MD_mask, :] = 0
+        if len(self.PFC_mask) > 0:
+            self.wPFC2MDdelta_mask[:, self.PFC_mask] = 0
+
 
 # CTRNN with MD layer
 class CTRNN_MD(nn.Module):

@@ -166,11 +166,12 @@ for i in range(total_training_cycle):
         task_id = 0
     elif i == 15000:
         task_id = 1
+        if config['MDeffect']:
+            net.rnn.md.update_mask()
     elif i == 30000:
         task_id = 0
-    
-    if i >= 15000:
-        net.rnn.md.learn = False
+        if config['MDeffect']:
+            net.rnn.md.update_mask()
 
     # fetch data
     env = envs[task_id]
@@ -367,7 +368,7 @@ for env_id in range(len(tasks)):
     plt.show()
 
 # Task performance with MD & no MD
-log_noMD = np.load('./files/'+'log_noMD_dlygodnmc.npy', allow_pickle=True).item()
+log_noMD = np.load('./files/'+'log_dlygodnmc_noMD.npy', allow_pickle=True).item()
 label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
 title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
