@@ -19,10 +19,8 @@ import gym
 import neurogym as ngym
 from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
+from model_ewc import RNN_MD, ElasticWeightConsolidation
 from utils import get_full_performance
-from model_dev import RNN_MD
-# from model_ideal import RNN_MD
-from model_ewc import ElasticWeightConsolidation
 import matplotlib as mpl
 mpl.rcParams['axes.spines.left'] = True
 mpl.rcParams['axes.spines.right'] = False
@@ -93,10 +91,6 @@ model_config = {
     'sub_size': 128,
     'output_size': act_size,
     'num_task': len(tasks),
-    'MDeffect': False,
-    'md_size': 10,
-    'md_active_size': 5,
-    'md_dt': 0.001,
 }
 config.update(model_config)
 
@@ -106,17 +100,9 @@ net = RNN_MD(input_size     = config['input_size' ],
              sub_size       = config['sub_size'],
              output_size    = config['output_size'],
              num_task       = config['num_task'],
-             dt             = config['env_kwargs']['dt'],
-             MDeffect       = config['MDeffect'],
-             md_size        = config['md_size'],
-             md_active_size = config['md_active_size'],
-             md_dt          = config['md_dt'],).to(device)
+             dt             = config['env_kwargs']['dt'],).to(device)
 net = net.to(device)
 print(net, '\n')
-
-# init_inweight = net.rnn.input2h.weight.clone()
-# init_recweight = net.rnn.h2h.weight.clone()
-# init_outweight = net.fc.weight.clone()
 
 # criterion & optimizer
 criterion = nn.MSELoss()
@@ -131,21 +117,20 @@ for name, param in net.named_parameters():
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 # EWC
-if config['EWC']:
-    ewc = ElasticWeightConsolidation(net,
-                                    crit=criterion,
-                                    optimizer=optimizer,
-                                    parameters=training_params,
-                                    named_parameters=named_training_params,
-                                    lr=config['lr'],
-                                    weight=config['importance'],
-                                    device=device)
+ewc = ElasticWeightConsolidation(net,
+                                 crit=criterion,
+                                 optimizer=optimizer,
+                                 parameters=training_params,
+                                 named_parameters=named_training_params,
+                                 lr=config['lr'],
+                                 weight=config['importance'],
+                                 device=device)
 
 ###--------------------------Train network--------------------------###
 
 total_training_cycle = 40000
 print_every_cycle = 500
-save_every_cycle = 10000
+save_every_cycle = 2000
 save_times = total_training_cycle//save_every_cycle
 running_loss = 0.0
 running_train_time = 0
@@ -167,12 +152,10 @@ for i in range(total_training_cycle):
         task_id = 0
     elif i == 15000:
         task_id = 1
-        if config['EWC']:
-            ewc.register_ewc_params(dataset=envs[0], task_id=task_id, num_batches=600)
+        ewc.register_ewc_params(dataset=envs[0], task_id=task_id, num_batches=600)
     elif i == 30000:
         task_id = 0
-        if config['EWC']:
-            ewc.register_ewc_params(dataset=envs[1], task_id=task_id, num_batches=600)
+        ewc.register_ewc_params(dataset=envs[1], task_id=task_id, num_batches=600)
 
     # fetch data
     env = envs[task_id]
@@ -198,7 +181,7 @@ for i in range(total_training_cycle):
     outputs, rnn_activity = net(inputs, sub_id=task_id)
 
     # plot during training
-    if i % 4000 == 3999:
+    if i % 2000 == 1999:
         font = {'family':'Times New Roman','weight':'normal', 'size':20}
         # PFC activities
         plt.figure()
@@ -299,14 +282,14 @@ for env_id in range(len(tasks)):
     plt.show()
 
 # Task performance EWC & no MD
-log_noMD = np.load('./files/'+'log_withMD_trials18000.npy', allow_pickle=True).item()
+log_noMD = np.load('./files/'+'log_noMD_trials18000.npy', allow_pickle=True).item()
 label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
 title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
 for env_id in range(len(tasks)):
     plt.figure()
     plt.plot(log_noMD['stamps'], log_noMD['act_perfs'][env_id], color='grey', label='$ MD- $')
-    plt.plot(log['stamps'], log['act_perfs'][env_id], color='red', label='$ RNNMD_EWC $')
+    plt.plot(log['stamps'], log['act_perfs'][env_id], color='red', label='$ EWC $')
     plt.fill_between(x=[   0,  15000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
     plt.fill_between(x=[15000, 30000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
     plt.fill_between(x=[30000, 40000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
