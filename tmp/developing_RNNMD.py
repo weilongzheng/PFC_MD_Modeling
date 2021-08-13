@@ -50,9 +50,9 @@ config = {
     'seq_len': 50,
     # 'tasks': ngym.get_collection('yang19'),
     # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
-    'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
+    # 'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
     # 'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
-    # 'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
+    'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
 }
 
 # set random seed
@@ -368,7 +368,7 @@ for env_id in range(len(tasks)):
     plt.show()
 
 # Task performance with MD & no MD
-log_noMD = np.load('./files/'+'log_dlygodnmc_noMD.npy', allow_pickle=True).item()
+log_noMD = np.load('./files/'+'log_withMD_trials18000.npy', allow_pickle=True).item()
 label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
 title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
 legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
