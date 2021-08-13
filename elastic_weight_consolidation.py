@@ -37,7 +37,7 @@ class ElasticWeightConsolidation:
             
 #            output = F.log_softmax(model_outputs, dim=1)
 #            log_liklihoods.append(output[:, target])
-        import pdb;pdb.set_trace()
+        #import pdb;pdb.set_trace()
         log_likelihood = torch.mean(torch.stack(log_liklihoods), dim=0)
         #log_likelihood = torch.cat(log_liklihoods).mean()
         grad_log_liklihood = autograd.grad(log_likelihood, self.model.parameters())

@@ -8,6 +8,10 @@ import time
 from collections import defaultdict
 from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
+import numpy as np
+from pathlib import Path
+import os
+import matplotlib as mpl
 
 class Elman(nn.Module):
     
@@ -64,9 +68,7 @@ class Elman_model(nn.Module):
 
 
     def forward(self, input):
-        
-        
-        
+
         n_time = input.shape[0]
         batch_size = input.shape[1]
 
@@ -120,27 +122,22 @@ block_cueingcontext = [0, 1, 0]
 tsteps = 200
 cuesteps = 100
 batch_size = 1
+total_step = sum(blocklen)//batch_size
+tsteps = 200
 
 dataset = RikhyeTaskBatch(num_cueingcontext=num_cueingcontext, num_cue=num_cue, num_rule=num_rule,\
                           rule=rule, blocklen=blocklen, block_cueingcontext=block_cueingcontext,\
                           tsteps=tsteps, cuesteps=cuesteps, batch_size=batch_size)
 
-
-total_step = sum(blocklen)//batch_size
-
-tsteps = 200
-log = defaultdict(list)
-
+log_ewc = defaultdict(list)
 #import pdb;pdb.set_trace()
-for iblock in range(3):
-    print('Training {:d} block'.format(iblock))
+for iblock in range(len(blocklen)):
+    print('Training {:d} block with EWC'.format(iblock))
     inputs_all = torch.zeros((blocklen[iblock],400,1,4))
     outputs_all = torch.zeros((blocklen[iblock],400,1,2))
     
     for i in range(blocklen[iblock]):
     
-        train_time_start = time.time()
-        
         # extract data
         inputs, labels = dataset()
         inputs = torch.from_numpy(inputs).type(torch.float)
@@ -153,18 +150,69 @@ for iblock in range(3):
         outputs = ewc.model(inputs)    
         loss = crit(outputs, labels)
         mse = loss.item()
-        log['mse'].append(mse)
+        log_ewc['mse'].append(mse)
     
     dataset_ewc = TrainingDataset(inputs_all,outputs_all)
     ewc.register_ewc_params(dataset_ewc, 1, blocklen[iblock])
+
+## Tese Elman RNN wihout EWC
+dataset = RikhyeTaskBatch(num_cueingcontext=num_cueingcontext, num_cue=num_cue, num_rule=num_rule,\
+                          rule=rule, blocklen=blocklen, block_cueingcontext=block_cueingcontext,\
+                          tsteps=tsteps, cuesteps=cuesteps, batch_size=batch_size)
+    
+model = Elman_model(input_size=input_size, hidden_size=hidden_size, output_size=output_size, nonlinearity=nonlinearity)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+criterion = nn.MSELoss()
+
+log = defaultdict(list)
+for i in range(total_step):
+    # extract data
+    inputs, labels = dataset()
+    inputs = torch.from_numpy(inputs).type(torch.float)
+    labels = torch.from_numpy(labels).type(torch.float)
+
+    # zero the parameter gradients
+    optimizer.zero_grad()
+
+    # forward
+    outputs = model(inputs)
+    
+    loss = criterion(outputs, labels)
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # clip gradients
+    optimizer.step()
+
+    # save loss values
+    mse = criterion(outputs, labels).item()
+    loss_val = loss.item()
+    log['mse'].append(mse)
+
+mpl.rcParams['font.size'] = 7
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'arial'
+mpl.rcParams['axes.spines.left'] = True
+mpl.rcParams['axes.spines.right'] = False
+mpl.rcParams['axes.spines.top'] = False
+mpl.rcParams['axes.spines.bottom'] = True
         
 # Plot MSE curve
-plt.plot(log['mse'], label='With MD')
-plt.xlabel('Cycles')
-plt.ylabel('MSE loss')
-plt.legend()
+filesave = Path('results')
+os.makedirs(filesave, exist_ok=True)
+
+plt.figure(figsize=(2.4,2.4))
+plt.plot(log_ewc['mse'], 'tab:blue', label='Elman RNN with EWC')
+plt.plot(log['mse'], 'tab:red', label='Elman RNN without EWC')
+plt.xticks(np.arange(0,501,100),np.arange(0,1001,200))
+plt.xlabel('Trials'),plt.ylabel('MSE')
+plt.ylim(0, 0.6)
+plt.legend(frameon=False)
+plt.axvspan(0, 200, ymin=0, ymax=1, alpha=0.1, color='tab:orange')
+plt.axvspan(200, 400, ymin=0, ymax=1, alpha=0.1, color='tab:orange')
+plt.axvspan(400, 500, ymin=0, ymax=1, alpha=0.1, color='tab:green')
+plt.title('Model Performance')
 plt.tight_layout()
-plt.show()        
+plt.savefig(filesave/'mse_ewc.pdf', dpi=300) 
         
         
         
