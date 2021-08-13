@@ -50,13 +50,13 @@ config = {
     'batch_size': 1,
     'seq_len': 50,
     'EWC': True,
-    'importance': 1e6,
+    'importance': 1e5, # Elman 1e6, RNNMD 1e5
 
     # 'tasks': ngym.get_collection('yang19'),
     # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
     # 'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
-    # 'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
-    'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
+    'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
+    # 'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
 }
 
 # set random seed
