@@ -122,15 +122,15 @@ if True:
     # tasks, TASK_NAME = ['yang19.dms-v0', 'yang19.dmc-v0'], 'dmsdmc'
     # tasks, TASK_NAME = ['yang19.dnms-v0', 'yang19.dnmc-v0'], 'dnmsdnmc'
     tasks, TASK_NAME = ['yang19.dlygo-v0', 'yang19.dnmc-v0'], 'dlygodnmc'
-    settings = ['withMD', 'noMD', 'Elman', 'ElmanEWC']
-    colors = ['red', 'grey', 'black', 'blue']
-    linewidths = [2, 1, 1, 1]
+    settings = ['withMD', 'ElmanEWC', 'PFCEWC', 'noMD', 'Elman']
+    colors = ['red', 'blue', 'green', 'grey', 'black']
+    linewidths = [3, 1, 1, 1, 1]
     label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
     title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
     for env_id in range(len(tasks)):
         plt.figure()
-        for i in range(4): # 4 settings
+        for i in range(5): # 5 settings
             PATH = FILE_PATH + 'log_' + TASK_NAME + '_' + settings[i] + '.npy'
             log = np.load(PATH, allow_pickle=True).item()
             plt.plot(log['stamps'], log['act_perfs'][env_id], linewidth=linewidths[i], color=colors[i], label=settings[i])
