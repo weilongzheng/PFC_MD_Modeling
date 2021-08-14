@@ -100,10 +100,6 @@ class TrainingDataset(Dataset):
             input = self.input[idx]
             return input,output
     
-#Ntrain = 50
-#Nextra = 0 
-#Ncontexts = 2
-#inpsPerConext = 2
 
 input_size = 4          # 4 cues
 hidden_size = 256      # number of PFC neurons
