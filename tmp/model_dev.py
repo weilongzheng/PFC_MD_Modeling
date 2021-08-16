@@ -1195,6 +1195,7 @@ class CTRNN_MD(nn.Module):
         rec_input = self.h2h(hidden)
 
         # mask external inputs
+        #  turn off mask external input -> Elman/Elman+MD
         ext_input_mask = torch.zeros_like(rec_input)
         ext_input_mask[:, sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 1
         ext_input = ext_input.mul(ext_input_mask)
