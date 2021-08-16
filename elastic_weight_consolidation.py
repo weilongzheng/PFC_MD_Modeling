@@ -31,7 +31,7 @@ class ElasticWeightConsolidation:
                 break
             model_outputs = torch.zeros_like(target)
             for isample in range(input.shape[0]):
-                model_outputs[isample,:] = self.model(input[isample,:])
+                model_outputs[isample,:] = self.model(input[isample,:],target[isample,:])
                 output = F.mse_loss(model_outputs[isample,:],target[isample,:])
                 log_liklihoods.append(output)
             

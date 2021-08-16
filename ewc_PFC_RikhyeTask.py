@@ -108,6 +108,7 @@ for i in range(total_step):
     if i % Ntrain==0:
         inputs_all = torch.zeros((Ntrain,400,4))
         outputs_all = torch.zeros((Ntrain,400,2))
+        isample = 0
         
     if i==Ntrain-1 or i==Ntrain*Ncontexts-1:
         dataset_ewc = TrainingDataset(inputs_all,outputs_all)
@@ -121,8 +122,9 @@ for i in range(total_step):
     #import pdb;pdb.set_trace()    
     inputs = torch.from_numpy(inputs).type(torch.float)
     labels = torch.from_numpy(labels).type(torch.float)
-    inputs_all[i,:] = inputs
-    outputs_all[i,:] = labels
+    inputs_all[isample,:] = inputs
+    outputs_all[isample,:] = labels
+    isample += 1
 
     ewc.forward_backward_update(inputs, labels)
 
