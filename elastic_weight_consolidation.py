@@ -31,7 +31,7 @@ class ElasticWeightConsolidation:
                 break
             model_outputs = torch.zeros_like(target)
             for isample in range(input.shape[0]):
-                model_outputs[isample,:] = self.model(input[isample,:])
+                model_outputs[isample,:] = self.model(input[isample,:],target[isample,:])
                 output = F.mse_loss(model_outputs[isample,:],target[isample,:])
                 log_liklihoods.append(output)
             
@@ -62,7 +62,7 @@ class ElasticWeightConsolidation:
             return 0
 
     def forward_backward_update(self, input, target):
-        output = self.model(input)
+        output = self.model(input, target)
         loss = self._compute_consolidation_loss(self.weight) + self.crit(output, target)
         self.optimizer.zero_grad()
         loss.backward()
