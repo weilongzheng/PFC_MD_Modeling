@@ -146,3 +146,7 @@ if True:
             plt.yticks([0.1*i for i in range(11)])
             plt.tight_layout()
         plt.show()
+
+# compare task pairs in one figure
+## compute average
+## plot
