@@ -62,7 +62,7 @@ class ElasticWeightConsolidation:
             return 0
 
     def forward_backward_update(self, input, target):
-        output = self.model(input)
+        output = self.model(input, target)
         loss = self._compute_consolidation_loss(self.weight) + self.crit(output, target)
         self.optimizer.zero_grad()
         loss.backward()

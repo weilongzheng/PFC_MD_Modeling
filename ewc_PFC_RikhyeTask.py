@@ -95,7 +95,6 @@ MDpreTraces = np.zeros(shape=(total_step,n_neuron))
 tsteps = 200
 MDouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,Num_MD))
 PFCouts_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
-outputs_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,2))
 Wout_all = np.zeros(shape=(total_step,n_output,n_neuron))
 
 wPFC2MDs_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,Num_MD,n_neuron))
@@ -105,6 +104,14 @@ MDpreTraces_all = np.zeros(shape=(total_step*inpsPerConext,tsteps,n_neuron))
 for i in range(total_step):
 
     train_time_start = time.time()
+    
+    if i % Ntrain==0:
+        inputs_all = torch.zeros((Ntrain,400,4))
+        outputs_all = torch.zeros((Ntrain,400,2))
+        
+    if i==Ntrain-1 or i==Ntrain*Ncontexts-1:
+        dataset_ewc = TrainingDataset(inputs_all,outputs_all)
+        ewc.register_ewc_params(dataset_ewc, 1, Ntrain)
 
     # extract data
     inputs, labels = dataset()
@@ -114,12 +121,13 @@ for i in range(total_step):
     #import pdb;pdb.set_trace()    
     inputs = torch.from_numpy(inputs).type(torch.float)
     labels = torch.from_numpy(labels).type(torch.float)
+    inputs_all[i,:] = inputs
+    outputs_all[i,:] = labels
 
-    # zero the parameter gradients
-    optimizer.zero_grad()
+    ewc.forward_backward_update(inputs, labels)
 
     # forward + backward + optimize
-    outputs = model(inputs, labels)
+    outputs = ewc.model(inputs, labels)
     #PFCouts_all[i,:] = model.pfc.activity.detach().numpy()
 #    if  MDeffect == True:
 #        MDouts_all[i,:] = model.md_output
@@ -127,7 +135,7 @@ for i in range(total_step):
     tstart = 0
     for itrial in range(inpsPerConext): 
         PFCouts_all[i*inpsPerConext+tstart,:,:] = model.pfc_outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
-        outputs_all[i*inpsPerConext+tstart,:,:] = outputs.detach().numpy()[tstart*tsteps:(tstart+1)*tsteps,:]
+        
         if  MDeffect == True:
             MDouts_all[i*inpsPerConext+tstart,:,:] = model.md_output_t[tstart*tsteps:(tstart+1)*tsteps,:]
             MDpreTraces_all[i*inpsPerConext+tstart,:,:] = model.md_preTraces[tstart*tsteps:(tstart+1)*tsteps,:]
@@ -136,17 +144,8 @@ for i in range(total_step):
         tstart += 1
 
     loss = criterion(outputs, labels)
-    loss.backward()
-    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # normalization  
-    if PFClearn==True:
-        torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-6) # normalization Jrec 1e-6
-    optimizer.step()
-
-    # print statistics
     mse = loss.item()
     log['mse'].append(mse)
-    running_train_time += time.time() - train_time_start
-    running_loss += loss.item()
     
     Wout_all[i,:,:] = model.pfc2out.weight.detach().numpy()
 
