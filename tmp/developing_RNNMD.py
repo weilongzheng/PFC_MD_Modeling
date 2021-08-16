@@ -50,9 +50,9 @@ config = {
     'seq_len': 50,
     # 'tasks': ngym.get_collection('yang19'),
     # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
-    'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
+    # 'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
     # 'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
-    # 'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
+    'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
 }
 
 # set random seed
@@ -129,7 +129,7 @@ print()
 optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
 
-total_training_cycle = 40000
+total_training_cycle = 50000
 print_every_cycle = 500
 save_every_cycle = 10000
 save_times = total_training_cycle//save_every_cycle
@@ -164,11 +164,11 @@ for i in range(total_training_cycle):
     # control training paradigm
     if i == 0:
         task_id = 0
-    elif i == 15000:
+    elif i == 20000:
         task_id = 1
         if config['MDeffect']:
             net.rnn.md.update_mask()
-    elif i == 30000:
+    elif i == 40000:
         task_id = 0
         if config['MDeffect']:
             net.rnn.md.update_mask()
