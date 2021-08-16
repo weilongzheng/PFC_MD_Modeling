@@ -50,9 +50,9 @@ config = {
     'seq_len': 50,
     # 'tasks': ngym.get_collection('yang19'),
     # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
-    # 'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
+    'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
     # 'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
-    'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
+    # 'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
 }
 
 # set random seed
