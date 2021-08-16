@@ -102,10 +102,12 @@ class RNN_MD(nn.Module):
         super().__init__()
 
         self.rnn = CTRNN_MD(input_size, hidden_size, sub_size, output_size, num_task, **kwargs)
+        self.drop_layer = nn.Dropout(p=0.05)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, sub_id):
         rnn_activity, _ = self.rnn(x, sub_id)
+        rnn_activity = self.drop_layer(rnn_activity)
         out = self.fc(rnn_activity)
         return out, rnn_activity
 
