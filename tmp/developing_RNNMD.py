@@ -55,8 +55,7 @@ config = {
     # 'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
     # 'tasks': ['yang19.dlyanti-v0', 'yang19.dnms-v0'],
     # 'tasks': ['yang19.dlyanti-v0', 'yang19.dms-v0'],
-    # 'tasks': ['yang19.go-v0', 'yang19.dnms-v0'],
-    'tasks': ['yang19.ctxdm1-v0', 'yang19.dms-v0'],
+    'tasks': ['yang19.go-v0', 'yang19.dnms-v0'],
 }
 
 # set random seed
@@ -93,7 +92,7 @@ model_config = {
     'sub_size': 128,
     'output_size': act_size,
     'num_task': len(tasks),
-    'MDeffect': True,
+    'MDeffect': False,
     'md_size': 10,
     'md_active_size': 5,
     'md_dt': 0.001,
