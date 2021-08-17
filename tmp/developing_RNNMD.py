@@ -92,7 +92,7 @@ model_config = {
     'sub_size': 128,
     'output_size': act_size,
     'num_task': len(tasks),
-    'MDeffect': False,
+    'MDeffect': True,
     'md_size': 10,
     'md_active_size': 5,
     'md_dt': 0.001,
