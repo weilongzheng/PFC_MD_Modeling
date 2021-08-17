@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib as mpl
 from elastic_weight_consolidation import ElasticWeightConsolidation
+from torch.utils.data import Dataset, DataLoader
 
 class TrainingDataset(Dataset):
     
@@ -33,7 +34,7 @@ class TrainingDataset(Dataset):
             return input,output
         
 # Generate trainset
-RNGSEED = 5 # set random seed
+RNGSEED = 10 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
 
@@ -164,9 +165,9 @@ if activity_record:
         pickle.dump({'log':log,'Ntrain':Ntrain,'Nextra':Nextra,'wPFC2MDs_all':wPFC2MDs_all,'wMD2PFCs_all':wMD2PFCs_all,'MDpreTraces_all':MDpreTraces_all,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all}, f)
 else:
     with open(filename / file_training, 'wb') as f:
-        pickle.dump({'log':log})
+        pickle.dump({'log':log},f)
 # Plot MSE curve
-plt.plot(log['mse'], label='With MD')
+plt.plot(log['mse'], label='PFC with EWC')
 plt.xlabel('Cycles')
 plt.ylabel('MSE loss')
 plt.legend()
