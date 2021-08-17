@@ -182,5 +182,48 @@ if False:
         plt.show()
 
 # compare task pairs in one figure
-## compute average
-## plot
+## compute averages of performance
+if False:
+    FILE_PATH = './files/comparison/dropout/'
+    # TASK_NAMES, setting = ['dnmsdnmc', 'dmsdmc', 'dmsdm2', 'dmsdm1', 'dmsctxdm1', 'dlygodnmc', 'dlyantidnms', 'ctxdm1dms'], 'withMD'
+    # TASK_NAMES, setting = ['dnmsdnmc', 'dmsdmc', 'dlygodnmc', 'dlyantidnms'], 'withMD'
+    # TASK_NAMES, setting = ['dnmsdnmc', 'dmsdmc', 'dlygodnmc', 'dlyantidnms'], 'noMD'
+    # TASK_NAMES, setting = ['dnmsdnmc', 'dmsdmc', 'dlygodnmc'], 'PFCEWC'
+    for i in range(len(TASK_NAMES)):
+        TASK_NAME = TASK_NAMES[i]
+        PATH = FILE_PATH + 'log_' + TASK_NAME + '_' + setting + '.npy'
+        log = np.load(PATH, allow_pickle=True).item()
+        if i == 0:
+            act_perfs = np.array(log['act_perfs'])
+        else:
+            act_perfs += np.array(log['act_perfs'])
+    act_perfs = act_perfs/len(TASK_NAMES)
+    np.save('./files/'+'avg_perfs_'+setting+'.npy', act_perfs)
+## PFC+MD VS PFC+EWC, PFC
+if False:
+    FILE_PATH = './files/comparison/average_perfs/'
+    settings = ['withMD', 'PFCEWC', 'noMD']
+    colors = ['red', 'green', 'black']
+    labels = ['PFC+MD', 'PFC+EWC', 'PFC']
+    linewidths = [2, 1, 1]
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    for env_id in range(2): # 2 tasks
+        plt.figure()
+        for i in range(len(settings)):
+            PATH = FILE_PATH + 'avg_perfs_' + settings[i] + '.npy'
+            act_perfs = np.load(PATH)
+            plt.plot(act_perfs[env_id, :], linewidth=linewidths[i], color=colors[i], label=labels[i])
+            plt.fill_between(x=[ 0,  40] , y1=0.0, y2=1.01, facecolor='red', alpha=0.02)
+            plt.fill_between(x=[40,  80] , y1=0.0, y2=1.01, facecolor='green', alpha=0.02)
+            plt.fill_between(x=[80, 100] , y1=0.0, y2=1.01, facecolor='red', alpha=0.02)
+            plt.legend(bbox_to_anchor = (1.3, 0.7), prop=legend_font)
+            plt.xlabel('Trials', fontdict=label_font)
+            plt.ylabel('Performance', fontdict=label_font)
+            plt.title('Task{:d}'.format(env_id+1), fontdict=title_font)
+            plt.xlim([0.0, None])
+            plt.ylim([0.0, 1.01])
+            plt.yticks([0.1*i for i in range(11)])
+            plt.tight_layout()
+        plt.show()
