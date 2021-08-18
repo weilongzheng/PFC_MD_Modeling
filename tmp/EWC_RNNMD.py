@@ -50,13 +50,15 @@ config = {
     'batch_size': 1,
     'seq_len': 50,
     'EWC': True,
-    'importance': 1e6,
+    'EWC_weight': 1e-3,
 
     # 'tasks': ngym.get_collection('yang19'),
     # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
     'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
     # 'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
     # 'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
+    # 'tasks': ['yang19.dlyanti-v0', 'yang19.dnms-v0'],
+    # 'tasks': ['yang19.dlyanti-v0', 'yang19.dms-v0'],
 }
 
 # set random seed
@@ -110,7 +112,7 @@ net = RNN_MD(input_size     = config['input_size' ],
              MDeffect       = config['MDeffect'],
              md_size        = config['md_size'],
              md_active_size = config['md_active_size'],
-             md_dt          = config['md_dt'],).to(device)
+             md_dt          = config['md_dt'],)
 net = net.to(device)
 print(net, '\n')
 
@@ -138,7 +140,7 @@ if config['EWC']:
                                     parameters=training_params,
                                     named_parameters=named_training_params,
                                     lr=config['lr'],
-                                    weight=config['importance'],
+                                    weight=config['EWC_weight'],
                                     device=device)
 
 ###--------------------------Train network--------------------------###
@@ -168,11 +170,11 @@ for i in range(total_training_cycle):
     elif i == 20000:
         task_id = 1
         if config['EWC']:
-            ewc.register_ewc_params(dataset=envs[0], task_id=task_id, num_batches=600)
+            ewc.register_ewc_params(dataset=envs[0], task_id=task_id, num_batches=1000)
     elif i == 40000:
         task_id = 0
         if config['EWC']:
-            ewc.register_ewc_params(dataset=envs[1], task_id=task_id, num_batches=600)
+            ewc.register_ewc_params(dataset=envs[1], task_id=task_id, num_batches=1000)
 
     # fetch data
     env = envs[task_id]
@@ -207,7 +209,7 @@ for i in range(total_training_cycle):
         plt.show()
 
     if config['EWC']:
-        loss = criterion(outputs, labels) + ewc._compute_consolidation_loss(weight=config['importance'])
+        loss = criterion(outputs, labels) + ewc._compute_consolidation_loss(weight=config['EWC_weight'])
     else:
         loss = criterion(outputs, labels)
     
@@ -306,11 +308,11 @@ legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
 for env_id in range(len(tasks)):
     plt.figure()
     plt.plot(log_noMD['stamps'], log_noMD['act_perfs'][env_id], color='grey', label='$ MD- $')
-    plt.plot(log['stamps'], log['act_perfs'][env_id], color='red', label='$ RNNMD_EWC $')
-    plt.fill_between(x=[   0,  15000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
-    plt.fill_between(x=[15000, 30000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
-    plt.fill_between(x=[30000, 40000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
-    plt.legend(bbox_to_anchor = (1.25, 0.7), prop=legend_font)
+    plt.plot(log['stamps'], log['act_perfs'][env_id], color='red', label='$ EWC $')
+    plt.fill_between(x=[   0,  20000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.fill_between(x=[20000, 40000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
+    plt.fill_between(x=[40000, 50000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+    plt.legend(bbox_to_anchor = (1.3, 0.7), prop=legend_font)
     plt.xlabel('Trials', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
     plt.title('Task{:d}: '.format(env_id+1)+tasks[env_id], fontdict=title_font)
