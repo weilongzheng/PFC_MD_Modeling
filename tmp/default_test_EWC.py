@@ -92,9 +92,8 @@ config = {
      'lr': 1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
 }
 
-# task_pairs = list(itertools.permutations(config['tasks'], 2))
-# task_pairs = [val for val in task_pairs for i in range(2)]
-task_pairs = [('yang19.dlyanti-v0', 'yang19.dms-v0')]
+task_pairs = list(itertools.permutations(config['tasks'], 2))
+task_pairs = [val for val in task_pairs for i in range(2)]
 
 # main loop
 for task_pair_id in range(len(task_pairs)):
