@@ -139,7 +139,7 @@ class ElasticWeightConsolidation:
             outputs, _ = self.model(inputs, sub_id=task_id)
             # compute log_liklihoods
             outputs = F.log_softmax(outputs, dim=-1) # the last dim
-            log_liklihoods.append(outputs[:, :, labels])
+            log_liklihoods.append(torch.flatten(outputs[:, :, labels]))
         log_likelihood = torch.cat(log_liklihoods).mean()
         grad_log_liklihood = autograd.grad(log_likelihood, self.parameters)
         _buff_param_names = [param[0].replace('.', '__') for param in self.named_parameters.items()]
