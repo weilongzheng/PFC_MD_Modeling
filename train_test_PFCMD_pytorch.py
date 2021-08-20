@@ -20,8 +20,11 @@ import seaborn as sns
 RNGSEED = 1 # set random seed
 np.random.seed([RNGSEED])
 torch.manual_seed(RNGSEED)
+results_path = Path('files/two_rnns') 
+results_path_str = './files/two_rnns/early_affected'
+os.makedirs(results_path, exist_ok=True)
 
-config = [2,3,4,5,6]
+config = [2,]
 for configPara in config:
     
     Ntrain = 50            # number of training cycles for each context
@@ -31,12 +34,12 @@ for configPara in config:
                              # (e.g. auditory cueing context contains high-pass noise and low-pass noise)
                              
     # Model settings
-    n_neuron_per_cue = 200
+    n_neuron_per_cue = 100
     Num_MD = 12
     num_active = int(Num_MD/Ncontexts)#5  # num MD active per context
     n_output = 2
     n_cues = Ncontexts*inpsPerConext
-    n_neuron = n_neuron_per_cue*n_cues+200
+    n_neuron = n_neuron_per_cue*n_cues+n_neuron_per_cue
     noiseSD = 1e-1
     MDeffect = True
     PFClearn = False
@@ -65,10 +68,11 @@ for configPara in config:
     if PFClearn==True:
         print('pfc.Jrec')
         print('\n')
-        training_params.append(model.pfc.Jrec)
+        training_params.append(model.pfc1.Jrec)
+        training_params.append(model.pfc2.Jrec)
         
-    Jrec_init = model.pfc.Jrec.clone()#.numpy()
-    print(Jrec_init)
+    # Jrec_init = model.pfc.Jrec.clone()#.numpy()
+    # print(Jrec_init)
     optimizer = torch.optim.Adam(training_params, lr=1e-3)
     #import pdb;pdb.set_trace()
     
@@ -125,7 +129,8 @@ for configPara in config:
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0) # normalization  
         if PFClearn==True:
-            torch.nn.utils.clip_grad_norm_(model.pfc.Jrec, 1e-6) # normalization Jrec 1e-6
+            torch.nn.utils.clip_grad_norm_(model.pfc1.Jrec, 1e-6) # normalization Jrec 1e-6
+            torch.nn.utils.clip_grad_norm_(model.pfc2.Jrec, 1e-6) # normalization Jrec 1e-6
         optimizer.step()
         
         #
@@ -151,7 +156,7 @@ for configPara in config:
             (running_train_time) * (total_step - i - 1) / print_step),
             end='\n\n')
             running_train_time = 0
-            print(model.pfc.Jrec)
+            # print(model.pfc.Jrec)
             if savemodel:
                 # save model every print_step
                 fname = os.path.join('models', model_name + '.pt')
@@ -173,52 +178,54 @@ for configPara in config:
         log['wMD2PFC'] = model.md.wMD2PFC
         log['wMD2PFCMult'] = model.md.wMD2PFCMult
     
-#    filename = Path('files/final')
-#    os.makedirs(filename, exist_ok=True)
-#    file_training = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
-#    with open(filename / file_training, 'wb') as f:
-#        pickle.dump(log, f)
-#        
-#    # Plot MSE curve
-#    plt.plot(log['mse'], label='With MD')
-#    plt.xlabel('Cycles')
-#    plt.ylabel('MSE loss')
-#    plt.legend()
-#    plt.tight_layout()
-#    plt.show()
-#    
-    ## plot pfc2md and md2pfc weights
-#    if  MDeffect == True: 
-#        ## plot pfc2md weights
-#        wPFC2MD = log['wPFC2MD']
-#        wMD2PFC = log['wMD2PFC']
-#        ax = plt.figure()
-#        ax = sns.heatmap(wPFC2MD, cmap='Reds')
-#        ax.set_xticks([0, 999])
-#        ax.set_xticklabels([1, 1000], rotation=0)
-#        ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-#        ax.set_xlabel('PFC neuron index')
-#        ax.set_ylabel('MD neuron index')
-#        ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn))
-#        cbar = ax.collections[0].colorbar
-#        cbar.set_label('connection weight')
-#        plt.tight_layout()
-#        plt.show()
-#        
-#        # Heatmap wMD2PFC
-#        ax = plt.figure()
-#        ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
-#        ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-#        ax.set_yticks([0, 999])
-#        ax.set_yticklabels([1, 1000], rotation=0)
-#        ax.set_xlabel('MD neuron index')
-#        ax.set_ylabel('PFC neuron index')
-#        ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn))
-#        cbar = ax.collections[0].colorbar
-#        cbar.set_label('connection weight')
-#        plt.tight_layout()
-#        plt.show()
-             
+    filename = Path('files/final')
+    os.makedirs(filename, exist_ok=True)
+    file_training = 'train_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+    with open(filename / file_training, 'wb') as f:
+        pickle.dump(log, f)
+
+    tstamp = str(int(time.time()))        
+    # Plot MSE curve
+    plt.plot(log['mse'], label='With MD')
+    plt.xlabel('Cycles')
+    plt.ylabel('MSE loss')
+    plt.gca().set_xlim([0, 0.5])
+    plt.legend()
+    plt.tight_layout()
+    plt.gcf().savefig(results_path_str+ 'plot_mse' + tstamp)
+    
+        # plot pfc2md and md2pfc weights
+    if  MDeffect == True: 
+        ## plot pfc2md weights
+        wPFC2MD = log['wPFC2MD']
+        wMD2PFC = log['wMD2PFC']
+        ax = plt.figure()
+        ax = sns.heatmap(wPFC2MD, cmap='Reds')
+        ax.set_xticks([0, 999])
+        ax.set_xticklabels([1, 1000], rotation=0)
+        # ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+        ax.set_xlabel('PFC neuron index')
+        ax.set_ylabel('MD neuron index')
+        ax.set_title('wPFC2MD '+'PFC learnable-'+str(PFClearn))
+        cbar = ax.collections[0].colorbar
+        cbar.set_label('connection weight')
+        plt.tight_layout()
+        plt.gcf().savefig(results_path_str + 'plot_weights' + tstamp)
+        
+        # Heatmap wMD2PFC
+        ax = plt.figure()
+        ax = sns.heatmap(wMD2PFC, cmap='Blues_r')
+        # ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+        ax.set_yticks([0, 999])
+        ax.set_yticklabels([1, 1000], rotation=0)
+        ax.set_xlabel('MD neuron index')
+        ax.set_ylabel('PFC neuron index')
+        ax.set_title('wMD2PFC '+'PFC learnable-'+str(PFClearn))
+        cbar = ax.collections[0].colorbar
+        cbar.set_label('connection weight')
+        plt.tight_layout()
+        plt.gcf().savefig(results_path_str + 'plot_heatmap' + tstamp,)
+                
 #    ## Testing
     Ntest = 50
     Nextra = 0
@@ -256,14 +263,13 @@ for configPara in config:
        
         mse = loss.item()
         log['mse'].append(mse)
-    
-    log['wPFC2MD'] = model.md.wPFC2MD
-    log['wMD2PFC'] = model.md.wMD2PFC
-    log['wMD2PFCMult'] = model.md.wMD2PFCMult
+
+    if MDeffect:    
+        log['wPFC2MD'] = model.md.wPFC2MD
+        log['wMD2PFC'] = model.md.wMD2PFC
+        log['wMD2PFCMult'] = model.md.wMD2PFCMult
         
-    filename = Path('files/final') 
-    os.makedirs(filename, exist_ok=True)
     file_training = 'test_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_R'+str(RNGSEED)+'.pkl'
-    with open(filename / file_training, 'wb') as f:
+    with open(results_path / file_training, 'wb') as f:
         pickle.dump({'log':log,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all,'cues_all':cues_all}, f, protocol = 4)
     

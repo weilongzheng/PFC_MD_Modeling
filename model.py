@@ -980,8 +980,9 @@ class PytorchPFCMD(nn.Module):
                 n_output=Num_PFC)
             self.sensory2pfc.torch(use_torch=True)
 
-        self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, pfcNoise, MDeffect=MDeffect, noisePresent = noisePresent)
-
+        # self.pfc = PytorchPFC(Num_PFC, n_neuron_per_cue, pfcNoise, MDeffect=MDeffect, noisePresent = noisePresent)
+        self.pfc1 = PytorchPFC(Num_PFC, n_neuron_per_cue, pfcNoise, MDeffect=MDeffect, noisePresent = noisePresent)
+        self.pfc2 = PytorchPFC(Num_PFC, n_neuron_per_cue, pfcNoise, MDeffect=MDeffect, noisePresent = noisePresent)
         #self.pfc2out = OutputLayer(n_input=Num_PFC, n_out=2, dt=dt)
         self.pfc2out = nn.Linear(Num_PFC, num_output)
         #self.pfc_output_t = np.array([])
@@ -1010,8 +1011,9 @@ class PytorchPFCMD(nn.Module):
         n_time = input.shape[0]
         tsteps = 200
 
-        self.pfc.init_activity()  # Reinit PFC activity
-        pfc_output = self.pfc.activity
+        self.pfc1.init_activity()  # Reinit PFC activity
+        self.pfc2.init_activity()  # Reinit PFC activity
+        pfc_output = self.pfc2.activity
         if self.MDeffect:
             self.md.init_activity()  # Reinit MD activity
 
@@ -1019,26 +1021,29 @@ class PytorchPFCMD(nn.Module):
         #self.pfc_output_t *= 0
 
         # initialize variables for saving important network activities
-        self.pfc_outputs = torch.zeros((n_time, self.pfc.Nneur))
-        self.md_preTraces = np.zeros(shape=(n_time, self.pfc.Nneur))
+        self.pfc_outputs = torch.zeros((n_time, self.pfc2.Nneur))
+        self.md_preTraces = np.zeros(shape=(n_time, self.pfc2.Nneur))
         self.md_preTrace_thresholds = np.zeros(shape=(n_time, 1))
         
         if self.MDeffect:
             self.md_output_t *= 0
-            self.wPFC2MDs_all = np.zeros(shape=(n_time,self.md.Num_MD,self.pfc.Nneur))
-            self.wMD2PFCs_all = np.zeros(shape=(n_time,self.pfc.Nneur,self.md.Num_MD))
+            self.wPFC2MDs_all = np.zeros(shape=(n_time,self.md.Num_MD,self.pfc2.Nneur))
+            self.wMD2PFCs_all = np.zeros(shape=(n_time,self.pfc2.Nneur,self.md.Num_MD))
 
         for i in range(n_time):
             input_t = input[i]
             target_t = target[i]
             
             if i % tsteps == 0: # Reinit activity for each trial
-                self.pfc.init_activity()  # Reinit PFC activity
-                pfc_output = self.pfc.activity
+                self.pfc1.init_activity()  # Reinit PFC activity
+                self.pfc2.init_activity()  # Reinit PFC activity
+                pfc_output = self.pfc2.activity
                 if self.MDeffect:
                     self.md.init_activity()  # Reinit MD activity
 
             input2pfc = self.sensory2pfc(input_t)
+            # print('input 2 pfc dims: ', input2pfc.shape)
+            # print('pfc1 output dims: ', self.pfc1.activity.shape)
             # try learnable input weights
             # input2pfc = self.PytorchSensory2pfc(input_t)
             
@@ -1046,13 +1051,16 @@ class PytorchPFCMD(nn.Module):
                 self.md_output = self.md(pfc_output.detach().numpy())
 
                 self.md.MD2PFCMult = np.dot(self.md.wMD2PFCMult, self.md_output)
-                rec_inp = np.dot(self.pfc.Jrec.detach().numpy(), self.pfc.activity.detach().numpy())
+                rec_inp = np.dot(self.pfc1.Jrec.detach().numpy(), self.pfc1.activity.detach().numpy())  # NOTE: Take affect PFC1
                 md2pfc_weights = (self.md.MD2PFCMult / np.round(self.md.Num_MD / self.num_output))
                 md2pfc = md2pfc_weights * rec_inp  
                 md2pfc += np.dot(self.md.wMD2PFC / np.round(self.md.Num_MD /self.num_output), self.md_output)
                 #pfc_output = self.pfc(torch.from_numpy(input2pfc), torch.from_numpy(md2pfc)).numpy()
                 
-                pfc_output = self.pfc(input2pfc,torch.from_numpy(md2pfc))
+
+                pfc1_output = self.pfc1(input2pfc,torch.from_numpy(md2pfc))
+
+                pfc_output = self.pfc2(pfc1_output)
                 
                 # save important network activities
                 pfc_output_t = pfc_output.view(1,pfc_output.shape[0])
@@ -1071,7 +1079,8 @@ class PytorchPFCMD(nn.Module):
                 else:
                     self.md_output_t = np.concatenate((self.md_output_t, self.md_output.reshape((1,self.md_output.shape[0]))),axis=0)
             else:
-                pfc_output = self.pfc(input2pfc)
+                pfc1_output = self.pfc1(input2pfc)
+                pfc_output = self.pfc2(pfc1_output)
                 pfc_output_t = pfc_output.view(1,pfc_output.shape[0])
                 self.pfc_outputs[i, :] = pfc_output_t
 #                pfc_output = self.pfc(input2pfc).numpy()

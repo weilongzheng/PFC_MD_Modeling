@@ -487,7 +487,8 @@ if __name__ == '__main__':
     
     for i,itau in enumerate(config):
         #pickle_in = open('files/final/test_numMD10_numContext2_MDTrue_R1.pkl','rb')
-        pickle_in = open('files/final/test_noiseN'+str(itau)+'_numMD'+str(10)+'_numContext'+str(2)+'_MD'+str(True)+'_R'+str(1)+'.pkl','rb')
+        pickle_in = open('files/final/test_numMD12_numContext2_MDTrue_R1.pkl','rb')
+        # pickle_in = open('files/final/test_noiseN'+str(itau)+'_numMD'+str(12)+'_numContext'+str(2)+'_MD'+str(True)+'_R'+str(1)+'.pkl','rb')
         data = pickle.load(pickle_in)
         
         cues_all = data['cues_all']
