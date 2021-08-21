@@ -232,8 +232,9 @@ if False:
 ## compute averages of performance
 if True:
     FILE_PATH = './files/scaleup/PFCMD/'
-    settings = ['withMD', 'PFCEWC', 'noMD']
-    LEN = 81
+    # settings = ['withMD', 'PFCEWC', 'noMD']
+    settings = ['noMD']
+    LEN = 420
     for setting in settings:
         for i in range(LEN):
             PATH = FILE_PATH + str(i) + '_log_' + setting + '.npy'
@@ -252,7 +253,7 @@ if True:
     settings = ['withMD', 'PFCEWC', 'noMD']
     colors = ['red', 'blue', 'black']
     labels = ['PFC+MD', 'PFC+EWC', 'PFC']
-    linewidths = [3, 2, 2]
+    linewidths = [2, 2, 2]
     label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
     title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
