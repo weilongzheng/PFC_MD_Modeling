@@ -136,13 +136,13 @@ optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 # EWC
 if config['EWC']:
     ewc = ElasticWeightConsolidation(net,
-                                    crit=criterion,
-                                    optimizer=optimizer,
-                                    parameters=training_params,
-                                    named_parameters=named_training_params,
-                                    lr=config['lr'],
-                                    weight=config['EWC_weight'],
-                                    device=device)
+                                     crit=criterion,
+                                     optimizer=optimizer,
+                                     parameters=training_params,
+                                     named_parameters=named_training_params,
+                                     lr=config['lr'],
+                                     weight=config['EWC_weight'],
+                                     device=device)
 
 ###--------------------------Train network--------------------------###
 

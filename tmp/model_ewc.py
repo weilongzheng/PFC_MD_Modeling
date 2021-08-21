@@ -126,7 +126,28 @@ class ElasticWeightConsolidation:
         for param_name, param in self.named_parameters.items():
             _buff_param_name = param_name.replace('.', '__')
             self.model.register_buffer(_buff_param_name+'_estimated_mean', param.data.clone())
+    
+    # CE loss
+    # def _update_fisher_params(self, current_ds, task_id, num_batch):
+    #     log_liklihoods = []
+    #     for i in range(num_batch):
+    #         # fetch data
+    #         current_ds.new_trial()
+    #         ob, gt = current_ds.ob, current_ds.gt
+    #         inputs = torch.from_numpy(ob).type(torch.float).to(self.device)
+    #         labels = torch.from_numpy(gt).type(torch.long).to(self.device)
+    #         inputs = inputs[:, np.newaxis, :]
+    #         outputs, _ = self.model(inputs, sub_id=task_id)
+    #         # compute log_liklihoods
+    #         outputs = F.log_softmax(outputs, dim=-1) # the last dim
+    #         log_liklihoods.append(torch.flatten(outputs[:, :, labels]))
+    #     log_likelihood = torch.cat(log_liklihoods).mean()
+    #     grad_log_liklihood = autograd.grad(log_likelihood, self.parameters)
+    #     _buff_param_names = [param[0].replace('.', '__') for param in self.named_parameters.items()]
+    #     for _buff_param_name, param in zip(_buff_param_names, grad_log_liklihood):
+    #         self.model.register_buffer(_buff_param_name+'_estimated_fisher', param.data.clone() ** 2)
 
+    # MSE loss
     def _update_fisher_params(self, current_ds, task_id, num_batch):
         log_liklihoods = []
         for i in range(num_batch):
@@ -135,12 +156,14 @@ class ElasticWeightConsolidation:
             ob, gt = current_ds.ob, current_ds.gt
             inputs = torch.from_numpy(ob).type(torch.float).to(self.device)
             labels = torch.from_numpy(gt).type(torch.long).to(self.device)
+            labels = (F.one_hot(labels, num_classes=self.model.rnn.output_size)).float()
             inputs = inputs[:, np.newaxis, :]
+            labels = labels[:, np.newaxis, :]
             outputs, _ = self.model(inputs, sub_id=task_id)
             # compute log_liklihoods
-            outputs = F.log_softmax(outputs, dim=-1) # the last dim
-            log_liklihoods.append(torch.flatten(outputs[:, :, labels]))
-        log_likelihood = torch.cat(log_liklihoods).mean()
+            outputs = F.mse_loss(outputs, labels)
+            log_liklihoods.append(outputs)
+        log_likelihood = torch.mean(torch.stack(log_liklihoods), dim=0)
         grad_log_liklihood = autograd.grad(log_likelihood, self.parameters)
         _buff_param_names = [param[0].replace('.', '__') for param in self.named_parameters.items()]
         for _buff_param_name, param in zip(_buff_param_names, grad_log_liklihood):
