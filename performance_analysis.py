@@ -48,18 +48,36 @@ for RNGSEED in seed_setup:
     
 mse_mdoff_mean = np.mean(mse_mdoff,axis=0)
 
+MDeffect = False
+mse_ewc = list()
+for RNGSEED in seed_setup:
+    file = 'train_ewc_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+    file = open(filename / file,'rb')
+    data = pickle.load(file)
+    log = data['log']
+    mse_ewc.append(log['mse'])
+    
+mse_ewc_mean = np.mean(mse_ewc,axis=0)
+
 filesave = Path('results')
 os.makedirs(filesave, exist_ok=True)
 
 plt.figure(figsize=(2.4,2.4))
-plt.plot(mse_mdoff_mean,'tab:red',label='Without MD')
+plt.plot(mse_mdoff_mean,'tab:red',label='PFC')
 #ci_off = 1.96 * np.std(mse_mdoff,axis=0)/np.mean(mse_mdoff,axis=0)
 ci_off = np.std(mse_mdoff,axis=0)
 plt.fill_between(np.arange(len(mse_mdoff_mean)), (mse_mdoff_mean-ci_off), (mse_mdoff_mean+ci_off), color='tab:red', alpha=.2)
-plt.plot(mse_md_mean,'tab:blue',label='With MD')
+
+plt.plot(mse_md_mean,'tab:blue',label='PFC-MD')
 #ci_on = 1.96 * np.std(mse_md,axis=0)/np.mean(mse_md,axis=0)
 ci_on = np.std(mse_md,axis=0)
 plt.fill_between(np.arange(len(mse_md_mean)), (mse_md_mean-ci_on), (mse_md_mean+ci_on), color='tab:blue', alpha=.2)
+
+plt.plot(mse_ewc_mean,'tab:green',label='PFC-EWC')
+#ci_on = 1.96 * np.std(mse_md,axis=0)/np.mean(mse_md,axis=0)
+ci_ewc = np.std(mse_ewc,axis=0)
+plt.fill_between(np.arange(len(mse_ewc_mean)), (mse_ewc_mean-ci_ewc), (mse_ewc_mean+ci_ewc), color='tab:green', alpha=.2)
+
 plt.xticks(np.arange(0,301,100),np.arange(0,601,200))
 plt.xlabel('Trials'),plt.ylabel('MSE')
 plt.ylim(0, 0.6)
@@ -70,21 +88,27 @@ plt.axvspan(100, 200, ymin=0, ymax=1, alpha=0.1, color='tab:green')
 plt.title('Model Performance')
 plt.tight_layout()
 #plt.savefig(filesave/'mse.pdf') 
-plt.savefig(filesave/'mse.pdf', dpi=300) 
+plt.savefig(filesave/'mse_all.pdf', dpi=300) 
 
 plt.figure(figsize=(2.4,2.4))
-plt.plot(mse_mdoff_mean[200:],'tab:red',label='Without MD')
+plt.plot(mse_mdoff_mean[200:],'tab:red',label='PFC')
 ci_off = np.std(mse_mdoff,axis=0)
 plt.fill_between(np.arange(len(mse_mdoff_mean[200:])), (mse_mdoff_mean[200:]-ci_off[200:]), (mse_mdoff_mean[200:]+ci_off[200:]), color='tab:red', alpha=.2)
-plt.plot(mse_md_mean[200:],'tab:blue',label='With MD')
+
+plt.plot(mse_md_mean[200:],'tab:blue',label='PFC-MD')
 ci_on = np.std(mse_md,axis=0)
 plt.fill_between(np.arange(len(mse_md_mean[200:])), (mse_md_mean[200:]-ci_on[200:]), (mse_md_mean[200:]+ci_on[200:]), color='tab:blue', alpha=.2)
+
+plt.plot(mse_ewc_mean[200:],'tab:green',label='PFC-EWC')
+ci_ewc = np.std(mse_ewc,axis=0)
+plt.fill_between(np.arange(len(mse_ewc_mean[200:])), (mse_ewc_mean[200:]-ci_ewc[200:]), (mse_ewc_mean[200:]+ci_ewc[200:]), color='tab:green', alpha=.2)
+
 plt.xticks(np.arange(0,101,25),np.arange(400,601,50))
 plt.xlabel('Trials'),plt.ylabel('MSE')
 plt.legend(frameon=False)
 plt.title('Model Performance')
 plt.tight_layout()
-plt.savefig(filesave/'mse_switch.pdf', dpi=300) 
+plt.savefig(filesave/'mse_all_switch.pdf', dpi=300) 
 #"""
 #MSE vs. cycles
 #"""
