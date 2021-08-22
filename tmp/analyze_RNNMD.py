@@ -232,11 +232,13 @@ if False:
 ## compute averages of performance
 if True:
     FILE_PATH = './files/scaleup/PFCMD/'
+
     # settings = ['withMD', 'PFCEWC', 'noMD']
-    # settings = ['withMD', 'noMD']
-    settings = ['PFCEWC','noMD']
-    # ITER = list(range(182)) + list(range(372, 420, 1))
-    ITER = list(range(329))
+    settings = ['withMD', 'noMD']
+    # settings = ['noMD']
+    
+    ITER = list(range(203)) + list(range(351, 420, 1))
+    # ITER = list(range(420))
     LEN = len(ITER)
     for setting in settings:
         for i in ITER:
