@@ -86,8 +86,8 @@ config = {
      'md_active_size': 5,
      'md_dt': 0.001,
      'EWC': True,
-     'EWC_weight': 1e-3,
-     'EWC_num_trials': 1000,
+     'EWC_weight': 1e0,
+     'EWC_num_trials': 3000,
     # optimizer
      'lr': 1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
 }

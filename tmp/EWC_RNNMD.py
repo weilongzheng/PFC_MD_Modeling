@@ -50,13 +50,13 @@ config = {
     'batch_size': 1,
     'seq_len': 50,
     'EWC': True,
-    'EWC_weight': 1e-3,
+    'EWC_weight': 1e0,
 
     # 'tasks': ngym.get_collection('yang19'),
     # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
-    # 'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
+    'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
     # 'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
-    'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
+    # 'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
     # 'tasks': ['yang19.dlyanti-v0', 'yang19.dnms-v0'],
     # 'tasks': ['yang19.dlyanti-v0', 'yang19.dms-v0'],
     # 'tasks': ['yang19.dm1-v0', 'yang19.dmc-v0'],
@@ -136,13 +136,13 @@ optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 # EWC
 if config['EWC']:
     ewc = ElasticWeightConsolidation(net,
-                                    crit=criterion,
-                                    optimizer=optimizer,
-                                    parameters=training_params,
-                                    named_parameters=named_training_params,
-                                    lr=config['lr'],
-                                    weight=config['EWC_weight'],
-                                    device=device)
+                                     crit=criterion,
+                                     optimizer=optimizer,
+                                     parameters=training_params,
+                                     named_parameters=named_training_params,
+                                     lr=config['lr'],
+                                     weight=config['EWC_weight'],
+                                     device=device)
 
 ###--------------------------Train network--------------------------###
 
@@ -171,11 +171,11 @@ for i in range(total_training_cycle):
     elif i == 20000:
         task_id = 1
         if config['EWC']:
-            ewc.register_ewc_params(dataset=envs[0], task_id=task_id, num_batches=1000)
+            ewc.register_ewc_params(dataset=envs[0], task_id=task_id, num_batches=3000)
     elif i == 40000:
         task_id = 0
         if config['EWC']:
-            ewc.register_ewc_params(dataset=envs[1], task_id=task_id, num_batches=1000)
+            ewc.register_ewc_params(dataset=envs[1], task_id=task_id, num_batches=3000)
 
     # fetch data
     env = envs[task_id]
