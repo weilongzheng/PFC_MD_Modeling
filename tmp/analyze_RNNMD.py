@@ -233,10 +233,13 @@ if False:
 if True:
     FILE_PATH = './files/scaleup/PFCMD/'
     # settings = ['withMD', 'PFCEWC', 'noMD']
-    settings = ['noMD']
-    LEN = 420
+    # settings = ['withMD', 'noMD']
+    settings = ['PFCEWC','noMD']
+    # ITER = list(range(182)) + list(range(372, 420, 1))
+    ITER = list(range(329))
+    LEN = len(ITER)
     for setting in settings:
-        for i in range(LEN):
+        for i in ITER:
             PATH = FILE_PATH + str(i) + '_log_' + setting + '.npy'
             log = np.load(PATH, allow_pickle=True).item()
             if i == 0:
