@@ -37,7 +37,6 @@ mpl.rcParams['ps.fonttype'] = 42
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio
-from pygifsicle import optimize
 
 '''
 source activate pytorch

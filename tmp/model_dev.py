@@ -1308,3 +1308,26 @@ class RNN_MD(nn.Module):
         rnn_activity = self.drop_layer(rnn_activity)
         out = self.fc(rnn_activity)
         return out, rnn_activity
+
+class serial_RNN_MD(nn.Module):
+    """Recurrent network model.
+    Args:
+        input_size: int, input size
+        hidden_size: int, hidden size
+        sub_size: int, subpopulation size
+        output_size: int, output size
+        rnn: str, type of RNN, lstm, rnn, ctrnn, or eirnn
+    """
+
+    def __init__(self, input_size, hidden_size, sub_size, output_size, num_task, MDeffect, md_size, md_active_size, md_dt, **kwargs):
+        super().__init__()
+
+        self.rnn = CTRNN_MD(input_size, hidden_size, sub_size, output_size, num_task, MDeffect, md_size, md_active_size, md_dt, **kwargs)
+        self.drop_layer = nn.Dropout(p=0.05)
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x, sub_id):
+        rnn_activity, _ = self.rnn(x, sub_id)
+        rnn_activity = self.drop_layer(rnn_activity)
+        out = self.fc(rnn_activity)
+        return out, rnn_activity
