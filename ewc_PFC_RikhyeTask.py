@@ -33,7 +33,7 @@ class TrainingDataset(Dataset):
             input = self.input[idx]
             return input,output
 
-weight_range = [1e1,1e2,1e3,1e4,1e5,1e6]
+weight_range = [1e-1,1e-2,1e-3,1e-4]
 for ewc_weight in weight_range:
     
     # Generate trainset
@@ -68,7 +68,7 @@ for ewc_weight in weight_range:
     
     # Training
     criterion = nn.MSELoss()
-    ewc = ElasticWeightConsolidation(model, crit=criterion, lr=1e-3, weight=ewc_weight)
+    ewc = ElasticWeightConsolidation(model, crit=criterion, lr=ewc_weight)
     training_params = list()
     for name, param in model.named_parameters():
         print(name)
