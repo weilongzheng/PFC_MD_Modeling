@@ -1322,12 +1322,16 @@ class serial_RNN_MD(nn.Module):
     def __init__(self, input_size, hidden_size, sub_size, output_size, num_task, MDeffect, md_size, md_active_size, md_dt, **kwargs):
         super().__init__()
 
-        self.rnn = CTRNN_MD(input_size, hidden_size, sub_size, output_size, num_task, MDeffect, md_size, md_active_size, md_dt, **kwargs)
-        self.drop_layer = nn.Dropout(p=0.05)
+        self.rnn1 = CTRNN_MD(input_size, hidden_size, sub_size, hidden_size, num_task, MDeffect, md_size, md_active_size, md_dt, **kwargs)
+        self.rnn2 = CTRNN_MD(hidden_size, hidden_size, sub_size, output_size, num_task, MDeffect, md_size, md_active_size, md_dt, **kwargs)
+        self.drop_layer1 = nn.Dropout(p=0.05)
+        self.drop_layer2 = nn.Dropout(p=0.05)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, sub_id):
-        rnn_activity, _ = self.rnn(x, sub_id)
-        rnn_activity = self.drop_layer(rnn_activity)
+        rnn_activity, _ = self.rnn1(x, sub_id)
+        rnn_activity = self.drop_layer1(rnn_activity)
+        rnn_activity, _ = self.rnn2(rnn_activity, sub_id)
+        rnn_activity = self.drop_layer2(rnn_activity)
         out = self.fc(rnn_activity)
         return out, rnn_activity

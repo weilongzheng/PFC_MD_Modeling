@@ -24,7 +24,8 @@ import neurogym as ngym
 from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
 # models
-from model_dev import RNN_MD
+# from model_dev import RNN_MD
+from model_dev import serial_RNN_MD as RNN_MD
 from utils import get_full_performance
 # visualization
 import matplotlib as mpl
@@ -74,12 +75,12 @@ config = {
      'seq_len': 50,
     # model
      'input_size': 33,
-     'hidden_size': 256,
-     'sub_size': 128,
+     'hidden_size': 128,
+     'sub_size': 64,
      'output_size': 17,
      'batch_size': 1,
      'num_task': 2,
-     'MDeffect': False,
+     'MDeffect': True,
      'md_size': 10,
      'md_active_size': 5,
      'md_dt': 0.001,
@@ -139,8 +140,10 @@ for task_pair_id in range(len(task_pairs)):
         'act_perfs': [[], []],
     }
     if config['MDeffect']:
-        net.rnn.md.learn = True
-        net.rnn.md.sendinputs = True
+        net.rnn1.md.learn = True
+        net.rnn1.md.sendinputs = True
+        net.rnn2.md.learn = True
+        net.rnn2.md.sendinputs = True
 
 
     for i in range(total_training_cycle):
@@ -153,11 +156,13 @@ for task_pair_id in range(len(task_pairs)):
         elif i == 20000:
             task_id = 1
             if config['MDeffect']:
-                net.rnn.md.update_mask()
+                net.rnn1.md.update_mask()
+                net.rnn2.md.update_mask()
         elif i == 40000:
             task_id = 0
             if config['MDeffect']:
-                net.rnn.md.update_mask()
+                net.rnn1.md.update_mask()
+                net.rnn2.md.update_mask()
 
         # fetch data
         env = envs[task_id]
@@ -204,7 +209,8 @@ for task_pair_id in range(len(task_pairs)):
             test_time_start = time.time()
             net.eval()
             if config['MDeffect']:
-                net.rnn.md.learn = False
+                net.rnn1.md.learn = False
+                net.rnn2.md.learn = False
             with torch.no_grad():
                 log['stamps'].append(i+1)
                 #   fixation & action performance
@@ -217,7 +223,8 @@ for task_pair_id in range(len(task_pairs)):
                     print('  act performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, act_perf))
             net.train()
             if config['MDeffect']:
-                net.rnn.md.learn = True
+                net.rnn1.md.learn = True
+                net.rnn2.md.learn = True
             running_test_time = time.time() - test_time_start
 
             # left training time
@@ -227,7 +234,7 @@ for task_pair_id in range(len(task_pairs)):
             running_train_time = 0
         
     # save log
-    np.save('./files/'+f'{task_pair_id}_log_noMD.npy', log)
+    np.save('./files/'+f'{task_pair_id}_log_MD_'+ str(config['MDeffect'])+'.npy', log)
 
     # Task performance
     label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
@@ -246,5 +253,5 @@ for task_pair_id in range(len(task_pairs)):
         plt.ylim([0.0, 1.01])
         plt.yticks([0.1*i for i in range(11)])
         plt.tight_layout()
-        plt.savefig('./files/'+f'{task_pair_id}_performance_noMD_task_{env_id}.png')
+        plt.savefig('./files/'+f'{task_pair_id}_performance_MD_'+ str(config['MDeffect'])+'_task_{env_id}.png')
         plt.close()
