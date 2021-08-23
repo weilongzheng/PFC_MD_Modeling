@@ -26,6 +26,7 @@ from neurogym.utils.scheduler import RandomSchedule
 # models
 # from model_dev import RNN_MD
 from model_dev import serial_RNN_MD as RNN_MD
+exp_folder = 'serial_RNN_MD'
 from utils import get_full_performance
 # visualization
 import matplotlib as mpl
@@ -59,18 +60,19 @@ config = {
      'tasks': ['yang19.dms-v0',
                'yang19.dnms-v0',
                'yang19.dmc-v0',
-               'yang19.dnmc-v0',
-               'yang19.dm1-v0',
-               'yang19.dm2-v0',
-               'yang19.ctxdm1-v0',
-               'yang19.ctxdm2-v0',
-               'yang19.multidm-v0',
-               'yang19.dlygo-v0',
-               'yang19.dlyanti-v0',
-               'yang19.go-v0',
-               'yang19.anti-v0',
-               'yang19.rtgo-v0',
-               'yang19.rtanti-v0'],
+            #    'yang19.dnmc-v0',
+            #    'yang19.dm1-v0',
+            #    'yang19.dm2-v0',
+            #    'yang19.ctxdm1-v0',
+            #    'yang19.ctxdm2-v0',
+            #    'yang19.multidm-v0',
+            #    'yang19.dlygo-v0',
+            #    'yang19.dlyanti-v0',
+            #    'yang19.go-v0',
+            #    'yang19.anti-v0',
+            #    'yang19.rtgo-v0',
+            #    'yang19.rtanti-v0'
+               ],
      'env_kwargs': {'dt': 100},
      'seq_len': 50,
     # model
@@ -80,7 +82,7 @@ config = {
      'output_size': 17,
      'batch_size': 1,
      'num_task': 2,
-     'MDeffect': True,
+     'MDeffect': False,
      'md_size': 10,
      'md_active_size': 5,
      'md_dt': 0.001,
@@ -127,8 +129,10 @@ for task_pair_id in range(len(task_pairs)):
     optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
     # training
-    total_training_cycle = 50000
-    print_every_cycle = 200
+    total_training_cycle = 25000
+    firt_transition = 10000
+    second_transition = 20000
+    print_every_cycle = 1000
     running_loss = 0.0
     running_train_time = 0
     log = {
@@ -153,12 +157,12 @@ for task_pair_id in range(len(task_pairs)):
         # control training paradigm
         if i == 0:
             task_id = 0
-        elif i == 20000:
+        elif i == firt_transition:
             task_id = 1
             if config['MDeffect']:
                 net.rnn1.md.update_mask()
                 net.rnn2.md.update_mask()
-        elif i == 40000:
+        elif i == second_transition:
             task_id = 0
             if config['MDeffect']:
                 net.rnn1.md.update_mask()
@@ -234,7 +238,8 @@ for task_pair_id in range(len(task_pairs)):
             running_train_time = 0
         
     # save log
-    np.save('./files/'+f'{task_pair_id}_log_MD_'+ str(config['MDeffect'])+'.npy', log)
+    os.makedirs('./files/'+ exp_folder, exist_ok=True)
+    np.save('./files/'+ exp_folder+'/'+f'{task_pair_id}_log_MD_'+ str(config['MDeffect'])+'.npy', log)
 
     # Task performance
     label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
@@ -243,9 +248,9 @@ for task_pair_id in range(len(task_pairs)):
     for env_id in range(len(task_pair)):
         plt.figure()
         plt.plot(log['stamps'], log['act_perfs'][env_id])
-        plt.fill_between(x=[   0,  20000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
-        plt.fill_between(x=[20000, 40000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
-        plt.fill_between(x=[40000, 50000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+        plt.fill_between(x=[   0,  firt_transition] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+        plt.fill_between(x=[firt_transition, second_transition] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
+        plt.fill_between(x=[second_transition, total_training_cycle], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
         plt.xlabel('Trials', fontdict=label_font)
         plt.ylabel('Performance', fontdict=label_font)
         plt.title('Task{:d}: '.format(env_id+1)+task_pair[env_id], fontdict=title_font)
@@ -253,5 +258,5 @@ for task_pair_id in range(len(task_pairs)):
         plt.ylim([0.0, 1.01])
         plt.yticks([0.1*i for i in range(11)])
         plt.tight_layout()
-        plt.savefig('./files/'+f'{task_pair_id}_performance_MD_'+ str(config['MDeffect'])+'_task_{env_id}.png')
+        plt.savefig('./files/'+ exp_folder+'/'+f'{task_pair_id}_performance_MD_'+ str(config['MDeffect'])+f'_task_{env_id}.png')
         plt.close()

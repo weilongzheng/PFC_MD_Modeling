@@ -8,7 +8,7 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 import matplotlib.pyplot as plt
 import imageio
-from pygifsicle import optimize
+# from pygifsicle import optimize
 
 
 # log = np.load('./files/'+'log_withMD.npy', allow_pickle=True).item()
@@ -230,7 +230,7 @@ if False:
 
 # scale up test
 ## compute averages of performance
-if True:
+if False:
     FILE_PATH = './files/scaleup/PFCMD/'
     # settings = ['withMD', 'PFCEWC', 'noMD']
     # settings = ['withMD', 'noMD']
@@ -251,7 +251,7 @@ if True:
         np.save('./files/'+'avg_perfs_'+setting+'.npy', act_perfs)
         np.save('./files/'+'time_stamps_'+setting+'.npy', time_stamps)
 ## PFC+MD VS PFC+EWC, PFC
-if True:
+if False:
     FILE_PATH = './files/'
     settings = ['withMD', 'PFCEWC', 'noMD']
     colors = ['red', 'blue', 'black']
@@ -278,3 +278,57 @@ if True:
             plt.yticks([0.1*i for i in range(11)])
             plt.tight_layout()
         plt.show()
+
+# Ali testing 2 serial RNNs
+## compute averages of performance
+if False:
+    FILE_PATH = './files/scaleup/PFCMD/'
+    # settings = ['withMD', 'PFCEWC', 'noMD']
+    # settings = ['withMD', 'noMD']
+    settings = ['PFCEWC','noMD']
+    # ITER = list(range(182)) + list(range(372, 420, 1))
+    ITER = list(range(329))
+    LEN = len(ITER)
+    for setting in settings:
+        for i in ITER:
+            PATH = FILE_PATH + str(i) + '_log_' + setting + '.npy'
+            log = np.load(PATH, allow_pickle=True).item()
+            if i == 0:
+                act_perfs = np.array(log['act_perfs'])
+            else:
+                act_perfs += np.array(log['act_perfs'])
+        time_stamps = log['stamps']
+        act_perfs = act_perfs/LEN
+        np.save('./files/'+'avg_perfs_'+setting+'.npy', act_perfs)
+        np.save('./files/'+'time_stamps_'+setting+'.npy', time_stamps)
+## Serial RNNs head to head MD lesioned MD intact
+if True:
+    FILE_PATH = './files/serial_RNN_MD/'
+    settings = ['MD_False', 'MD_True']
+    colors = ['red', 'blue']#, 'black']
+    labels = ['MD lesioned', 'MD intact']#, 'PFC']
+    
+    
+    tasks, TASK_NAME = ['yang19.dlygo-v0', 'yang19.dnmc-v0'], 'dlygodnmc'
+    linewidths = [2, 1, 1, 1]
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':14}
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':8}
+    for env_id in range(len(tasks)):
+        fig = plt.figure(figsize=[4,3])
+        for i in range(len(settings)):
+            PATH = FILE_PATH + '0_log_' + settings[i] + '.npy'
+            log = np.load(PATH, allow_pickle=True).item()
+            plt.plot(log['stamps'], log['act_perfs'][env_id], linewidth=linewidths[i], color=colors[i], label=labels[i])
+            plt.fill_between(x=[   0,  10000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.02)
+            plt.fill_between(x=[10000, 20000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.02)
+            plt.fill_between(x=[20000, 25000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.02)
+            plt.legend(bbox_to_anchor = (1.4, 0.7), prop=legend_font)
+            plt.xlabel('Trials', fontdict=label_font)
+            plt.ylabel('Performance', fontdict=label_font)
+            plt.title('Task{:d}: '.format(env_id+1)+tasks[env_id], fontdict=title_font)
+            plt.xlim([0.0, None])
+            plt.ylim([0.0, 1.01])
+            plt.yticks([0.1*i for i in range(11)])
+            plt.tight_layout()
+        plt.savefig(f'output_task_{env_id}.png')

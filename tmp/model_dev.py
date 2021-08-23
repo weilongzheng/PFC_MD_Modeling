@@ -969,7 +969,7 @@ class MD_GYM():
     def init_activity(self):
         self.MDinp = np.zeros(shape=self.Num_MD)
         
-    def __call__(self, input, *args, **kwargs):
+    def __call__(self, input, md_output=None, *args, **kwargs):
         """Run the network one step
 
         For now, consider this network receiving input from PFC,
@@ -992,6 +992,9 @@ class MD_GYM():
             # shift PFC rates, so that mean is non-zero to turn MD on
             self.MDinp += self.dt / self.tauMD * (-self.MDinp + np.dot(self.wPFC2MD, (input + 0.5)))      
         MDout = self.winner_take_all(self.MDinp)
+
+        if md_output is not None: #if md_output is given, override local calc
+            MDout = md_output
 
         # update
         if self.learn:
@@ -1189,7 +1192,7 @@ class CTRNN_MD(nn.Module):
         # hidden = 1/self.hidden_size*torch.rand(batch_size, self.hidden_size)
         return hidden.to(input.device)
 
-    def recurrence(self, input, sub_id, hidden):
+    def recurrence(self, input, sub_id, hidden, md_output=None):
         """Recurrence helper."""
         ext_input = self.input2h(input)
         rec_input = self.h2h(hidden)
@@ -1217,7 +1220,7 @@ class CTRNN_MD(nn.Module):
             # md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             # only MD additive inputs
-            self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
+            self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :], md_output=md_output)
             md2pfc = np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
             md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
@@ -1247,7 +1250,7 @@ class CTRNN_MD(nn.Module):
 
         return h_new
 
-    def forward(self, input, sub_id, hidden=None):
+    def forward(self, input, sub_id, hidden=None, md_output_t= None):
         """Propogate input through the network."""
         
         num_tsteps = input.size(0)
@@ -1268,8 +1271,12 @@ class CTRNN_MD(nn.Module):
             self.md.md_output_t *= 0
 
         for i in range(num_tsteps):
-            hidden = self.recurrence(input[i], sub_id, hidden)
-            
+            if md_output_t is not None:
+                self.md.md_output = md_output_t[i]
+                hidden = self.recurrence(input[i], sub_id, hidden, self.md.md_output)
+            else:
+                hidden = self.recurrence(input[i], sub_id, hidden, None)
+                
             # save PFC activities
             output.append(hidden)
             # save MD activities
@@ -1332,6 +1339,38 @@ class serial_RNN_MD(nn.Module):
         rnn_activity, _ = self.rnn1(x, sub_id)
         rnn_activity = self.drop_layer1(rnn_activity)
         rnn_activity, _ = self.rnn2(rnn_activity, sub_id)
+        rnn_activity = self.drop_layer2(rnn_activity)
+        out = self.fc(rnn_activity)
+        return out, rnn_activity
+
+class serial_RNN_1MD(nn.Module):
+    """Recurrent network model.
+    Args:
+        input_size: int, input size
+        hidden_size: int, hidden size
+        sub_size: int, subpopulation size
+        output_size: int, output size
+        rnn: str, type of RNN, lstm, rnn, ctrnn, or eirnn
+    """
+
+    def __init__(self, input_size, hidden_size, sub_size, output_size, num_task, MDeffect, md_size, md_active_size, md_dt, **kwargs):
+        super().__init__()
+
+        self.rnn1 = CTRNN_MD(input_size, hidden_size, sub_size, hidden_size, num_task, MDeffect, md_size, md_active_size, md_dt, **kwargs)
+        self.rnn2 = CTRNN_MD(hidden_size, hidden_size, sub_size, output_size, num_task, MDeffect, md_size, md_active_size, md_dt, **kwargs)
+        self.drop_layer1 = nn.Dropout(p=0.05)
+        self.drop_layer2 = nn.Dropout(p=0.05)
+        self.fc = nn.Linear(hidden_size, output_size)
+        self.MDeffect = MDeffect
+
+    def forward(self, x, sub_id):
+        rnn_activity, _ = self.rnn1(x, sub_id)
+        if self.MDeffect:
+            md_output_t = self.rnn1.md.md_output_t
+        else:
+            md_output_t = None
+        rnn_activity = self.drop_layer1(rnn_activity)
+        rnn_activity, _ = self.rnn2(rnn_activity, sub_id, md_output_t=md_output_t)
         rnn_activity = self.drop_layer2(rnn_activity)
         out = self.fc(rnn_activity)
         return out, rnn_activity
