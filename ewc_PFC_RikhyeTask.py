@@ -33,8 +33,9 @@ class TrainingDataset(Dataset):
             input = self.input[idx]
             return input,output
 
-weight_range = [1e-1,1e-2,1e-3,1e-4]
-for ewc_weight in weight_range:
+#RNGSEED_range = [1,2,3,4,5,6,7,8,9,10]
+weight_range = [0,10e10]
+for weight in weight_range:
     
     # Generate trainset
     RNGSEED = 1 # set random seed
@@ -68,7 +69,7 @@ for ewc_weight in weight_range:
     
     # Training
     criterion = nn.MSELoss()
-    ewc = ElasticWeightConsolidation(model, crit=criterion, lr=ewc_weight)
+    ewc = ElasticWeightConsolidation(model, crit=criterion, lr=1e-3, weight=weight)
     training_params = list()
     for name, param in model.named_parameters():
         print(name)
@@ -162,7 +163,7 @@ for ewc_weight in weight_range:
     
     filename = Path('files')
     os.makedirs(filename, exist_ok=True)
-    file_training = 'train_ewc'+str(ewc_weight)+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
+    file_training = 'train_ewc'+str(weight)+'_numMD'+str(Num_MD)+'_numContext'+str(Ncontexts)+'_MD'+str(MDeffect)+'_PFC'+str(PFClearn)+'_R'+str(RNGSEED)+'.pkl'
     if activity_record:
         with open(filename / file_training, 'wb') as f:
             pickle.dump({'log':log,'Ntrain':Ntrain,'Nextra':Nextra,'wPFC2MDs_all':wPFC2MDs_all,'wMD2PFCs_all':wMD2PFCs_all,'MDpreTraces_all':MDpreTraces_all,'PFCouts_all':PFCouts_all,'MDouts_all':MDouts_all}, f)
