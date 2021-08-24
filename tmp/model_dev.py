@@ -1128,9 +1128,9 @@ class CTRNN_MD(nn.Module):
             self.md.md_output[index[:md_active_size]] = 1 # randomly set part of md_output to 1
             self.md.md_output_t = np.array([])
         
-        # Detect block switching
+        # report block switching
         if self.MDeffect:
-            self.prev_actMD = np.zeros(shape=(49, md_size)) # actiavted MD neurons in the previous <odd number> trials
+            self.prev_actMD = np.zeros(shape=(md_size)) # actiavted MD neurons in the previous <odd number> trials
 
     def reset_parameters(self):
         # identity*0.5
@@ -1290,12 +1290,13 @@ class CTRNN_MD(nn.Module):
         # report block switching during training
         if self.MDeffect:
             if self.md.learn:
-                prev = (np.mean(self.prev_actMD, axis=0) > np.mean(self.prev_actMD)).astype(float)
-                self.prev_actMD = np.roll(self.prev_actMD, shift=-1, axis=0)
-                self.prev_actMD[-1, :] = (np.mean(self.md.md_output_t, axis=0) > np.mean(self.md.md_output_t)).astype(float)
-                curr = (np.mean(self.prev_actMD, axis=0) > np.mean(self.prev_actMD)).astype(float)
+                alpha = 0.05
+                prev = (self.prev_actMD > np.mean(self.prev_actMD)).astype(float)
+                new_actMD = (np.mean(self.md.md_output_t, axis=0) > np.mean(self.md.md_output_t)).astype(float)
+                self.prev_actMD[:] = (1-alpha)*self.prev_actMD + alpha*new_actMD
+                curr = (self.prev_actMD > np.mean(self.prev_actMD)).astype(float)
                 flag = sum(np.invert(np.logical_xor(prev, curr)).astype(float))
-                if flag < 10.0:
+                if flag < 2.0:
                     print('Swtiching!!!!!!!!!!!!!!!!!!!!!!!!!!')
                     print(prev, curr)
                     print(self.prev_actMD)
