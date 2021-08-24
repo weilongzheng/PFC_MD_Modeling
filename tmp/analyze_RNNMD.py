@@ -237,7 +237,7 @@ if True:
     settings = ['withMD', 'noMD']
     # settings = ['noMD']
     
-    ITER = list(range(420))
+    ITER = list(range(0, 420, 10))
     LEN = len(ITER)
     for setting in settings:
         for i in ITER:

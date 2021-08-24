@@ -51,11 +51,11 @@ config = {
     # 'tasks': ngym.get_collection('yang19'),
     # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
     # 'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
-    # 'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
+    'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
     # 'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
     # 'tasks': ['yang19.dlyanti-v0', 'yang19.dnms-v0'],
     # 'tasks': ['yang19.dlyanti-v0', 'yang19.dms-v0'],
-    'tasks': ['yang19.rtgo-v0', 'yang19.ctxdm2-v0'],
+    # 'tasks': ['yang19.rtgo-v0', 'yang19.ctxdm2-v0'],
 }
 
 # set random seed
@@ -278,7 +278,8 @@ for i in range(total_training_cycle):
     optimizer.step()
 
     # save activities
-    if i % save_every_cycle == (save_every_cycle - 1):
+    # if i % save_every_cycle == (save_every_cycle - 1):
+    if False:
         log['PFCouts_all'].append(rnn_activity.cpu().detach().numpy().copy())
         if config['MDeffect']:
             log['MDouts_all'].append(net.rnn.md.md_output_t.copy())
