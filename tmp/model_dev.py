@@ -1291,15 +1291,25 @@ class CTRNN_MD(nn.Module):
         # report block switching during training
         if self.MDeffect:
             if self.md.learn:
-                alpha = 0.05
-                prev = (self.prev_actMD > np.mean(self.prev_actMD)).astype(float)
-                new_actMD = (np.mean(self.md.md_output_t, axis=0) > np.mean(self.md.md_output_t)).astype(float)
+                # time constant
+                alpha = 0.01
+                # previous activated MD neurons
+                prev_actMD_sorted = np.sort(self.prev_actMD)
+                prev = (self.prev_actMD > np.median(prev_actMD_sorted[-int(self.md.num_active)*2:])).astype(float)
+                # update self.prev_actMD
+                new_actMD = np.mean(self.md.md_output_t, axis=0)
                 self.prev_actMD[:] = (1-alpha)*self.prev_actMD + alpha*new_actMD
-                curr = (self.prev_actMD > np.mean(self.prev_actMD)).astype(float)
-                flag = sum(np.invert(np.logical_xor(prev, curr)).astype(float))
-                if flag < 1.0: # when task switching, flag = 0
-                    print('Swtiching!')
+                # current activated MD neurons
+                curr_actMD_sorted = np.sort(self.prev_actMD)
+                curr = (self.prev_actMD > np.median(curr_actMD_sorted[-int(self.md.num_active)*2:])).astype(float)
+                # compare prev and curr
+                flag = sum(np.logical_xor(prev, curr).astype(float))
+                if flag >= 2*self.md.num_active-2: # when task switching correctly, flag = 2*num_active
+                    print('Switching!')
                     print(prev, curr, self.prev_actMD, sep='\n')
+                    # change self.prev_actMD to penalize many switching
+                    self.prev_actMD[:] = curr
+                    # update saturation factor
                     self.md.update_mask(prev=prev)
 
 
