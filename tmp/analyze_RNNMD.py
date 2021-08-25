@@ -231,11 +231,11 @@ if False:
 # scale up test
 ## compute averages of performance
 if True:
-    FILE_PATH = './files/scaleup/PFCMD/'
+    FILE_PATH = './files/scaleup/PFCMD_nosaturationfactor/'
 
     # settings = ['withMD', 'PFCEWC', 'noMD']
-    settings = ['withMD', 'noMD']
-    # settings = ['noMD']
+    # settings = ['withMD', 'noMD']
+    settings = ['withMD']
     
     ITER = list(range(0, 420, 10))
     LEN = len(ITER)
