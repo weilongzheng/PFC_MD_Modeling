@@ -4,6 +4,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import sys, shelve
 
 try:
@@ -1072,8 +1073,8 @@ class MD_GYM():
 
         return MDout
 
-    def update_mask(self):
-        MD_mask_new = np.where(self.MDpostTrace > np.mean(self.MDpostTrace))[0]
+    def update_mask(self, prev):
+        MD_mask_new = np.where(prev == 1.0)[0]
         PFC_mask_new = np.where(np.mean(self.wPFC2MD[MD_mask_new, :], axis=0) > 0.5)[0] # the threshold here is dependent on <self.wMD2PFC = np.clip(self.wMD2PFC + wPFC2MDdelta.T, -1, 0.)>
         self.MD_mask = np.concatenate((self.MD_mask, MD_mask_new)).astype(int)
         self.PFC_mask = np.concatenate((self.PFC_mask, PFC_mask_new)).astype(int)
@@ -1296,10 +1297,10 @@ class CTRNN_MD(nn.Module):
                 self.prev_actMD[:] = (1-alpha)*self.prev_actMD + alpha*new_actMD
                 curr = (self.prev_actMD > np.mean(self.prev_actMD)).astype(float)
                 flag = sum(np.invert(np.logical_xor(prev, curr)).astype(float))
-                if flag < 2.0:
-                    print('Swtiching!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                    print(prev, curr)
-                    print(self.prev_actMD)
+                if flag < 1.0: # when task switching, flag = 0
+                    print('Swtiching!')
+                    print(prev, curr, self.prev_actMD, sep='\n')
+                    self.md.update_mask(prev=prev)
 
 
         output = torch.stack(output, dim=0)
