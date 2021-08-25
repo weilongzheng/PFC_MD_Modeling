@@ -80,7 +80,7 @@ config = {
      'output_size': 17,
      'batch_size': 1,
      'num_task': 2,
-     'MDeffect': False,
+     'MDeffect': True,
      'md_size': 10,
      'md_active_size': 5,
      'md_dt': 0.001,
@@ -153,12 +153,8 @@ for task_pair_id in range(len(task_pairs)):
             task_id = 0
         elif i == 20000:
             task_id = 1
-            if config['MDeffect']:
-                net.rnn.md.update_mask()
         elif i == 40000:
             task_id = 0
-            if config['MDeffect']:
-                net.rnn.md.update_mask()
 
         # fetch data
         env = envs[task_id]
@@ -228,7 +224,7 @@ for task_pair_id in range(len(task_pairs)):
             running_train_time = 0
         
     # save log
-    np.save('./files/'+f'{task_pair_id}_log_noMD.npy', log)
+    np.save('./files/'+f'{task_pair_id}_log_withMD.npy', log)
 
     # Task performance
     label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
@@ -247,5 +243,5 @@ for task_pair_id in range(len(task_pairs)):
         plt.ylim([0.0, 1.01])
         plt.yticks([0.1*i for i in range(11)])
         plt.tight_layout()
-        plt.savefig('./files/'+f'{task_pair_id}_performance_noMD_task_{env_id}.png')
+        plt.savefig('./files/'+f'{task_pair_id}_performance_withMD_task_{env_id}.png')
         plt.close()
