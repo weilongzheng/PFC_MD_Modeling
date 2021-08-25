@@ -4,6 +4,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import sys, shelve
 
 try:
@@ -1075,8 +1076,8 @@ class MD_GYM():
 
         return MDout
 
-    def update_mask(self):
-        MD_mask_new = np.where(self.MDpostTrace > np.mean(self.MDpostTrace))[0]
+    def update_mask(self, prev):
+        MD_mask_new = np.where(prev == 1.0)[0]
         PFC_mask_new = np.where(np.mean(self.wPFC2MD[MD_mask_new, :], axis=0) > 0.5)[0] # the threshold here is dependent on <self.wMD2PFC = np.clip(self.wMD2PFC + wPFC2MDdelta.T, -1, 0.)>
         self.MD_mask = np.concatenate((self.MD_mask, MD_mask_new)).astype(int)
         self.PFC_mask = np.concatenate((self.PFC_mask, PFC_mask_new)).astype(int)
@@ -1130,6 +1131,10 @@ class CTRNN_MD(nn.Module):
             index = np.random.permutation(md_size)
             self.md.md_output[index[:md_active_size]] = 1 # randomly set part of md_output to 1
             self.md.md_output_t = np.array([])
+        
+        # report block switching
+        if self.MDeffect:
+            self.prev_actMD = np.zeros(shape=(md_size)) # actiavted MD neurons in the previous <odd number> trials
 
     def reset_parameters(self):
         # identity*0.5
@@ -1289,6 +1294,31 @@ class CTRNN_MD(nn.Module):
                     self.md.md_output_t = self.md.md_output.reshape((1, self.md.md_output.shape[0]))
                 else:
                     self.md.md_output_t = np.concatenate((self.md.md_output_t, self.md.md_output.reshape((1, self.md.md_output.shape[0]))),axis=0)
+
+        # report block switching during training
+        if self.MDeffect:
+            if self.md.learn:
+                # time constant
+                alpha = 0.01
+                # previous activated MD neurons
+                prev_actMD_sorted = np.sort(self.prev_actMD)
+                prev = (self.prev_actMD > np.median(prev_actMD_sorted[-int(self.md.num_active)*2:])).astype(float)
+                # update self.prev_actMD
+                new_actMD = np.mean(self.md.md_output_t, axis=0)
+                self.prev_actMD[:] = (1-alpha)*self.prev_actMD + alpha*new_actMD
+                # current activated MD neurons
+                curr_actMD_sorted = np.sort(self.prev_actMD)
+                curr = (self.prev_actMD > np.median(curr_actMD_sorted[-int(self.md.num_active)*2:])).astype(float)
+                # compare prev and curr
+                flag = sum(np.logical_xor(prev, curr).astype(float))
+                if flag >= 2*self.md.num_active-2: # when task switching correctly, flag = 2*num_active
+                    print('Switching!')
+                    print(prev, curr, self.prev_actMD, sep='\n')
+                    # change self.prev_actMD to penalize many switching
+                    self.prev_actMD[:] = curr
+                    # update saturation factor
+                    self.md.update_mask(prev=prev)
+
 
         output = torch.stack(output, dim=0)
         return output, hidden

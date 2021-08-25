@@ -82,7 +82,7 @@ config = {
      'output_size': 17,
      'batch_size': 1,
      'num_task': 2,
-     'MDeffect': False,
+     'MDeffect': True,
      'md_size': 10,
      'md_active_size': 5,
      'md_dt': 0.001,
@@ -159,14 +159,8 @@ for task_pair_id in range(len(task_pairs)):
             task_id = 0
         elif i == firt_transition:
             task_id = 1
-            if config['MDeffect']:
-                net.rnn1.md.update_mask()
-                net.rnn2.md.update_mask()
         elif i == second_transition:
             task_id = 0
-            if config['MDeffect']:
-                net.rnn1.md.update_mask()
-                net.rnn2.md.update_mask()
 
         # fetch data
         env = envs[task_id]
