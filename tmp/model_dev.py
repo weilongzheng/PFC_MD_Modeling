@@ -826,10 +826,17 @@ class Net(nn.Module):
         # self.rnn = nn.RNN(input_size=input_size, hidden_size=hidden_size)
         self.linear = nn.Linear(hidden_size, output_size)
 
-    def forward(self, x):
-        out, hidden = self.lstm(x)
+    def forward(self, inp):
+        out, hidden = self.lstm(inp)
         # out, hidden = self.rnn(x)
         x = self.linear(out)
+        # import pdb; pdb.set_trace()
+        # ipdb> inp.shape
+        # torch.Size([20, 100, 33])
+        # ipdb> out.shape
+        # torch.Size([20, 100, 256])
+        # ipdb> x.shape
+        # torch.Size([20, 100, 17])
         return x, out
 
 # CTRNN model
