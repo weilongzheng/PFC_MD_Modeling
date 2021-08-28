@@ -1020,7 +1020,7 @@ class MD_GYM():
         # 1. non-filtered rout
         # MDoutTrace = self.update_trace(rout, MDout)
         # 2. filtered rout
-        kernel = np.ones(shape=(5,))/5
+        kernel = np.ones(shape=(1,))/1
         rout_filtered = np.convolve(rout, kernel, mode='same')
         MDoutTrace = self.update_trace(rout_filtered, MDout)
 
@@ -1185,6 +1185,9 @@ class CTRNN_MD(nn.Module):
         # k = (1./self.hidden_size)**0.5
         # nn.init.uniform_(self.h2h.weight, a=-k, b=k)
         # nn.init.uniform_(self.h2h.bias, a=-k, b=k)
+
+        # default initialization
+        # pass
 
     def init_hidden(self, input):
         batch_size = input.shape[1]
