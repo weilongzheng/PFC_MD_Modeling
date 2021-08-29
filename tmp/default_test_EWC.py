@@ -76,27 +76,42 @@ config = {
      'seq_len': 50,
     # model
      'input_size': 33,
-     'hidden_size': 256,
-     'sub_size': 128,
+     'hidden_size': 400,
+     'sub_size': 200,
      'output_size': 17,
      'batch_size': 1,
      'num_task': 2,
      'MDeffect': False,
-     'md_size': 10,
-     'md_active_size': 5,
+     'md_size': 4,
+     'md_active_size': 2,
      'md_dt': 0.001,
      'EWC': True,
-     'EWC_weight': 1e0,
+     'EWC_weight': 1e6,
      'EWC_num_trials': 3000,
     # optimizer
      'lr': 1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
 }
 
-task_pairs = list(itertools.permutations(config['tasks'], 2))
-task_pairs = [val for val in task_pairs for i in range(2)]
+# Generate task pairs
+## 1. all pairs
+# task_pairs = list(itertools.permutations(config['tasks'], 2))
+# task_pairs = [val for val in task_pairs for i in range(2)]
+## 2. pairs from different task families
+GoFamily = ['yang19.dlygo-v0', 'yang19.dlyanti-v0']
+DMFamily = ['yang19.dm1-v0', 'yang19.ctxdm2-v0', 'yang19.multidm-v0']
+MatchFamily = ['yang19.dms-v0', 'yang19.dmc-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0']
+TaskA = GoFamily + DMFamily
+TaskB = MatchFamily
+task_pairs = []
+for a in TaskA:
+    for b in TaskB:
+        task_pairs.append((a, b))
+        task_pairs.append((b, a))
 
 # main loop
 for task_pair_id in range(len(task_pairs)):
+# for task_pair_id in range(0, 20, 1):
+# for task_pair_id in range(39, 19, -1):
     
     # envs for training and test
     task_pair = task_pairs[task_pair_id]
@@ -127,8 +142,9 @@ for task_pair_id in range(len(task_pairs)):
     training_params = list()
     named_training_params = dict()
     for name, param in net.named_parameters():
-        print(name)
-        training_params.append(param)
+        if 'rnn.input2PFCctx' not in name:
+            print(name)
+            training_params.append(param)
         named_training_params[name] = param
     optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
@@ -170,14 +186,10 @@ for task_pair_id in range(len(task_pairs)):
             task_id = 0
         elif i == 20000:
             task_id = 1
-            if config['MDeffect']:
-                net.rnn.md.update_mask()
             if config['EWC']:
                 ewc.register_ewc_params(dataset=envs[0], task_id=task_id, num_batches=config['EWC_num_trials'])
         elif i == 40000:
             task_id = 0
-            if config['MDeffect']:
-                net.rnn.md.update_mask()
             if config['EWC']:
                 ewc.register_ewc_params(dataset=envs[1], task_id=task_id, num_batches=config['EWC_num_trials'])
 
@@ -185,6 +197,7 @@ for task_pair_id in range(len(task_pairs)):
         env = envs[task_id]
         env.new_trial()
         ob, gt = env.ob, env.gt
+        ob[:, 1:] = (ob[:, 1:] - np.min(ob[:, 1:]))/(np.max(ob[:, 1:]) - np.min(ob[:, 1:]))
         assert not np.any(np.isnan(ob))
 
         # numpy -> torch

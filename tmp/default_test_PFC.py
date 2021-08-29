@@ -44,7 +44,7 @@ source activate pytorch
 cd tmp
 nohup python -u default_test_twotasks.py > default_test_twotasks.log 2>&1 &
 
-# Turn off MD by changing config, file name of log & perf
+# Change test mode by changing config, file name of log & perf
 '''
 
 
