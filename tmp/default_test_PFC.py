@@ -106,6 +106,8 @@ for a in TaskA:
 
 # main loop
 for task_pair_id in range(len(task_pairs)):
+# for task_pair_id in range(0, 20, 1):
+# for task_pair_id in range(39, 19, -1):
     
     # envs for training and test
     task_pair = task_pairs[task_pair_id]
