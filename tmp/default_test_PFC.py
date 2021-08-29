@@ -75,21 +75,34 @@ config = {
      'seq_len': 50,
     # model
      'input_size': 33,
-     'hidden_size': 256,
-     'sub_size': 128,
+     'hidden_size': 400,
+     'sub_size': 200,
      'output_size': 17,
      'batch_size': 1,
      'num_task': 2,
      'MDeffect': True,
-     'md_size': 10,
-     'md_active_size': 5,
+     'md_size': 4,
+     'md_active_size': 2,
      'md_dt': 0.001,
     # optimizer
      'lr': 1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
 }
 
-task_pairs = list(itertools.permutations(config['tasks'], 2))
-task_pairs = [val for val in task_pairs for i in range(2)]
+# Generate task pairs
+## 1. all pairs
+# task_pairs = list(itertools.permutations(config['tasks'], 2))
+# task_pairs = [val for val in task_pairs for i in range(2)]
+## 2. pairs from different task families
+GoFamily = ['yang19.dlygo-v0', 'yang19.dlyanti-v0']
+DMFamily = ['yang19.dm1-v0', 'yang19.ctxdm2-v0', 'yang19.multidm-v0']
+MatchFamily = ['yang19.dms-v0', 'yang19.dmc-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0']
+TaskA = GoFamily + DMFamily
+TaskB = MatchFamily
+task_pairs = []
+for a in TaskA:
+    for b in TaskB:
+        task_pairs.append((a, b))
+        task_pairs.append((b, a))
 
 # main loop
 for task_pair_id in range(len(task_pairs)):
@@ -122,8 +135,9 @@ for task_pair_id in range(len(task_pairs)):
     print('training parameters:')
     training_params = list()
     for name, param in net.named_parameters():
-        print(name)
-        training_params.append(param)
+        if 'rnn.input2PFCctx' not in name:
+            print(name)
+            training_params.append(param)
     optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
     # training
@@ -160,6 +174,7 @@ for task_pair_id in range(len(task_pairs)):
         env = envs[task_id]
         env.new_trial()
         ob, gt = env.ob, env.gt
+        ob[:, 1:] = (ob[:, 1:] - np.min(ob[:, 1:]))/(np.max(ob[:, 1:]) - np.min(ob[:, 1:]))
         assert not np.any(np.isnan(ob))
 
         # numpy -> torch
