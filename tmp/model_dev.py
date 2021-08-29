@@ -939,9 +939,13 @@ class MD_GYM():
         self.wPFC2MD = np.random.normal(0,
                                         1 / np.sqrt(self.Num_MD * self.Nneur),
                                         size=(self.Num_MD, self.Nneur))
-        self.wMD2PFC = np.random.normal(0,
-                                        1 / np.sqrt(self.Num_MD * self.Nneur),
-                                        size=(self.Nneur, self.Num_MD))
+        # self.wMD2PFC = np.random.normal(0,
+        #                                 1 / np.sqrt(self.Num_MD * self.Nneur),
+        #                                 size=(self.Nneur, self.Num_MD))
+        self.wMD2PFC = np.zeros(shape=(self.Nneur, self.Num_MD))
+        for i in range(self.wMD2PFC.shape[0]):
+            j = np.floor(np.random.rand()*self.Num_MD).astype(int)
+            self.wMD2PFC[i, j] = -5
         self.wMD2PFCMult = np.random.normal(0,
                                             1 / np.sqrt(self.Num_MD * self.Nneur),
                                             size=(self.Nneur, self.Num_MD))
@@ -1052,8 +1056,8 @@ class MD_GYM():
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
         wPFC2MDdelta = wPFC2MDdelta * self.wPFC2MDdelta_mask
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
-        self.wMD2PFC = np.clip(self.wMD2PFC + wPFC2MDdelta.T, -0.8, 0.)
-        self.wMD2PFCMult = np.clip(self.wMD2PFCMult + wPFC2MDdelta.T, 0., 1.)
+        # self.wMD2PFC = np.clip(self.wMD2PFC + wPFC2MDdelta.T, -0.8, 0.)
+        # self.wMD2PFCMult = np.clip(self.wMD2PFCMult + wPFC2MDdelta.T, 0., 1.)
 
     def winner_take_all(self, MDinp):
         '''Winner take all on the MD
@@ -1104,6 +1108,7 @@ class CTRNN_MD(nn.Module):
         self.output_size = output_size
         self.num_task = num_task
         self.md_size = md_size
+        self.MDeffect = MDeffect
 
         self.tau = 100
         if dt is None:
@@ -1118,22 +1123,32 @@ class CTRNN_MD(nn.Module):
 
         # hidden layer
         self.h2h = nn.Linear(hidden_size, hidden_size)
-        self.reset_parameters()
-
-        # MD layer
-        self.MDeffect = MDeffect
+        
+        # MD related layers
         if self.MDeffect:
+            # PFC layer containing context info
+            self.input2PFCctx = nn.Linear(input_size, hidden_size, bias=False)
+            # MD layer
             self.md = MD_GYM(Nneur=hidden_size, Num_MD=md_size, num_active=md_active_size, dt=md_dt, positiveRates=True)
             self.md.md_output = np.zeros(md_size)
             index = np.random.permutation(md_size)
             self.md.md_output[index[:md_active_size]] = 1 # randomly set part of md_output to 1
             self.md.md_output_t = np.array([])
         
+        self.reset_parameters()
+        
         # report block switching
         if self.MDeffect:
             self.prev_actMD = np.zeros(shape=(md_size)) # actiavted MD neurons in the previous <odd number> trials
 
     def reset_parameters(self):
+        ### input weights initialization
+        if self.MDeffect:
+            # all uniform noise
+            k = (1./self.hidden_size)**0.5
+            self.input2PFCctx.weight.data = k*torch.rand(self.input2PFCctx.weight.data.size()) # noise ~ U(leftlim=0, rightlim=k)
+
+        ### recurrent weights initialization
         # identity*0.5
         nn.init.eye_(self.h2h.weight)
         self.h2h.weight.data *= 0.5
@@ -1202,13 +1217,14 @@ class CTRNN_MD(nn.Module):
         ext_input = self.input2h(input)
         rec_input = self.h2h(hidden)
 
-        # mask external inputs
-        #  turn off mask external input -> Elman/Elman+MD
-        ext_input_mask = torch.zeros_like(rec_input)
-        ext_input_mask[:, sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 1
-        ext_input = ext_input.mul(ext_input_mask)
-
         pre_activation = ext_input + rec_input
+
+        # external inputs & activities of PFC neurons containing context info
+        if self.MDeffect:
+            ext_input_ctx = self.input2PFCctx(input)
+            ext_input_mask = torch.zeros_like(rec_input)
+            ext_input_mask[:, sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 1
+            PFC_input_ctx = torch.relu(ext_input_ctx.mul(ext_input_mask))
 
         # md inputs
         if self.MDeffect:
@@ -1225,7 +1241,8 @@ class CTRNN_MD(nn.Module):
             # md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             # only MD additive inputs
-            self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
+            # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
+            self.md.md_output = self.md(PFC_input_ctx.cpu().detach().numpy()[0, :])
             md2pfc = np.dot((self.md.wMD2PFC/self.md.Num_MD), self.md.md_output)
             md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
@@ -1307,13 +1324,13 @@ class CTRNN_MD(nn.Module):
                 curr = (self.prev_actMD > np.median(curr_actMD_sorted[-int(self.md.num_active)*2:])).astype(float)
                 # compare prev and curr
                 flag = sum(np.logical_xor(prev, curr).astype(float))
-                if flag >= 2*self.md.num_active-2: # when task switching correctly, flag = 2*num_active
+                if flag >= 2*self.md.num_active: # when task switching correctly, flag = 2*num_active
                     print('Switching!')
                     print(prev, curr, self.prev_actMD, sep='\n')
                     # change self.prev_actMD to penalize many switching
                     self.prev_actMD[:] = curr
                     # update saturation factor
-                    self.md.update_mask(prev=prev)
+                    # self.md.update_mask(prev=prev)
 
 
         output = torch.stack(output, dim=0)
@@ -1333,7 +1350,7 @@ class RNN_MD(nn.Module):
         super().__init__()
 
         self.rnn = CTRNN_MD(input_size, hidden_size, sub_size, output_size, num_task, MDeffect, md_size, md_active_size, md_dt, **kwargs)
-        self.drop_layer = nn.Dropout(p=0.05)
+        self.drop_layer = nn.Dropout(p=0.0)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, sub_id):
