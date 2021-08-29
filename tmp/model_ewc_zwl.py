@@ -119,14 +119,17 @@ class ElasticWeightConsolidation:
     use mse loss in updateing fisher params
     '''
 
-    def __init__(self, model, crit, lr=0.001, weight=1000000):
+    def __init__(self, model, crit, parameters, named_parameters, lr=0.001, weight=1000000):
         self.model = model
         self.weight = weight
         self.crit = crit
-        self.optimizer = optim.Adam(self.model.parameters(), lr)
+        self.parameters = parameters
+        self.named_parameters = named_parameters
+        self.optimizer = optim.Adam(self.parameters, lr)
+        self.device = 'cpu'
 
     def _update_mean_params(self):
-        for param_name, param in self.model.named_parameters():
+        for param_name, param in self.named_parameters.items():
             _buff_param_name = param_name.replace('.', '__')
             self.model.register_buffer(_buff_param_name+'_estimated_mean', param.data.clone())
 
@@ -152,14 +155,14 @@ class ElasticWeightConsolidation:
         for _buff_param_name, param in zip(_buff_param_names, grad_log_liklihood):
             self.model.register_buffer(_buff_param_name+'_estimated_fisher', param.data.clone() ** 2)
 
-    def register_ewc_params(self, dataset, batch_size, num_batches):
-        self._update_fisher_params(dataset, batch_size, num_batches)
+    def register_ewc_params(self, dataset, task_id, num_batches):
+        self._update_fisher_params(dataset, task_id, num_batches)
         self._update_mean_params()
 
     def _compute_consolidation_loss(self, weight):
         try:
             losses = []
-            for param_name, param in self.model.named_parameters():
+            for param_name, param in self.named_parameters.items():
                 _buff_param_name = param_name.replace('.', '__')
                 estimated_mean = getattr(self.model, '{}_estimated_mean'.format(_buff_param_name))
                 estimated_fisher = getattr(self.model, '{}_estimated_fisher'.format(_buff_param_name))
