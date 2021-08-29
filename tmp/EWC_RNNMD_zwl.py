@@ -224,7 +224,7 @@ if config['EWC']:
     
     print('Finished Training')
     # save log
-    np.save('./files/'+'log_EWC.npy', log)
+    np.save('./files/'+'log_EWC_'+str(config['EWC_weight'])+'.npy', log)
 
 else:
     RNGSEED = config['RNGSEED']
