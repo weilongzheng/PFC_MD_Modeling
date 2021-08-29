@@ -50,14 +50,14 @@ config = {
     'batch_size': 1,
     'seq_len': 50,
     'EWC': True,
-    'EWC_weight': 1e0,
+    'EWC_weight': 1e6,
 
     # 'tasks': ngym.get_collection('yang19'),
     # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
-    'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
+    # 'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
     # 'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
     # 'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
-    # 'tasks': ['yang19.dlyanti-v0', 'yang19.dnms-v0'],
+    'tasks': ['yang19.dlyanti-v0', 'yang19.dnms-v0'],
     # 'tasks': ['yang19.dlyanti-v0', 'yang19.dms-v0'],
     # 'tasks': ['yang19.dm1-v0', 'yang19.dmc-v0'],
 }
@@ -92,13 +92,13 @@ act_size = 17
 # Model settings
 model_config = {
     'input_size': ob_size,
-    'hidden_size': 256,
-    'sub_size': 128,
+    'hidden_size': 400,
+    'sub_size': 200,
     'output_size': act_size,
     'num_task': len(tasks),
     'MDeffect': False,
-    'md_size': 10,
-    'md_active_size': 5,
+    'md_size': 4,
+    'md_active_size': 2,
     'md_dt': 0.001,
 }
 config.update(model_config)
@@ -127,7 +127,8 @@ print('training parameters:')
 training_params = list()
 named_training_params = dict()
 for name, param in net.named_parameters():
-    if True: # learnable RNN
+    # if True: # learnable RNN
+    if 'rnn.input2PFCctx' not in name:
         print(name)
         training_params.append(param)
         named_training_params[name] = param
@@ -181,6 +182,7 @@ for i in range(total_training_cycle):
     env = envs[task_id]
     env.new_trial()
     ob, gt = env.ob, env.gt
+    ob[:, 1:] = (ob[:, 1:] - np.min(ob[:, 1:]))/(np.max(ob[:, 1:]) - np.min(ob[:, 1:]))
     assert not np.any(np.isnan(ob))
 
     # numpy -> torch
