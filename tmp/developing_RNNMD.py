@@ -89,13 +89,13 @@ act_size = 17
 # Model settings
 model_config = {
     'input_size': ob_size,
-    'hidden_size': 256,
-    'sub_size': 128,
+    'hidden_size': 400,
+    'sub_size': 200,
     'output_size': act_size,
     'num_task': len(tasks),
-    'MDeffect': True,
-    'md_size': 10,
-    'md_active_size': 5,
+    'MDeffect': False,
+    'md_size': 4,
+    'md_active_size': 2,
     'md_dt': 0.001,
 }
 config.update(model_config)
@@ -126,7 +126,8 @@ print('training parameters:')
 training_params = list()
 for name, param in net.named_parameters():
     # if 'rnn.h2h' not in name: # reservoir
-    if True: # learnable RNN
+    # if True: # learnable RNN
+    if 'rnn.input2PFCctx' not in name:
         print(name)
         training_params.append(param)
 print()
