@@ -19,6 +19,7 @@ def get_full_performance(net, env, task_id, num_task, num_trial=1000, device='cp
     for i in range(num_trial):
         env.new_trial()
         ob, gt = env.ob, env.gt
+        ob[:, 1:] = (ob[:, 1:] - np.min(ob[:, 1:]))/(np.max(ob[:, 1:]) - np.min(ob[:, 1:]))
         ob = ob[:, np.newaxis, :]  # Add batch axis
         inputs = torch.from_numpy(ob).type(torch.float).to(device)
 

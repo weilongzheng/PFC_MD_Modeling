@@ -51,11 +51,12 @@ config = {
     # 'tasks': ngym.get_collection('yang19'),
     # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
     # 'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
-    'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
-    # 'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
+    # 'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
+    'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
     # 'tasks': ['yang19.dlyanti-v0', 'yang19.dnms-v0'],
     # 'tasks': ['yang19.dlyanti-v0', 'yang19.dms-v0'],
     # 'tasks': ['yang19.rtgo-v0', 'yang19.ctxdm2-v0'],
+    # 'tasks': ['yang19.dlygo-v0', 'yang19.dm1-v0'],
 }
 
 # set random seed
@@ -179,6 +180,7 @@ for i in range(total_training_cycle):
     env = envs[task_id]
     env.new_trial()
     ob, gt = env.ob, env.gt
+    ob[:, 1:] = (ob[:, 1:] - np.min(ob[:, 1:]))/(np.max(ob[:, 1:]) - np.min(ob[:, 1:]))
     assert not np.any(np.isnan(ob))
 
     # numpy -> torch
@@ -230,9 +232,9 @@ for i in range(total_training_cycle):
             # Heatmap wPFC2MD
             # ax = plt.subplot(2, 2, 4)
             # ax = sns.heatmap(net.rnn.md.wPFC2MD, cmap='Reds')
-            # ax.set_xticks([0, 255])
-            # ax.set_xticklabels([1, 256], rotation=0)
-            # ax.set_yticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
+            # ax.set_xticks([0, config['hidden_size']-1])
+            # ax.set_xticklabels([1, config['hidden_size']], rotation=0)
+            # ax.set_yticklabels([i for i in range(config['md_size'])], rotation=0)
             # ax.set_xlabel('PFC neuron index', fontdict=font)
             # ax.set_ylabel('MD neuron index', fontdict=font)
             # ax.set_title('wPFC2MD', fontdict=font)
@@ -241,9 +243,9 @@ for i in range(total_training_cycle):
             ## Heatmap wMD2PFC
             ax = plt.subplot(2, 2, 4)
             ax = sns.heatmap(net.rnn.md.wMD2PFC, cmap='Blues_r')
-            ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-            ax.set_yticks([0, 255])
-            ax.set_yticklabels([1, 256], rotation=0)
+            ax.set_xticklabels([i for i in range(config['md_size'])], rotation=0)
+            ax.set_yticks([0, config['hidden_size']-1])
+            ax.set_yticklabels([1, config['hidden_size']], rotation=0)
             ax.set_xlabel('MD neuron index', fontdict=font)
             ax.set_ylabel('PFC neuron index', fontdict=font)
             ax.set_title('wMD2PFC', fontdict=font)
@@ -253,9 +255,9 @@ for i in range(total_training_cycle):
             # font = {'family':'Times New Roman','weight':'normal', 'size':20}
             # ax = plt.subplot(2, 3, 6)
             # ax = sns.heatmap(net.rnn.md.wMD2PFCMult, cmap='Reds')
-            # ax.set_xticklabels([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], rotation=0)
-            # ax.set_yticks([0, 255])
-            # ax.set_yticklabels([1, 256], rotation=0)
+            # ax.set_xticklabels([i for i in range(config['md_size'])], rotation=0)
+            # ax.set_yticks([0, config['hidden_size']-1])
+            # ax.set_yticklabels([1, config['hidden_size']], rotation=0)
             # ax.set_xlabel('MD neuron index', fontdict=font)
             # ax.set_ylabel('PFC neuron index', fontdict=font)
             # ax.set_title('wMD2PFCMult', fontdict=font)
