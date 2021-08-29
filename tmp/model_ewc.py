@@ -154,6 +154,7 @@ class ElasticWeightConsolidation:
             # fetch data
             current_ds.new_trial()
             ob, gt = current_ds.ob, current_ds.gt
+            ob[:, 1:] = (ob[:, 1:] - np.min(ob[:, 1:]))/(np.max(ob[:, 1:]) - np.min(ob[:, 1:]))
             inputs = torch.from_numpy(ob).type(torch.float).to(self.device)
             labels = torch.from_numpy(gt).type(torch.long).to(self.device)
             labels = (F.one_hot(labels, num_classes=self.model.rnn.output_size)).float()
