@@ -187,11 +187,11 @@ for task_pair_id in range(len(task_pairs)):
         elif i == 20000:
             task_id = 1
             if config['EWC']:
-                ewc.register_ewc_params(dataset=envs[0], task_id=task_id, num_batches=config['EWC_num_trials'])
+                ewc.register_ewc_params(dataset=envs[0], task_id=0, num_batches=config['EWC_num_trials'])
         elif i == 40000:
             task_id = 0
             if config['EWC']:
-                ewc.register_ewc_params(dataset=envs[1], task_id=task_id, num_batches=config['EWC_num_trials'])
+                ewc.register_ewc_params(dataset=envs[1], task_id=1, num_batches=config['EWC_num_trials'])
 
         # fetch data
         env = envs[task_id]

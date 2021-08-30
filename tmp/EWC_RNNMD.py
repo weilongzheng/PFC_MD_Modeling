@@ -172,11 +172,11 @@ for i in range(total_training_cycle):
     elif i == 20000:
         task_id = 1
         if config['EWC']:
-            ewc.register_ewc_params(dataset=envs[0], task_id=task_id, num_batches=3000)
+            ewc.register_ewc_params(dataset=envs[0], task_id=0, num_batches=3000)
     elif i == 40000:
         task_id = 0
         if config['EWC']:
-            ewc.register_ewc_params(dataset=envs[1], task_id=task_id, num_batches=3000)
+            ewc.register_ewc_params(dataset=envs[1], task_id=1, num_batches=3000)
 
     # fetch data
     env = envs[task_id]
