@@ -40,8 +40,8 @@ mpl.rcParams['axes.spines.left'] = True
 mpl.rcParams['axes.spines.right'] = False
 mpl.rcParams['axes.spines.top'] = False
 mpl.rcParams['axes.spines.bottom'] = True
-mpl.rcParams['pdf.fonttype'] = 42
-mpl.rcParams['ps.fonttype'] = 42
+# mpl.rcParams['pdf.fonttype'] = 42
+# mpl.rcParams['ps.fonttype'] = 42
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio
@@ -58,21 +58,29 @@ my_parser.add_argument('exp_name',
                        type=str, nargs='?',
                        help='Experiment name, also used to create the path to save results')
 my_parser.add_argument('use_gates',
-                       default=False, nargs='?',
+                       default=0, nargs='?',
                        type=int,
                        help='Use multiplicative gating or not')
 my_parser.add_argument('same_rnn',
-                       default=True, nargs='?',
+                       default=1, nargs='?',
                        type=int,
                        help='Train the same RNN for all task or create a separate RNN for each task')
 my_parser.add_argument('train_to_criterion',
-                       default=True, nargs='?',
+                       default=1, nargs='?',
                        type=int,
                        help='TODO')
 my_parser.add_argument('--var1',
                        default=1.0, nargs='?',
                        type=float,
                        help='the variance of the fixed multiplicative MD to RNN weights')
+my_parser.add_argument('--var2',
+                       default=1.0, nargs='?',
+                       type=float,
+                       help='the variance of the fixed multiplicative MD to RNN weights')
+my_parser.add_argument('--num_of_tasks',
+                       default=30, nargs='?',
+                       type=int,
+                       help='number of tasks to train on')
 
 
 # Execute the parse_args() method
@@ -112,13 +120,14 @@ config = {
     'trials_per_task' : 200000,
     'batch_size' : 100,
     'print_every_batches': 100,
-    'train_to_criterion': True,
+    'train_to_criterion': bool(args.train_to_criterion),
     'device': device,
 # model
     'use_lstm': False,
     'same_rnn' : bool(args.same_rnn), 
     'use_gates': bool(args.use_gates), 
-    'md_range': args.var1, #0.1
+    'md_mean' : args.var1,
+    'md_range': args.var2, #0.1
     'use_external_inputs_mask': False,
     'input_size': 33,
     'hidden_size': 256,
@@ -132,8 +141,14 @@ config = {
 # optimizer
     'lr': 1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
 }
+config.update({'tasks': config['tasks'][:args.num_of_tasks]})
 config.update({'human_task_names': ['{:<6}'.format(tn[7:-3]) for tn in config['tasks']]})
 config.update({'md_size': len(config['tasks'])})
+
+exp_signature = config['exp_name'] +f'_{args.var1}_{args.var2}_'+\
+    f'{"same_rnn" if config["same_rnn"] else "separate"}_{"gates" if config["use_gates"] else "nogates"}'+\
+        f'_{"tc" if config["train_to_criterion"] else "nc"}'
+print(exp_signature)
 
 task_seq = []
 # Add tasks gradually with rehearsal 1 2 1 2 3 1 2 3 4 ...
@@ -149,14 +164,14 @@ task_seq = simplified_task_seq
 # In[3]:
 
 
-def get_performance(net, envs, context_ids, batch_size=100, device='cpu'):
+def get_performance(net, envs, context_ids, batch_size=100):
     if type(envs) is not type([]):
         envs = [envs]
 
     fixation_accuracies = defaultdict()
     action_accuracies = defaultdict()
     for task_i, (context_id, env) in enumerate(zip(context_ids, envs)):
-
+        # import pdb; pdb.set_trace()
         inputs, labels = get_trials_batch(env, batch_size)
         if config['use_lstm']:
             action_pred, _ = net(inputs) # shape [500, 10, 17]
@@ -282,8 +297,9 @@ class CTRNN_MD(nn.Module):
         self.oneminusalpha = 1 - alpha
 
         if self.use_multiplicative_gates:
-            self.gates = torch.normal(0., config['md_range'], size=(config['md_size'], config['hidden_size'], ),
+            self.gates = torch.normal(config['md_mean'], config['md_range'], size=(config['md_size'], config['hidden_size'], ),
              device=self.device, dtype=torch.float) #.type(torch.LongTensor)
+            torch.abs_(self.gates)
                 # *config.G/np.sqrt(config.Nsub*2)
             # Substract mean from each row.
             # self.gates -= np.mean(self.gates, axis=1)[:, np.newaxis]
@@ -477,7 +493,7 @@ for task_i, (task_id, task_name) in bar_tasks:
                     net,
                     envs,
                     context_ids=testing_context_ids,
-                    device=device) 
+                    ) 
                 
                 testing_log['fixation_accuracy'].append(fix_perf)
                 testing_log['accuracy'].append(act_perf)
@@ -490,7 +506,9 @@ for task_i, (task_id, task_name) in bar_tasks:
             if config['MDeffect']:
                 net.rnn.md.learn = True
 
-            if (running_acc > 0.98) and config['train_to_criterion']: break # stop training current task if sufficient accuracy. Note placed here to allow at least one performance run before this is triggered.
+            if (running_acc > 0.98) and config['train_to_criterion']:
+                # import pdb; pdb.set_trace()
+                break # stop training current task if sufficient accuracy. Note placed here to allow at least one performance run before this is triggered.
         running_acc = 0.7 * running_acc + 0.3 * acc
 
     training_log['sample_input'] = inputs[0].detach().cpu().numpy().T
@@ -517,30 +535,27 @@ for logi in range(num_tasks):
 #         ax.axis('off')
         log = testing_logs[logi]
         ax.plot(log['stamps'], [test[li] for test in log['accuracy']], linewidth=2)
-        if logi == 0: ax.set_title(config['human_task_names'][li])
-        if li == 0: ax.set_ylabel(config['human_task_names'][logi])
+        ax.plot(log['stamps'], np.ones_like(log['stamps'])*0.5, ':', color='grey', linewidth=0.5)
+        if li == 0: ax.set_title(config['human_task_names'][logi])
+        if logi == 0: ax.set_ylabel(config['human_task_names'][li])
         ax.set_yticklabels([]) 
         ax.set_xticklabels([])
         if logi== li:
             ax.axvspan(*ax.get_xlim(), facecolor='grey', alpha=0.2)
         if li == num_tasks-1 and logi in [num_tasks//2 - 4, num_tasks//2, num_tasks//2 + 4] :
             ax.set_xlabel('batch #')
-axes[num_tasks-1, num_tasks//2-2].text(-7., -2.2, title_label, fontsize=12)     
+axes[num_tasks-1, num_tasks//2-2].text(-8., -2.5, title_label, fontsize=12)     
 exp_parameters = f'Exp parameters: {config["exp_name"]}\nRNN: {"same" if config["same_rnn"] else "separate"}\
-      mul_gate: {"Yes" if config["use_gates"] else "None"}'
+      mul_gate: {"True" if config["use_gates"] else "False"}\
+          {exp_signature}'
 axes[num_tasks-1, 0].text(-7., -2.2, exp_parameters, fontsize=7)     
 # plt.show()
-plt.savefig('./files/'+ config['exp_name']+'/training_same_model_for_each_task.jpg')
+plt.savefig('./files/'+ config['exp_name']+f'/testing_log_{exp_signature}.jpg')
 
 
 # In[33]:
-
-
-np.save('./files/'+ config['exp_name']+'/testing_logs.npy', testing_logs, allow_pickle=True)
-np.save('./files/'+ config['exp_name']+'/training_logs.npy', training_logs, allow_pickle=True)
-
-
-[print(ml['stamps']) for ml in logs]
+np.save('./files/'+ config['exp_name']+f'/testing_logs_{exp_signature}.npy', testing_logs, allow_pickle=True)
+np.save('./files/'+ config['exp_name']+f'/training_logs_{exp_signature}.npy', training_logs, allow_pickle=True)
 
 # same_testing_log = np.load('./files/same_model_testing_log.npy', allow_pickle=True)
 # same_training_log = np.load('./files/same_model_training_log.npy', allow_pickle=True)
