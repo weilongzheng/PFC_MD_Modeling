@@ -25,7 +25,7 @@ from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
 # models
 from model_dev import RNN_MD
-from model_ewc import ElasticWeightConsolidation
+from baselines import ElasticWeightConsolidation
 from utils import get_full_performance
 # visualization
 import matplotlib as mpl

@@ -22,7 +22,7 @@ from neurogym.utils.scheduler import RandomSchedule
 from utils import get_full_performance
 from model_dev import RNN_MD
 # from model_ideal import RNN_MD
-from model_ewc import ElasticWeightConsolidation
+from baselines import ElasticWeightConsolidation
 import matplotlib as mpl
 mpl.rcParams['axes.spines.left'] = True
 mpl.rcParams['axes.spines.right'] = False
@@ -56,8 +56,8 @@ config = {
     # 'tasks': ['yang19.go-v0', 'yang19.rtgo-v0'],
     # 'tasks': ['yang19.dms-v0', 'yang19.dmc-v0'],
     # 'tasks': ['yang19.dnms-v0', 'yang19.dnmc-v0'],
-    'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
-    # 'tasks': ['yang19.dlyanti-v0', 'yang19.dnms-v0'],
+    # 'tasks': ['yang19.dlygo-v0', 'yang19.dnmc-v0'],
+    'tasks': ['yang19.dlyanti-v0', 'yang19.dnms-v0'],
     # 'tasks': ['yang19.dlyanti-v0', 'yang19.dms-v0'],
     # 'tasks': ['yang19.dlygo-v0', 'yang19.ctxdm1-v0'],
 }

@@ -231,15 +231,15 @@ if False:
 # scale up test
 ## compute averages of performance
 if True:
-    FILE_PATH = './files/scaleup/PFCMD_nokernel/'
+    FILE_PATH = './files/two_PFCs/'
     # FILE_PATH = './files/scaleup/noMD/'
 
-    # settings = ['withMD', 'PFCEWC', 'noMD']
+    settings = ['withMD', 'PFCEWC', 'noMD']
     # settings = ['withMD', 'noMD']
-    settings = ['withMD']
+    # settings = ['withMD']
     # settings = ['noMD']
     
-    ITER = list(range(0, 420, 10))
+    ITER = list(range(0, 6, 1)) + list(range(33, 40, 1))
     LEN = len(ITER)
     for setting in settings:
         for i in ITER:
@@ -256,14 +256,10 @@ if True:
 ## PFC+MD VS PFC+EWC, PFC
 if True:
     FILE_PATH = './files/'
-    # settings = ['withMD', 'PFCEWC', 'noMD']
-    # colors = ['red', 'blue', 'black']
-    # labels = ['PFC+MD', 'PFC+EWC', 'PFC']
-    # linewidths = [2, 2, 2]
-    settings = ['withMD', 'noMD']
-    colors = ['red', 'black']
-    labels = ['PFC+MD', 'PFC']
-    linewidths = [3, 3]
+    settings = ['withMD', 'PFCEWC', 'noMD']
+    colors = ['red', 'blue', 'black']
+    labels = ['PFC+MD', 'PFC+EWC', 'PFC']
+    linewidths = [2, 2, 2]
     label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
     title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
