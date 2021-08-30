@@ -24,9 +24,7 @@ import neurogym as ngym
 from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
 # models
-# from model_dev import RNN_MD
-from model_dev import serial_RNN_MD as RNN_MD
-exp_folder = 'serial_RNN_MD'
+from model_dev import RNN_MD
 from utils import get_full_performance
 # visualization
 import matplotlib as mpl
@@ -39,13 +37,14 @@ mpl.rcParams['ps.fonttype'] = 42
 import matplotlib.pyplot as plt
 import seaborn as sns
 import imageio
+from pygifsicle import optimize
 
 '''
 source activate pytorch
 cd tmp
 nohup python -u default_test_twotasks.py > default_test_twotasks.log 2>&1 &
 
-# Turn off MD by changing config, file name of log & perf
+# Change test mode by changing config, file name of log & perf
 '''
 
 
@@ -60,41 +59,55 @@ config = {
      'tasks': ['yang19.dms-v0',
                'yang19.dnms-v0',
                'yang19.dmc-v0',
-            #    'yang19.dnmc-v0',
-            #    'yang19.dm1-v0',
-            #    'yang19.dm2-v0',
-            #    'yang19.ctxdm1-v0',
-            #    'yang19.ctxdm2-v0',
-            #    'yang19.multidm-v0',
-            #    'yang19.dlygo-v0',
-            #    'yang19.dlyanti-v0',
-            #    'yang19.go-v0',
-            #    'yang19.anti-v0',
-            #    'yang19.rtgo-v0',
-            #    'yang19.rtanti-v0'
-               ],
+               'yang19.dnmc-v0',
+               'yang19.dm1-v0',
+               'yang19.dm2-v0',
+               'yang19.ctxdm1-v0',
+               'yang19.ctxdm2-v0',
+               'yang19.multidm-v0',
+               'yang19.dlygo-v0',
+               'yang19.dlyanti-v0',
+               'yang19.go-v0',
+               'yang19.anti-v0',
+               'yang19.rtgo-v0',
+               'yang19.rtanti-v0'],
      'env_kwargs': {'dt': 100},
      'seq_len': 50,
     # model
      'input_size': 33,
-     'hidden_size': 128,
-     'sub_size': 64,
+     'hidden_size': 400,
+     'sub_size': 200,
      'output_size': 17,
      'batch_size': 1,
      'num_task': 2,
      'MDeffect': True,
-     'md_size': 10,
-     'md_active_size': 5,
+     'md_size': 4,
+     'md_active_size': 2,
      'md_dt': 0.001,
     # optimizer
      'lr': 1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
 }
 
-task_pairs = list(itertools.permutations(config['tasks'], 2))
-task_pairs = [val for val in task_pairs for i in range(2)]
+# Generate task pairs
+## 1. all pairs
+# task_pairs = list(itertools.permutations(config['tasks'], 2))
+# task_pairs = [val for val in task_pairs for i in range(2)]
+## 2. pairs from different task families
+GoFamily = ['yang19.dlygo-v0', 'yang19.dlyanti-v0']
+DMFamily = ['yang19.dm1-v0', 'yang19.ctxdm2-v0', 'yang19.multidm-v0']
+MatchFamily = ['yang19.dms-v0', 'yang19.dmc-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0']
+TaskA = GoFamily + DMFamily
+TaskB = MatchFamily
+task_pairs = []
+for a in TaskA:
+    for b in TaskB:
+        task_pairs.append((a, b))
+        task_pairs.append((b, a))
 
 # main loop
 for task_pair_id in range(len(task_pairs)):
+# for task_pair_id in range(0, 20, 1):
+# for task_pair_id in range(39, 19, -1):
     
     # envs for training and test
     task_pair = task_pairs[task_pair_id]
@@ -124,15 +137,14 @@ for task_pair_id in range(len(task_pairs)):
     print('training parameters:')
     training_params = list()
     for name, param in net.named_parameters():
-        print(name)
-        training_params.append(param)
+        if 'rnn.input2PFCctx' not in name:
+            print(name)
+            training_params.append(param)
     optimizer = torch.optim.Adam(training_params, lr=config['lr'])
 
     # training
-    total_training_cycle = 25000
-    firt_transition = 10000
-    second_transition = 20000
-    print_every_cycle = 1000
+    total_training_cycle = 50000
+    print_every_cycle = 200
     running_loss = 0.0
     running_train_time = 0
     log = {
@@ -144,10 +156,8 @@ for task_pair_id in range(len(task_pairs)):
         'act_perfs': [[], []],
     }
     if config['MDeffect']:
-        net.rnn1.md.learn = True
-        net.rnn1.md.sendinputs = True
-        net.rnn2.md.learn = True
-        net.rnn2.md.sendinputs = True
+        net.rnn.md.learn = True
+        net.rnn.md.sendinputs = True
 
 
     for i in range(total_training_cycle):
@@ -157,15 +167,16 @@ for task_pair_id in range(len(task_pairs)):
         # control training paradigm
         if i == 0:
             task_id = 0
-        elif i == firt_transition:
+        elif i == 20000:
             task_id = 1
-        elif i == second_transition:
+        elif i == 40000:
             task_id = 0
 
         # fetch data
         env = envs[task_id]
         env.new_trial()
         ob, gt = env.ob, env.gt
+        ob[:, 1:] = (ob[:, 1:] - np.min(ob[:, 1:]))/(np.max(ob[:, 1:]) - np.min(ob[:, 1:]))
         assert not np.any(np.isnan(ob))
 
         # numpy -> torch
@@ -207,8 +218,7 @@ for task_pair_id in range(len(task_pairs)):
             test_time_start = time.time()
             net.eval()
             if config['MDeffect']:
-                net.rnn1.md.learn = False
-                net.rnn2.md.learn = False
+                net.rnn.md.learn = False
             with torch.no_grad():
                 log['stamps'].append(i+1)
                 #   fixation & action performance
@@ -221,8 +231,7 @@ for task_pair_id in range(len(task_pairs)):
                     print('  act performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, i+1, act_perf))
             net.train()
             if config['MDeffect']:
-                net.rnn1.md.learn = True
-                net.rnn2.md.learn = True
+                net.rnn.md.learn = True
             running_test_time = time.time() - test_time_start
 
             # left training time
@@ -232,8 +241,7 @@ for task_pair_id in range(len(task_pairs)):
             running_train_time = 0
         
     # save log
-    os.makedirs('./files/'+ exp_folder, exist_ok=True)
-    np.save('./files/'+ exp_folder+'/'+f'{task_pair_id}_log_MD_'+ str(config['MDeffect'])+'.npy', log)
+    np.save('./files/'+f'{task_pair_id}_log_withMD.npy', log)
 
     # Task performance
     label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
@@ -242,9 +250,9 @@ for task_pair_id in range(len(task_pairs)):
     for env_id in range(len(task_pair)):
         plt.figure()
         plt.plot(log['stamps'], log['act_perfs'][env_id])
-        plt.fill_between(x=[   0,  firt_transition] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
-        plt.fill_between(x=[firt_transition, second_transition] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
-        plt.fill_between(x=[second_transition, total_training_cycle], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+        plt.fill_between(x=[   0,  20000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+        plt.fill_between(x=[20000, 40000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
+        plt.fill_between(x=[40000, 50000], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
         plt.xlabel('Trials', fontdict=label_font)
         plt.ylabel('Performance', fontdict=label_font)
         plt.title('Task{:d}: '.format(env_id+1)+task_pair[env_id], fontdict=title_font)
@@ -252,5 +260,5 @@ for task_pair_id in range(len(task_pairs)):
         plt.ylim([0.0, 1.01])
         plt.yticks([0.1*i for i in range(11)])
         plt.tight_layout()
-        plt.savefig('./files/'+ exp_folder+'/'+f'{task_pair_id}_performance_MD_'+ str(config['MDeffect'])+f'_task_{env_id}.png')
+        plt.savefig('./files/'+f'{task_pair_id}_performance_withMD_task_{env_id}.png')
         plt.close()
