@@ -231,7 +231,7 @@ if False:
 # scale up test
 ## compute averages of performance
 if True:
-    FILE_PATH = './files/two_PFCs/'
+    FILE_PATH = './files/two_PFCs/default_test1/'
     # FILE_PATH = './files/scaleup/noMD/'
 
     settings = ['withMD', 'PFCEWC', 'noMD']
@@ -239,7 +239,7 @@ if True:
     # settings = ['withMD']
     # settings = ['noMD']
     
-    ITER = list(range(0, 6, 1)) + list(range(33, 40, 1))
+    ITER = list(range(40))
     LEN = len(ITER)
     for setting in settings:
         for i in ITER:
