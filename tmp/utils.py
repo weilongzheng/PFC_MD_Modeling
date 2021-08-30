@@ -65,3 +65,9 @@ def get_task_pair_id(task_pair):
     for task_pair_id in range(len(task_pairs)):
         if task_pairs[task_pair_id] == task_pair:
             return task_pair_id
+
+def get_device() -> torch.device:
+    """
+    Returns the GPU device if available else CPU.
+    """
+    return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
