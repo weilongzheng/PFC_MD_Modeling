@@ -61,8 +61,8 @@ def get_full_performance(net, dataset, task_id, config):
     num_no_act_trial = 0
     for i in range(num_trial):
         ob, gt = dataset.new_trial(task_id)
-
         inputs = torch.from_numpy(ob).type(torch.float).to(config.device)
+        inputs = inputs[:, np.newaxis, :]
         action_pred, _ = net(inputs, task_id=task_id)
         action_pred = action_pred.detach().cpu().numpy()
         action_pred = np.argmax(action_pred, axis=-1)

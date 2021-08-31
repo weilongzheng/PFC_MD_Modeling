@@ -17,16 +17,16 @@ class BaseConfig(object):
         # RNN model
         self.input_size = 33
         self.hidden_size = 400
-        self.sub_size = 200
         self.output_size = 17
         self.num_task = len(self.taskpair)
         self.lr = 1e-4
 
-        # training & test
+        # training
         self.total_trials = 50000
         self.switch_points = [0, 20000, 40000]
         self.switch_taskid = [0, 1, 0]
         assert len(self.switch_points) == len(self.switch_taskid)
+        # test & plot
         self.test_every_trials = 500
         self.test_num_trials = 50
         self.plot_every_trials = 4000
@@ -40,6 +40,9 @@ class BaseConfig(object):
 class PFCMDConfig(BaseConfig):
     def __init__(self):
         super(PFCMDConfig, self).__init__()
+        # PFC context
+        self.hidden_ctx_size = 200
+        self.sub_size = 100
         # MD
         self.MDeffect = True
         self.md_size = 4
