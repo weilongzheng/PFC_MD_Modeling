@@ -110,7 +110,7 @@ net = RNN_MD(input_size     = config['input_size' ],
              MDeffect       = config['MDeffect'],
              md_size        = config['md_size'],
              md_active_size = config['md_active_size'],
-             md_dt          = config['md_dt'],).to(device)
+             md_dt          = config['md_dt'],)
 net = net.to(device)
 print(net, '\n')
 
