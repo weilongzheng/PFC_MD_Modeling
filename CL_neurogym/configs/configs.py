@@ -71,4 +71,6 @@ class PFCSIConfig(BaseConfig):
         # SI
         self.SI = True
         self.SI_c = 1e6
+        self.c = self.SI_c
         self.SI_xi = 0.5
+        self.xi = self.SI_xi

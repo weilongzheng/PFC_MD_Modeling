@@ -94,8 +94,108 @@ class ElasticWeightConsolidation:
         self.model = torch.load(filename)
 
 
+### More baselines
+### ref https://github.com/aimagelab/mammoth
+# Continual learning model API
+class ContinualModel(nn.Module):
+    """
+    Continual learning model.
+    """
+    NAME = None
+    COMPATIBILITY = []
 
+    def __init__(self, backbone: nn.Module, loss: nn.Module,
+                       args: Namespace, transform: torchvision.transforms, opt, device) -> None:
+        super(ContinualModel, self).__init__()
 
-# More baselines
-    # Continual model
-    # SI
+        self.net = backbone
+        self.loss = loss
+        self.args = args
+        self.transform = transform
+        self.opt = opt
+        self.device = device
+        self.net.to(self.device)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Computes a forward pass.
+        :param x: batch of inputs
+        :param task_label: some models require the task label
+        :return: the result of the computation
+        """
+        return self.net(x)
+
+    def observe(self, inputs: torch.Tensor, labels: torch.Tensor,
+                not_aug_inputs: torch.Tensor) -> float:
+        """
+        Compute a training step over a given batch of examples.
+        :param inputs: batch of examples
+        :param labels: ground-truth labels
+        :param kwargs: some methods could require additional parameters
+        :return: the value of the loss function
+        """
+        pass
+
+    def get_params(self) -> torch.Tensor:
+        """
+        Returns all the parameters concatenated in a single tensor.
+        :return: parameters tensor (??)
+        """
+        params = []
+        for pp in list(self.net.parameters()):
+            params.append(pp.view(-1))
+        return torch.cat(params)
+
+    def get_grads(self) -> torch.Tensor:
+        """
+        Returns all the gradients concatenated in a single tensor.
+        :return: gradients tensor (input_size * 100 + 100 + 100 * 100 + 100 +
+                                   + 100 * output_size + output_size)
+        """
+        grads = []
+        for pp in list(self.net.parameters()):
+            grads.append(pp.grad.view(-1))
+        return torch.cat(grads)
+
+# Synaptic Intelligence
+class SI(ContinualModel):
+    NAME = 'si'
+    COMPATIBILITY = ['class-il', 'domain-il', 'task-il']
+
+    def __init__(self, backbone, loss, args, transform, opt, device):
+        super(SI, self).__init__(backbone, loss, args, transform, opt, device)
+
+        self.checkpoint = self.get_params().data.clone().to(self.device)
+        self.big_omega = None
+        self.small_omega = 0
+
+    def penalty(self):
+        if self.big_omega is None:
+            return torch.tensor(0.0).to(self.device)
+        else:
+            penalty = (self.big_omega * ((self.get_params() - self.checkpoint) ** 2)).sum()
+            return penalty
+
+    def end_task(self, dataset):
+        # big omega calculation step
+        if self.big_omega is None:
+            self.big_omega = torch.zeros_like(self.get_params()).to(self.device)
+
+        self.big_omega += self.small_omega / ((self.get_params().data - self.checkpoint) ** 2 + self.args.xi)
+
+        # store parameters checkpoint and reset small_omega
+        self.checkpoint = self.get_params().data.clone().to(self.device)
+        self.small_omega = 0
+
+    def observe(self, inputs, labels, not_aug_inputs, task_id=None):
+        self.opt.zero_grad()
+        outputs, rnn_activity = self.net(inputs)
+        penalty = self.penalty()
+        loss = self.loss(outputs, labels) + self.args.c * penalty
+        loss.backward()
+        nn.utils.clip_grad.clip_grad_value_(self.net.parameters(), 1)
+        self.opt.step()
+
+        self.small_omega += self.args.lr * self.get_grads().data ** 2
+
+        return loss, rnn_activity

@@ -44,6 +44,7 @@ criterion = nn.MSELoss()
 optimizer, training_params, named_training_params = get_optimizer(net=net, config=config)
 
 # EWC initialization
+assert config.EWC, 'Turn on EWC'
 if config.EWC:
     ewc = ElasticWeightConsolidation(model=net,
                                      crit=criterion, 
