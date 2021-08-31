@@ -29,6 +29,7 @@ class BaseConfig(object):
         assert len(self.switch_points) == len(self.switch_taskid)
         self.test_every_trials = 500
         self.test_num_trials = 50
+        self.plot_every_trials = 4000
     
     def update(self, new_config):
         self.__dict__.update(new_config.__dict__)

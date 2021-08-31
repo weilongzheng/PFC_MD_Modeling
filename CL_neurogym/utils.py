@@ -14,9 +14,7 @@ def set_seed(seed):
 def get_taskpairs():
     pass
 
-def save_parameters():
-    pass
-
+# training
 def get_optimizer(net, config):
     print('training parameters:')
     training_params = list()
@@ -31,8 +29,8 @@ def get_optimizer(net, config):
     optimizer = torch.optim.Adam(training_params, lr=config.lr)
     return optimizer, training_params, named_training_params
 
-# forward + backward + optimize
 def forward_backward(net, opt, crit, inputs, labels, task_id):
+    # forward + backward + optimize
     opt.zero_grad()
     outputs, rnn_activity = net(inputs, task_id=task_id)
     loss = crit(outputs, labels)
@@ -95,7 +93,7 @@ def test_in_training(net, dataset, config, log, trial_idx):
         log.stamps.append(trial_idx+1)
         #   fixation & action performance
         print('Performance')
-        for env_id in range(len(config.taskpair)):
+        for env_id in range(config.num_task):
             fix_perf, act_perf = get_full_performance(net=net, dataset=dataset, task_id=env_id, config=config)
             log.fix_perfs[env_id].append(fix_perf)
             log.act_perfs[env_id].append(act_perf)
@@ -106,3 +104,7 @@ def test_in_training(net, dataset, config, log, trial_idx):
     if hasattr(config, 'MDeffect'):
         if config.MDeffect:
             net.rnn.md.learn = True
+
+# save variables
+def save_parameters():
+    pass
