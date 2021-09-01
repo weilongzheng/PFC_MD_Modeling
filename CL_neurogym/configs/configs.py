@@ -16,6 +16,7 @@ class BaseConfig(object):
         self.ROOT_DIR = os.getcwd()
         
         # dataset
+        # 1. Two tasks
         # self.task_seq = ['yang19.go-v0', 'yang19.rtgo-v0']
         # self.task_seq = ['yang19.dms-v0', 'yang19.dmc-v0']
         # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0']
@@ -24,7 +25,9 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dms-v0']
         # self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0']
-        self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
+        # 2. Four tasks
+        # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
+        self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.anti-v0', 'yang19.dlyanti-v0']
 
         
         self.num_task = len(self.task_seq)
