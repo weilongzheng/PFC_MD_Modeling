@@ -14,7 +14,7 @@ def set_seed(seed):
 
 def get_task_seqs():
     '''
-    Generate task pairs
+    Generate task sequences
     '''
     ## 1. all pairs
     # tasks = ['yang19.dms-v0',
@@ -63,7 +63,9 @@ def get_optimizer(net, config):
     return optimizer, training_params, named_training_params
 
 def forward_backward(net, opt, crit, inputs, labels, task_id):
-    # forward + backward + optimize
+    '''
+    forward + backward + optimize
+    '''
     opt.zero_grad()
     outputs, rnn_activity = net(inputs, task_id=task_id)
     loss = crit(outputs, labels)
@@ -116,6 +118,9 @@ def get_full_performance(net, dataset, task_id, config):
     return fix_perf, act_perf
 
 def test_in_training(net, dataset, config, log, trial_idx):
+    '''
+    Compute performances for every task in the given task sequence(config.task_seq).
+    '''
     # turn on test mode
     net.eval()
     if hasattr(config, 'MDeffect'):

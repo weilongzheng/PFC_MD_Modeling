@@ -19,21 +19,31 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0']
         
+        self.num_task = len(self.task_seq)
         self.env_kwargs = {'dt': 100}
         self.batch_size = 1
-        
-        # RNN model
-        self.input_size = 33
-        self.hidden_size = 400
-        self.output_size = 17
-        self.num_task = len(self.task_seq)
-        self.lr = 1e-4
 
-        # training
+        # block training
+        '''
+        Customize the block training paradigm by changing self.task_seq, self.total_trials, self.switch_points, self.switch_taskid.
+            e.g.
+            To train four tasks serially for 10000 trials each:
+            self.task_seq=[task1, task2, task3, task4]
+            self.total_trials=40000
+            self.switch_points=[0, 10000, 20000, 30000]
+            self.switch_taskid=[0, 1, 2, 3]
+        '''
         self.total_trials = 50000
         self.switch_points = [0, 20000, 40000]
         self.switch_taskid = [0, 1, 0]
         assert len(self.switch_points) == len(self.switch_taskid)
+
+        # RNN model
+        self.input_size = 33
+        self.hidden_size = 400
+        self.output_size = 17
+        self.lr = 1e-4
+
         # test & plot
         self.test_every_trials = 500
         self.test_num_trials = 50
