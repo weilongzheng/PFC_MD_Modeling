@@ -17,7 +17,8 @@ class ContinualModel(nn.Module):
 
     def __init__(self, backbone: nn.Module, loss: nn.Module,
                        args: Namespace, transform: torchvision.transforms,
-                       opt, device) -> None:
+                       opt, device,
+                       parameters, named_parameters) -> None:
         super(ContinualModel, self).__init__()
 
         self.net = backbone
@@ -27,6 +28,8 @@ class ContinualModel(nn.Module):
         self.opt = opt
         self.device = device
         self.net.to(self.device)
+        self.parameters = parameters
+        self.named_parameters = named_parameters
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -54,7 +57,7 @@ class ContinualModel(nn.Module):
         :return: parameters tensor (??)
         """
         params = []
-        for pp in list(self.net.parameters()):
+        for pp in list(self.parameters):
             params.append(pp.view(-1))
         return torch.cat(params)
 
@@ -65,17 +68,14 @@ class ContinualModel(nn.Module):
                                    + 100 * output_size + output_size)
         """
         grads = []
-        for pp in list(self.net.parameters()):
+        for pp in list(self.parameters):
             grads.append(pp.grad.view(-1))
         return torch.cat(grads)
 
 # Elastic Weight Consolidation
 class EWC(ContinualModel):
-    def __init__(self, backbone, loss, args, transform, opt, device,
-                 parameters, named_parameters):
-        super(EWC, self).__init__(backbone, loss, args, transform, opt, device)
-        self.parameters = parameters
-        self.named_parameters = named_parameters
+    def __init__(self, backbone, loss, args, transform, opt, device, parameters, named_parameters):
+        super(EWC, self).__init__(backbone, loss, args, transform, opt, device, parameters, named_parameters)
 
     def _update_mean_params(self):
         for param_name, param in self.named_parameters.items():
@@ -148,8 +148,8 @@ class SI(ContinualModel):
     NAME = 'si'
     COMPATIBILITY = ['class-il', 'domain-il', 'task-il']
 
-    def __init__(self, backbone, loss, args, transform, opt, device):
-        super(SI, self).__init__(backbone, loss, args, transform, opt, device)
+    def __init__(self, backbone, loss, args, transform, opt, device, parameters, named_parameters):
+        super(SI, self).__init__(backbone, loss, args, transform, opt, device, parameters, named_parameters)
 
         self.checkpoint = self.get_params().data.clone().to(self.device)
         self.big_omega = None
@@ -179,7 +179,7 @@ class SI(ContinualModel):
         penalty = self.penalty()
         loss = self.loss(outputs, labels) + self.args.c * penalty
         loss.backward()
-        nn.utils.clip_grad.clip_grad_value_(self.net.parameters(), 1)
+        nn.utils.clip_grad.clip_grad_value_(self.parameters, 1)
         self.opt.step()
 
         self.small_omega += self.args.lr * self.get_grads().data ** 2

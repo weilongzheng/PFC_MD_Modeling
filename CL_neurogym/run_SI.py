@@ -51,7 +51,9 @@ if config.SI:
             args=config,
             transform=None,
             opt=optimizer,
-            device=config.device)
+            device=config.device,
+            parameters=training_params,
+            named_parameters=named_training_params)
     net = si.net
 
 # logger
@@ -71,11 +73,11 @@ for i in range(config.total_trials):
     elif i == config.switch_points[1]:
         task_id = config.switch_taskid[1]
         if config.SI:
-            si.end_task(dataset=None)
+            si.end_task()
     elif i == config.switch_points[2]:
         task_id = config.switch_taskid[2]
         if config.SI:
-            si.end_task(dataset=None)
+            si.end_task()
 
     inputs, labels = dataset(task_id=task_id)
 
