@@ -19,7 +19,7 @@ from configs.configs import PFCEWCConfig
 from logger.logger import BaseLogger
 from data.ngym import NGYMDataset
 from models.PFC import RNN_MD
-from models.baselines import ElasticWeightConsolidation
+from models.baselines import EWC
 from utils import set_seed, forward_backward, get_optimizer, test_in_training
 from analysis.visualization import plot_rnn_activity, plot_loss, plot_perf, plot_fullperf
 
@@ -46,15 +46,15 @@ optimizer, training_params, named_training_params = get_optimizer(net=net, confi
 # EWC initialization
 assert config.EWC, 'Turn on EWC'
 if config.EWC:
-    ewc = ElasticWeightConsolidation(model=net,
-                                     crit=criterion, 
-                                     optimizer=optimizer,
-                                     parameters=training_params,
-                                     named_parameters=named_training_params,
-                                     lr=config.lr,
-                                     weight=config.EWC_weight,
-                                     device=config.device)
-    net = ewc.model
+    ewc = EWC(backbone=net,
+              loss=criterion,
+              args=config,
+              transform=None,
+              opt=optimizer,
+              device=config.device,
+              parameters=training_params,
+              named_parameters=named_training_params)
+    net = ewc.net
 
 # logger
 log = BaseLogger()
@@ -73,15 +73,15 @@ for i in range(config.total_trials):
     elif i == config.switch_points[1]:
         task_id = config.switch_taskid[1]
         if config.EWC:
-            ewc.register_ewc_params(dataset=dataset, task_ids=config.switch_taskid[0:1], num_batches=config.EWC_num_trials)
+            ewc.end_task(dataset=dataset, task_ids=config.switch_taskid[0:1], num_batches=config.EWC_num_trials)
     elif i == config.switch_points[2]:
         task_id = config.switch_taskid[2]
         if config.EWC:
-            ewc.register_ewc_params(dataset=dataset, task_ids=config.switch_taskid[0:2], num_batches=config.EWC_num_trials)
+            ewc.end_task(dataset=dataset, task_ids=config.switch_taskid[0:2], num_batches=config.EWC_num_trials)
 
     inputs, labels = dataset(task_id=task_id)
 
-    loss, rnn_activity = ewc.forward_backward_update(input=inputs, target=labels, EWC_reg=True)
+    loss, rnn_activity = ewc.observe(inputs=inputs, labels=labels, not_aug_inputs=None)
 
     # plots
     if i % config.plot_every_trials == config.plot_every_trials-1:
