@@ -24,7 +24,7 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dms-v0']
         # self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0']
-        self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.rtgo-v0', 'yang19.go-v0']
+        self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
 
         
         self.num_task = len(self.task_seq)
@@ -33,17 +33,19 @@ class BaseConfig(object):
 
         # block training
         '''
-        Customize the block training paradigm by changing self.task_seq, self.total_trials, self.switch_points, self.switch_taskid.
+        Customize the block training paradigm:
+        1. Change self.task_seq, self.total_trials, self.switch_points.
             e.g.
             To train four tasks serially for 10000 trials each:
             self.task_seq=[task1, task2, task3, task4]
             self.total_trials=40000
             self.switch_points=[0, 10000, 20000, 30000]
-            self.switch_taskid=[0, 1, 2, 3]
+        2. Change utils.get_task_id
+        3. Change the task_ids of CL_model.end_task() in the run_baselines.py 
         '''
         self.total_trials = 50000
         self.switch_points = [0, 20000, 40000]
-        self.switch_taskid = [0, 1, 0]
+        self.switch_taskid = [0, 1, 0] # this config is deprecated right now
         assert len(self.switch_points) == len(self.switch_taskid)
 
         # RNN model
