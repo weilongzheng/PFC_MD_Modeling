@@ -73,11 +73,11 @@ for i in range(config.total_trials):
     elif i == config.switch_points[1]:
         task_id = config.switch_taskid[1]
         if config.EWC:
-            ewc.register_ewc_params(dataset=dataset, task_id=config.switch_taskid[0], num_batches=config.EWC_num_trials)
+            ewc.register_ewc_params(dataset=dataset, task_ids=config.switch_taskid[0:1], num_batches=config.EWC_num_trials)
     elif i == config.switch_points[2]:
         task_id = config.switch_taskid[2]
         if config.EWC:
-            ewc.register_ewc_params(dataset=dataset, task_id=config.switch_taskid[1], num_batches=config.EWC_num_trials)
+            ewc.register_ewc_params(dataset=dataset, task_ids=config.switch_taskid[0:2], num_batches=config.EWC_num_trials)
 
     inputs, labels = dataset(task_id=task_id)
 

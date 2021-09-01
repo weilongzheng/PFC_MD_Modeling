@@ -73,7 +73,7 @@ class PFCEWCConfig(BaseConfig):
         # EWC
         self.EWC = True
         self.EWC_weight = 1e6
-        self.EWC_num_trials = 3000
+        self.EWC_num_trials = 1500
 
 class PFCSIConfig(BaseConfig):
     def __init__(self):

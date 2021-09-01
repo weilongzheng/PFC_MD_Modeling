@@ -26,18 +26,19 @@ class ElasticWeightConsolidation:
             self.model.register_buffer(_buff_param_name+'_estimated_mean', param.data.clone())
     
     # CE loss
-    def _update_fisher_params(self, current_ds, task_id, num_batch):
+    def _update_fisher_params(self, current_ds, task_ids, num_batch):
         log_liklihoods = []
-        for i in range(num_batch):
-            # fetch data
-            ob, gt = current_ds.new_trial(task_id=task_id)
-            inputs = torch.from_numpy(ob).type(torch.float).to(self.device)
-            labels = torch.from_numpy(gt).type(torch.long).to(self.device)
-            inputs = inputs[:, np.newaxis, :]
-            outputs, _ = self.model(inputs)
-            # compute log_liklihoods
-            outputs = F.log_softmax(outputs, dim=-1) # the last dim
-            log_liklihoods.append(torch.flatten(outputs[:, :, labels]))
+        for task_id in task_ids:
+            for i in range(num_batch):
+                # fetch data
+                ob, gt = current_ds.new_trial(task_id=task_id)
+                inputs = torch.from_numpy(ob).type(torch.float).to(self.device)
+                labels = torch.from_numpy(gt).type(torch.long).to(self.device)
+                inputs = inputs[:, np.newaxis, :]
+                outputs, _ = self.model(inputs)
+                # compute log_liklihoods
+                outputs = F.log_softmax(outputs, dim=-1) # the last dim
+                log_liklihoods.append(torch.flatten(outputs[:, :, labels]))
         log_likelihood = torch.cat(log_liklihoods).mean()
         grad_log_liklihood = autograd.grad(log_likelihood, self.parameters)
         _buff_param_names = [param[0].replace('.', '__') for param in self.named_parameters.items()]
@@ -60,8 +61,8 @@ class ElasticWeightConsolidation:
     #     for _buff_param_name, param in zip(_buff_param_names, grad_log_liklihood):
     #         self.model.register_buffer(_buff_param_name+'_estimated_fisher', param.data.clone() ** 2)
 
-    def register_ewc_params(self, dataset, task_id, num_batches):
-        self._update_fisher_params(dataset, task_id, num_batches)
+    def register_ewc_params(self, dataset, task_ids, num_batches):
+        self._update_fisher_params(dataset, task_ids, num_batches)
         self._update_mean_params()
 
     def _compute_consolidation_loss(self, weight):
