@@ -24,11 +24,12 @@ from utils import set_seed, get_optimizer, test_in_training
 from analysis.visualization import plot_rnn_activity, plot_loss, plot_perf, plot_fullperf
 
 
-# configs
 # choose a mode from 'Base', 'EWC', 'SI'
-mode = 'Base'
-config = get_config(mode)
+mode = 'SI'
 print(mode, '\n')
+
+# configs
+config = get_config(mode)
 
 # datasets
 dataset = get_dataset(dataset_filename='ngym', config=config)
