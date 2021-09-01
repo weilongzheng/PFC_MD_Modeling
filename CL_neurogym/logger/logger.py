@@ -1,14 +1,17 @@
 class BaseLogger(object):
-    def __init__(self):
+    def __init__(self, config):
         self.losses = []
         self.stamps = []
-        self.fix_perfs = [[], []]
-        self.act_perfs = [[], []]
+        self.fix_perfs = []
+        self.act_perfs = []
+        for _ in range(config.num_task):
+            self.fix_perfs.append([])
+            self.act_perfs.append([])
         self.PFCouts_all = []
 
 class PFCMDLogger(BaseLogger):
-    def __init__(self):
-        super(PFCMDLogger, self).__init__()
+    def __init__(self, config):
+        super(PFCMDLogger, self).__init__(config)
         self.MDouts_all = []
         self.MDpreTraces_all = []
         self.MDpreTraces_binary_all = []

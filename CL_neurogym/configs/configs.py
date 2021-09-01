@@ -19,11 +19,13 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.go-v0', 'yang19.rtgo-v0']
         # self.task_seq = ['yang19.dms-v0', 'yang19.dmc-v0']
         # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0']
-        self.task_seq = ['yang19.dlygo-v0', 'yang19.dnmc-v0']
+        # self.task_seq = ['yang19.dlygo-v0', 'yang19.dnmc-v0']
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dnms-v0']
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dms-v0']
         # self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0']
+        self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.rtgo-v0', 'yang19.go-v0']
+
         
         self.num_task = len(self.task_seq)
         self.env_kwargs = {'dt': 100}
@@ -52,7 +54,7 @@ class BaseConfig(object):
 
         # test & plot
         self.test_every_trials = 500
-        self.test_num_trials = 50
+        self.test_num_trials = 30
         self.plot_every_trials = 4000
 
         # continual learning mode
@@ -68,7 +70,7 @@ class PFCMDConfig(BaseConfig):
     def __init__(self):
         super(PFCMDConfig, self).__init__()
         # PFC context
-        self.hidden_ctx_size = 200
+        self.hidden_ctx_size = 400
         self.sub_size = 100
         # MD
         self.MDeffect = True

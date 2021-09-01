@@ -17,16 +17,17 @@ import seaborn as sns
 
 from configs.configs import PFCMDConfig
 from logger.logger import PFCMDLogger
-from data.ngym import NGYMDataset
+from data.ngym import NGYM
 from models.PFCMD import RNN_MD
 from utils import set_seed, forward_backward, get_optimizer, test_in_training
 from analysis.visualization import plot_rnn_activity, plot_MD_variables, plot_loss, plot_perf, plot_fullperf
 
 # configs
 config = PFCMDConfig()
+print(config.task_seq)
 
 # datasets
-dataset = NGYMDataset(config)
+dataset = NGYM(config)
 
 # set random seed
 set_seed(seed=config.RNGSEED)
@@ -49,7 +50,7 @@ criterion = nn.MSELoss()
 optimizer, training_params, named_training_params = get_optimizer(net=net, config=config)
 
 # logger
-log = PFCMDLogger()
+log = PFCMDLogger(config=config)
 
 # training
 running_loss = 0.0
@@ -61,11 +62,29 @@ for i in range(config.total_trials):
 
     # control training paradigm
     if i == config.switch_points[0]:
-        task_id = config.switch_taskid[0]
+        # task_id = config.switch_taskid[0]
+        task_id = 0
     elif i == config.switch_points[1]:
-        task_id = config.switch_taskid[1]
+        # task_id = config.switch_taskid[1]
+        task_id = 2
     elif i == config.switch_points[2]:
-        task_id = config.switch_taskid[2]
+        # task_id = config.switch_taskid[2]
+        task_id = 0
+    if i >= config.switch_points[0] and i < config.switch_points[1]:
+        if task_id == 0:
+            task_id = 1
+        elif task_id == 1:
+            task_id = 0
+    elif i >= config.switch_points[1] and i < config.switch_points[2]:
+        if task_id == 2:
+            task_id = 3
+        elif task_id == 3:
+            task_id = 2
+    elif i >= config.switch_points[2]:
+        if task_id == 0:
+            task_id = 1
+        elif task_id == 1:
+            task_id = 0
 
     inputs, labels = dataset(task_id=task_id)
 
