@@ -9,11 +9,11 @@ import neurogym as ngym
 class NGYMDataset():
     def __init__(self, config):
         self.config = config
-        self.taskpair = tuple(self.config.taskpair)
-        self.num_tasks = len(self.taskpair)
+        self.task_seq = tuple(self.config.task_seq)
+        self.num_tasks = len(self.task_seq)
         # initialize environments
         self.envs = []
-        for task in self.taskpair:
+        for task in self.task_seq:
             env = gym.make(task, **self.config.env_kwargs)
             self.envs.append(env)
 

@@ -10,14 +10,14 @@ class BaseConfig(object):
         self.ROOT_DIR = os.getcwd()
         
         # dataset
-        # self.taskpair = ['yang19.go-v0', 'yang19.rtgo-v0']
-        # self.taskpair = ['yang19.dms-v0', 'yang19.dmc-v0']
-        # self.taskpair = ['yang19.dnms-v0', 'yang19.dnmc-v0']
-        # self.taskpair = ['yang19.dlygo-v0', 'yang19.dnmc-v0']
-        self.taskpair = ['yang19.dlyanti-v0', 'yang19.dnms-v0']
-        # self.taskpair = ['yang19.dlyanti-v0', 'yang19.dms-v0']
-        # self.taskpair = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
-        # self.taskpair = ['yang19.dlygo-v0', 'yang19.dm1-v0']
+        # self.task_seq = ['yang19.go-v0', 'yang19.rtgo-v0']
+        # self.task_seq = ['yang19.dms-v0', 'yang19.dmc-v0']
+        # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0']
+        # self.task_seq = ['yang19.dlygo-v0', 'yang19.dnmc-v0']
+        self.task_seq = ['yang19.dlyanti-v0', 'yang19.dnms-v0']
+        # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dms-v0']
+        # self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
+        # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0']
         
         self.env_kwargs = {'dt': 100}
         self.batch_size = 1
@@ -26,7 +26,7 @@ class BaseConfig(object):
         self.input_size = 33
         self.hidden_size = 400
         self.output_size = 17
-        self.num_task = len(self.taskpair)
+        self.num_task = len(self.task_seq)
         self.lr = 1e-4
 
         # training

@@ -12,7 +12,7 @@ def set_seed(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-def get_taskpairs():
+def get_task_seqs():
     '''
     Generate task pairs
     '''
@@ -32,20 +32,20 @@ def get_taskpairs():
     #          'yang19.anti-v0',
     #          'yang19.rtgo-v0',
     #          'yang19.rtanti-v0']
-    # taskpairs = list(itertools.permutations(tasks, 2))
-    # taskpairs = [val for val in taskpairs for i in range(2)]
+    # task_seqs = list(itertools.permutations(tasks, 2))
+    # task_seqs = [val for val in task_seqs for i in range(2)]
     ## 2. pairs from different task families
     GoFamily = ['yang19.dlygo-v0', 'yang19.dlyanti-v0']
     DMFamily = ['yang19.dm1-v0', 'yang19.ctxdm2-v0', 'yang19.multidm-v0']
     MatchFamily = ['yang19.dms-v0', 'yang19.dmc-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0']
     TaskA = GoFamily + DMFamily
     TaskB = MatchFamily
-    taskpairs = []
+    task_seqs = []
     for a in TaskA:
         for b in TaskB:
-            taskpairs.append((a, b))
-            taskpairs.append((b, a))
-    return taskpairs
+            task_seqs.append((a, b))
+            task_seqs.append((b, a))
+    return task_seqs
 
 # training
 def get_optimizer(net, config):
