@@ -6,7 +6,7 @@ from torch.nn import functional as F
 import gym
 import neurogym as ngym
 
-class NGYMDataset():
+class NGYM():
     def __init__(self, config):
         self.config = config
         self.task_seq = tuple(self.config.task_seq)

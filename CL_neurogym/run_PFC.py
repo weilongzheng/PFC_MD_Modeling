@@ -18,7 +18,7 @@ import seaborn as sns
 from configs.configs import BaseConfig
 from logger.logger import BaseLogger
 from data.ngym import NGYMDataset
-from models.PFC import RNN_MD
+from models.PFC import RNN
 from utils import set_seed, forward_backward, get_optimizer, test_in_training
 from analysis.visualization import plot_rnn_activity, plot_loss, plot_perf, plot_fullperf
 
@@ -32,9 +32,9 @@ dataset = NGYMDataset(config)
 set_seed(seed=config.RNGSEED)
 
 # model
-net = RNN_MD(input_size=config.input_size,
-             hidden_size=config.hidden_size,
-             output_size=config.output_size)
+net = RNN(input_size=config.input_size,
+          hidden_size=config.hidden_size,
+          output_size=config.output_size)
 net = net.to(config.device)
 print(net, '\n')
 

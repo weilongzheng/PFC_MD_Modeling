@@ -1,6 +1,12 @@
 import os
 import sys
+from models import MODES
 
+'''
+Class names of configs are based on the class names of models:
+    Base -> BaseConfig
+    EWC  -> EWCConfig
+'''
 
 class BaseConfig(object):
     def __init__(self):
@@ -48,6 +54,9 @@ class BaseConfig(object):
         self.test_every_trials = 500
         self.test_num_trials = 50
         self.plot_every_trials = 4000
+
+        # continual learning mode
+        self.mode = None
     
     def update(self, new_config):
         self.__dict__.update(new_config.__dict__)
@@ -67,17 +76,17 @@ class PFCMDConfig(BaseConfig):
         self.md_active_size = 2
         self.md_dt = 0.001
 
-class PFCEWCConfig(BaseConfig):
+class EWCConfig(BaseConfig):
     def __init__(self):
-        super(PFCEWCConfig, self).__init__()
+        super(EWCConfig, self).__init__()
         # EWC
         self.EWC = True
         self.EWC_weight = 1e6
         self.EWC_num_trials = 1500
 
-class PFCSIConfig(BaseConfig):
+class SIConfig(BaseConfig):
     def __init__(self):
-        super(PFCSIConfig, self).__init__()
+        super(SIConfig, self).__init__()
         # SI
         self.SI = True
         self.SI_c = 1e6

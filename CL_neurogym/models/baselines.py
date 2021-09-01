@@ -16,14 +16,14 @@ class ContinualModel(nn.Module):
     COMPATIBILITY = []
 
     def __init__(self, backbone: nn.Module, loss: nn.Module,
-                       args: Namespace, transform: torchvision.transforms,
+                       config: Namespace, transform: torchvision.transforms,
                        opt, device,
                        parameters, named_parameters) -> None:
         super(ContinualModel, self).__init__()
 
         self.net = backbone
         self.loss = loss
-        self.args = args
+        self.config = config
         self.transform = transform
         self.opt = opt
         self.device = device
@@ -72,10 +72,36 @@ class ContinualModel(nn.Module):
             grads.append(pp.grad.view(-1))
         return torch.cat(grads)
 
+# Base Model
+class Base(ContinualModel):
+    NAME = 'Base'
+    COMPATIBILITY = ['class-il', 'domain-il', 'task-il']
+
+    def __init__(self, backbone, loss, config, transform, opt, device, parameters, named_parameters):
+        super(Base, self).__init__(backbone, loss, config, transform, opt, device, parameters, named_parameters)
+
+    def penalty(self):
+        pass
+
+    def end_task(self, dataset=None, task_ids=None, num_batches=None):
+        pass
+
+    def observe(self, inputs, labels, not_aug_inputs, task_id=None):
+        self.opt.zero_grad()
+        outputs, rnn_activity = self.net(inputs)
+        loss = self.loss(outputs, labels)
+        loss.backward()
+        nn.utils.clip_grad.clip_grad_value_(self.parameters, 1)
+        self.opt.step()
+        return loss, rnn_activity
+
 # Elastic Weight Consolidation
 class EWC(ContinualModel):
-    def __init__(self, backbone, loss, args, transform, opt, device, parameters, named_parameters):
-        super(EWC, self).__init__(backbone, loss, args, transform, opt, device, parameters, named_parameters)
+    NAME = 'Elastic Weight Consolidation'
+    COMPATIBILITY = ['class-il', 'domain-il', 'task-il']
+
+    def __init__(self, backbone, loss, config, transform, opt, device, parameters, named_parameters):
+        super(EWC, self).__init__(backbone, loss, config, transform, opt, device, parameters, named_parameters)
 
     def _update_mean_params(self):
         for param_name, param in self.named_parameters.items():
@@ -137,7 +163,7 @@ class EWC(ContinualModel):
     def observe(self, inputs, labels, not_aug_inputs, task_id=None):
         self.opt.zero_grad()
         output, rnn_activity = self.net(inputs)
-        loss = self.loss(output, labels) + self.penalty(self.args.EWC_weight)
+        loss = self.loss(output, labels) + self.penalty(self.config.EWC_weight)
         loss.backward()
         self.opt.step()
         return loss, rnn_activity
@@ -145,11 +171,11 @@ class EWC(ContinualModel):
 
 # Synaptic Intelligence
 class SI(ContinualModel):
-    NAME = 'si'
+    NAME = 'Synaptic Intelligence'
     COMPATIBILITY = ['class-il', 'domain-il', 'task-il']
 
-    def __init__(self, backbone, loss, args, transform, opt, device, parameters, named_parameters):
-        super(SI, self).__init__(backbone, loss, args, transform, opt, device, parameters, named_parameters)
+    def __init__(self, backbone, loss, config, transform, opt, device, parameters, named_parameters):
+        super(SI, self).__init__(backbone, loss, config, transform, opt, device, parameters, named_parameters)
 
         self.checkpoint = self.get_params().data.clone().to(self.device)
         self.big_omega = None
@@ -167,7 +193,7 @@ class SI(ContinualModel):
         if self.big_omega is None:
             self.big_omega = torch.zeros_like(self.get_params()).to(self.device)
 
-        self.big_omega += self.small_omega / ((self.get_params().data - self.checkpoint) ** 2 + self.args.xi)
+        self.big_omega += self.small_omega / ((self.get_params().data - self.checkpoint) ** 2 + self.config.xi)
 
         # store parameters checkpoint and reset small_omega
         self.checkpoint = self.get_params().data.clone().to(self.device)
@@ -177,11 +203,11 @@ class SI(ContinualModel):
         self.opt.zero_grad()
         outputs, rnn_activity = self.net(inputs)
         penalty = self.penalty()
-        loss = self.loss(outputs, labels) + self.args.c * penalty
+        loss = self.loss(outputs, labels) + self.config.c * penalty
         loss.backward()
         nn.utils.clip_grad.clip_grad_value_(self.parameters, 1)
         self.opt.step()
 
-        self.small_omega += self.args.lr * self.get_grads().data ** 2
+        self.small_omega += self.config.lr * self.get_grads().data ** 2
 
         return loss, rnn_activity

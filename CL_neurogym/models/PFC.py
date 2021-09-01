@@ -126,7 +126,7 @@ class CTRNN(nn.Module):
         output = torch.stack(output, dim=0)
         return output, hidden
 
-class RNN_MD(nn.Module):
+class RNN(nn.Module):
     """Recurrent network model.
     Args:
         input_size: int, input size
