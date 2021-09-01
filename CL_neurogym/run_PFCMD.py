@@ -19,7 +19,7 @@ from configs.configs import PFCMDConfig
 from logger.logger import PFCMDLogger
 from data.ngym import NGYM
 from models.PFCMD import RNN_MD
-from utils import set_seed, forward_backward, get_optimizer, test_in_training
+from utils import set_seed, get_task_id, forward_backward, get_optimizer, test_in_training
 from analysis.visualization import plot_rnn_activity, plot_MD_variables, plot_loss, plot_perf, plot_fullperf
 
 # configs
@@ -53,6 +53,7 @@ optimizer, training_params, named_training_params = get_optimizer(net=net, confi
 log = PFCMDLogger(config=config)
 
 # training
+task_id = 0
 running_loss = 0.0
 running_train_time = 0
 
@@ -61,30 +62,7 @@ for i in range(config.total_trials):
     train_time_start = time.time()    
 
     # control training paradigm
-    if i == config.switch_points[0]:
-        # task_id = config.switch_taskid[0]
-        task_id = 0
-    elif i == config.switch_points[1]:
-        # task_id = config.switch_taskid[1]
-        task_id = 2
-    elif i == config.switch_points[2]:
-        # task_id = config.switch_taskid[2]
-        task_id = 0
-    if i >= config.switch_points[0] and i < config.switch_points[1]:
-        if task_id == 0:
-            task_id = 1
-        elif task_id == 1:
-            task_id = 0
-    elif i >= config.switch_points[1] and i < config.switch_points[2]:
-        if task_id == 2:
-            task_id = 3
-        elif task_id == 3:
-            task_id = 2
-    elif i >= config.switch_points[2]:
-        if task_id == 0:
-            task_id = 1
-        elif task_id == 1:
-            task_id = 0
+    task_id = get_task_id(config=config, trial_idx=i, prev_task_id=task_id)
 
     inputs, labels = dataset(task_id=task_id)
 

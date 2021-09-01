@@ -20,7 +20,7 @@ from logger.logger import BaseLogger
 from data import get_dataset
 from models.PFC import RNN
 from models import get_model
-from utils import set_seed, get_optimizer, test_in_training
+from utils import set_seed, get_task_id, get_optimizer, test_in_training
 from analysis.visualization import plot_rnn_activity, plot_loss, plot_perf, plot_fullperf
 
 
@@ -60,9 +60,10 @@ CL_model = get_model(backbone=net,
 net = CL_model.net
 
 # logger
-log = BaseLogger()
+log = BaseLogger(config=config)
 
 # training
+task_id = 0
 running_loss = 0.0
 running_train_time = 0
 
@@ -71,14 +72,13 @@ for i in range(config.total_trials):
     train_time_start = time.time()    
 
     # control training paradigm
-    if i == config.switch_points[0]:
-        task_id = config.switch_taskid[0]
-    elif i == config.switch_points[1]:
-        task_id = config.switch_taskid[1]
-        CL_model.end_task(dataset=dataset, task_ids=config.switch_taskid[0:1], config=config)
-    elif i == config.switch_points[2]:
-        task_id = config.switch_taskid[2]
+    task_id = get_task_id(config=config, trial_idx=i, prev_task_id=task_id)
+
+    # register parameters an the end of each block
+    if i == config.switch_points[1]:
         CL_model.end_task(dataset=dataset, task_ids=config.switch_taskid[0:2], config=config)
+    elif i == config.switch_points[2]:
+        CL_model.end_task(dataset=dataset, task_ids=config.switch_taskid[0:4], config=config)
 
     inputs, labels = dataset(task_id=task_id)
 
