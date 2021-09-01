@@ -25,9 +25,10 @@ from analysis.visualization import plot_rnn_activity, plot_loss, plot_perf, plot
 
 
 # configs
-mode = 'EWC'
+# choose a mode from 'Base', 'EWC', 'SI'
+mode = 'Base'
 config = get_config(mode)
-print(mode)
+print(mode, '\n')
 
 # datasets
 dataset = get_dataset(dataset_filename='ngym', config=config)
@@ -56,3 +57,63 @@ CL_model = get_model(backbone=net,
                      parameters=training_params,
                      named_parameters=named_training_params)
 net = CL_model.net
+
+# logger
+log = BaseLogger()
+
+# training
+running_loss = 0.0
+running_train_time = 0
+
+for i in range(config.total_trials):
+
+    train_time_start = time.time()    
+
+    # control training paradigm
+    if i == config.switch_points[0]:
+        task_id = config.switch_taskid[0]
+    elif i == config.switch_points[1]:
+        task_id = config.switch_taskid[1]
+        CL_model.end_task(dataset=dataset, task_ids=config.switch_taskid[0:1], config=config)
+    elif i == config.switch_points[2]:
+        task_id = config.switch_taskid[2]
+        CL_model.end_task(dataset=dataset, task_ids=config.switch_taskid[0:2], config=config)
+
+    inputs, labels = dataset(task_id=task_id)
+
+    loss, rnn_activity = CL_model.observe(inputs=inputs, labels=labels, not_aug_inputs=None)
+
+    # plots
+    if i % config.plot_every_trials == config.plot_every_trials-1:
+        plot_rnn_activity(rnn_activity)
+    # statistics
+    log.losses.append(loss.item())
+    running_loss += loss.item()
+    running_train_time += time.time() - train_time_start
+    if i % config.test_every_trials == (config.test_every_trials - 1):
+        # progress info
+        print('Total trial: {:d}'.format(config.total_trials))
+        print('Training sample index: {:d}-{:d}'.format(i+1-config.test_every_trials, i+1))
+        # train loss
+        print('MSE loss: {:0.9f}'.format(running_loss / config.test_every_trials))
+        running_loss = 0.0
+        # test during training
+        test_time_start = time.time()
+        test_in_training(net=net, dataset=dataset, config=config, log=log, trial_idx=i)
+        running_test_time = time.time() - test_time_start
+        # left training time
+        print('Predicted left training time: {:0.0f} s'.format(
+             (running_train_time + running_test_time) * (config.total_trials - i - 1) / config.test_every_trials),
+             end='\n\n')
+        running_train_time = 0
+
+# save variables
+# np.save('./files/'+'config.npy', config)
+# np.save('./files/'+'log.npy', log)
+# log = np.load('./files/'+'log.npy', allow_pickle=True).item()
+# config = np.load('./files/'+'config.npy', allow_pickle=True).item()
+
+# visualization
+plot_loss(log)
+plot_fullperf(config, log)
+plot_perf(config, log)

@@ -51,10 +51,19 @@ class ContinualModel(nn.Module):
         """
         pass
 
+    def end_task(self, dataset=None, task_ids=None, config=None):
+        """
+        At the end of training a task, register parameters.
+        :param dataset: dataset
+        :param task_ids: indices of learned tasks
+        :param config: configs
+        """
+        pass
+
     def get_params(self) -> torch.Tensor:
         """
         Returns all the parameters concatenated in a single tensor.
-        :return: parameters tensor (??)
+        :return: parameters tensor
         """
         params = []
         for pp in list(self.parameters):
@@ -79,12 +88,6 @@ class Base(ContinualModel):
 
     def __init__(self, backbone, loss, config, transform, opt, device, parameters, named_parameters):
         super(Base, self).__init__(backbone, loss, config, transform, opt, device, parameters, named_parameters)
-
-    def penalty(self):
-        pass
-
-    def end_task(self, dataset=None, task_ids=None, num_batches=None):
-        pass
 
     def observe(self, inputs, labels, not_aug_inputs, task_id=None):
         self.opt.zero_grad()
@@ -156,7 +159,8 @@ class EWC(ContinualModel):
         except AttributeError:
             return 0
     
-    def end_task(self, dataset, task_ids, num_batches):
+    def end_task(self, dataset, task_ids, config):
+        num_batches = config.EWC_num_trials
         self._update_fisher_params(dataset, task_ids, num_batches)
         self._update_mean_params()
 
@@ -188,7 +192,7 @@ class SI(ContinualModel):
             penalty = (self.big_omega * ((self.get_params() - self.checkpoint) ** 2)).sum()
             return penalty
 
-    def end_task(self, dataset=None, task_ids=None, num_batches=None):
+    def end_task(self, dataset=None, task_ids=None, config=None):
         # big omega calculation step
         if self.big_omega is None:
             self.big_omega = torch.zeros_like(self.get_params()).to(self.device)
