@@ -12,6 +12,7 @@ class BaseConfig(object):
     def __init__(self):
         # system
         self.device = 'cpu'
+        # self.device = 'cuda:0'
         self.RNGSEED = 5
         self.ROOT_DIR = os.getcwd()
         

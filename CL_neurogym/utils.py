@@ -35,7 +35,8 @@ def get_task_seqs():
     # task_seqs = list(itertools.permutations(tasks, 2))
     # task_seqs = [val for val in task_seqs for i in range(2)]
     ## 2. pairs from different task families
-    GoFamily = ['yang19.dlygo-v0', 'yang19.dlyanti-v0']
+    GoFamily = ['yang19.dlygo-v0', 'yang19.go-v0']
+    AntiFamily = ['yang19.dlyanti-v0', 'yang19.anti-v0']
     DMFamily = ['yang19.dm1-v0', 'yang19.ctxdm2-v0', 'yang19.multidm-v0']
     MatchFamily = ['yang19.dms-v0', 'yang19.dmc-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0']
     TaskA = GoFamily + DMFamily
