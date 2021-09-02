@@ -49,10 +49,7 @@ from tqdm import tqdm, trange
 
 
 import argparse
-# Create the parser
 my_parser = argparse.ArgumentParser(description='Train neurogym tasks sequentially')
-
-# Add the arguments
 my_parser.add_argument('exp_name',
                        default='unamed_exps',
                        type=str, nargs='?',

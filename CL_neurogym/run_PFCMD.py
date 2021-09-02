@@ -14,16 +14,57 @@ import gym
 import neurogym as ngym
 import matplotlib.pyplot as plt
 import seaborn as sns
+from tqdm import tqdm, trange
 
-from configs.configs import PFCMDConfig
+from configs.configs import *
 from logger.logger import PFCMDLogger
 from data.ngym import NGYM
 from models.PFCMD import RNN_MD
 from utils import set_seed, get_task_id, forward_backward, get_optimizer, test_in_training
 from analysis.visualization import plot_rnn_activity, plot_MD_variables, plot_loss, plot_perf, plot_fullperf
 
+import argparse
+my_parser = argparse.ArgumentParser(description='Train neurogym tasks sequentially')
+my_parser.add_argument('exp_name',
+                       default='unamed_exps',
+                       type=str, nargs='?',
+                       help='Experiment name, also used to create the path to save results')
+my_parser.add_argument('use_gates',
+                       default=0, nargs='?',
+                       type=int,
+                       help='Use multiplicative gating or not')
+my_parser.add_argument('same_rnn',
+                       default=1, nargs='?',
+                       type=int,
+                       help='Train the same RNN for all task or create a separate RNN for each task')
+my_parser.add_argument('train_to_criterion',
+                       default=1, nargs='?',
+                       type=int,
+                       help='TODO')
+my_parser.add_argument('--var1',
+                       default=1.0, nargs='?',
+                       type=float,
+                       help='Generic var to be used in various places, Currently, the variance of the fixed multiplicative MD to RNN weights')
+my_parser.add_argument('--var2',
+                       default=1.0, nargs='?',
+                       type=float,
+                       help='Generic var to be used in various places, Currently, tthe variance of the fixed multiplicative MD to RNN weights')
+my_parser.add_argument('--num_of_tasks',
+                       default=30, nargs='?',
+                       type=int,
+                       help='number of tasks to train on')
+args = my_parser.parse_args()
+
+exp_name = args.exp_name
+os.makedirs('./files/'+exp_name, exist_ok=True)
+
+
 # configs
-config = PFCMDConfig()
+if len(sys.argv) > 1:   # if arguments passed to the python file 
+    config = SerialConfig()
+    config.use_gates= bool(args.use_gates)
+else:
+    config = PFCMDConfig()
 print(config.task_seq)
 
 # datasets
@@ -57,7 +98,7 @@ task_id = 0
 running_loss = 0.0
 running_train_time = 0
 
-for i in range(config.total_trials):
+for i in trange(config.total_trials):
 
     train_time_start = time.time()    
 
