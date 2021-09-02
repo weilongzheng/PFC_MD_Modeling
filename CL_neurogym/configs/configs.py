@@ -67,7 +67,11 @@ class BaseConfig(object):
 
         # save variables
         self.FILEPATH = './files/'
-
+        self.FILENAME = {
+                        'config':    'config_PFC.npy',
+                        'log':       'log_PFC.npy',
+                        'plot_perf': 'performance_PFC_task.png',
+        }
         # continual learning mode
         self.mode = None
     

@@ -15,36 +15,33 @@ import neurogym as ngym
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from configs.configs import PFCMDConfig
-from logger.logger import PFCMDLogger
-from data.ngym import NGYM
-from models.PFCMD import RNN_MD
-from utils import set_seed, get_task_seqs, get_task_id, forward_backward, get_optimizer, test_in_training, save_variables
-from analysis.visualization import plot_rnn_activity, plot_MD_variables, plot_loss, plot_perf, plot_fullperf
+from configs import get_config
+from logger.logger import BaseLogger
+from data import get_dataset
+from models.PFC import RNN
+from models import get_model
+from utils import set_seed, get_task_seqs, get_task_id, get_optimizer, test_in_training, save_variables
+from analysis.visualization import plot_rnn_activity, plot_loss, plot_perf, plot_fullperf
 
 # main loop
 task_seqs = get_task_seqs()
+# choose a mode from 'Base', 'EWC', 'SI'
+mode = 'Base'
+print(mode, '\n')
 
 for task_seq_id, task_seq in enumerate(task_seqs, start=0):
-
     # configs
-    config = PFCMDConfig()
+    config = get_config(mode)
     config.set_task_seq(task_seq=task_seq)
     print(config.task_seq)
 
     # datasets
-    dataset = NGYM(config)
+    dataset = get_dataset(dataset_filename='ngym', config=config)
 
-    # model
-    net = RNN_MD(input_size       =  config.input_size,
-                 hidden_size      =  config.hidden_size,
-                 hidden_ctx_size  =  config.hidden_ctx_size,
-                 sub_size         =  config.sub_size,
-                 output_size      =  config.output_size,
-                 MDeffect         =  config.MDeffect,
-                 md_size          =  config.md_size,
-                 md_active_size   =  config.md_active_size,
-                 md_dt            =  config.md_dt)
+    # backbone network
+    net = RNN(input_size=config.input_size,
+              hidden_size=config.hidden_size,
+              output_size=config.output_size)
     net = net.to(config.device)
     print(net, '\n')
 
@@ -52,8 +49,19 @@ for task_seq_id, task_seq in enumerate(task_seqs, start=0):
     criterion = nn.MSELoss()
     optimizer, training_params, named_training_params = get_optimizer(net=net, config=config)
 
+    # continual learning model
+    CL_model = get_model(backbone=net,
+                         loss=criterion,
+                         config=config,
+                         transform=None,
+                         opt=optimizer,
+                         device=config.device,
+                         parameters=training_params,
+                         named_parameters=named_training_params)
+    net = CL_model.net
+
     # logger
-    log = PFCMDLogger(config=config)
+    log = BaseLogger(config=config)
 
     # training
     task_id = 0
@@ -67,9 +75,15 @@ for task_seq_id, task_seq in enumerate(task_seqs, start=0):
         # control training paradigm
         task_id = get_task_id(config=config, trial_idx=i, prev_task_id=task_id)
 
+        # register parameters an the end of each block
+        if i == config.switch_points[1]:
+            CL_model.end_task(dataset=dataset, task_ids=config.switch_taskid[0:2], config=config)
+        elif i == config.switch_points[2]:
+            CL_model.end_task(dataset=dataset, task_ids=config.switch_taskid[0:4], config=config)
+
         inputs, labels = dataset(task_id=task_id)
 
-        loss, rnn_activity = forward_backward(net=net, opt=optimizer, crit=criterion, inputs=inputs, labels=labels, task_id=task_id)
+        loss, rnn_activity = CL_model.observe(inputs=inputs, labels=labels, not_aug_inputs=None)
 
         # statistics
         log.losses.append(loss.item())
