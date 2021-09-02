@@ -19,7 +19,7 @@ from configs.configs import PFCMDConfig
 from logger.logger import PFCMDLogger
 from data.ngym import NGYM
 from models.PFCMD import RNN_MD
-from utils import set_seed, get_task_seqs, get_task_id, forward_backward, get_optimizer, test_in_training
+from utils import set_seed, get_task_seqs, get_task_id, forward_backward, get_optimizer, test_in_training, save_variables
 from analysis.visualization import plot_rnn_activity, plot_MD_variables, plot_loss, plot_perf, plot_fullperf
 
 # main loop
@@ -92,10 +92,7 @@ for task_seq_id, task_seq in enumerate(task_seqs):
             running_train_time = 0
 
     # save variables
-    np.save('./files/'+f'{task_seq_id}_config_PFCMD.npy', config)
-    np.save('./files/'+f'{task_seq_id}_log_PFCMD.npy', log)
-    # log = np.load('./files/'+'log.npy', allow_pickle=True).item()
-    # config = np.load('./files/'+'config.npy', allow_pickle=True).item()
+    save_variables(config=config, log=log, task_seq_id=task_seq_id)
 
     # visualization
     plot_perf(config, log, task_seq_id=task_seq_id)

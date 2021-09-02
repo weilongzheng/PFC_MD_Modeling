@@ -65,6 +65,9 @@ class BaseConfig(object):
         self.plot_every_trials = 4000
         self.save_fig = True
 
+        # save variables
+        self.FILEPATH = './files/'
+
         # continual learning mode
         self.mode = None
     
@@ -89,6 +92,12 @@ class PFCMDConfig(BaseConfig):
         self.md_size = 4
         self.md_active_size = 2
         self.md_dt = 0.001
+        # save variables
+        self.FILENAME = {
+                        'config':    'config_PFCMD.npy',
+                        'log':       'log_PFCMD.npy',
+                        'plot_perf': 'performance_PFCMD_task.png',
+        }
 
 class EWCConfig(BaseConfig):
     def __init__(self):
@@ -97,6 +106,12 @@ class EWCConfig(BaseConfig):
         self.EWC = True
         self.EWC_weight = 1e6
         self.EWC_num_trials = 1500
+        # save variables
+        self.FILENAME = {
+                        'config':    'config_EWC.npy',
+                        'log':       'log_EWC.npy',
+                        'plot_perf': 'performance_EWC_task.png',
+        }
 
 class SIConfig(BaseConfig):
     def __init__(self):
@@ -107,3 +122,9 @@ class SIConfig(BaseConfig):
         self.c = self.SI_c
         self.SI_xi = 0.5
         self.xi = self.SI_xi
+        # save variables
+        self.FILENAME = {
+                        'config':    'config_SI.npy',
+                        'log':       'log_SI.npy',
+                        'plot_perf': 'performance_SI_task.png',
+        }

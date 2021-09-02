@@ -182,5 +182,8 @@ def test_in_training(net, dataset, config, log, trial_idx):
             net.rnn.md.learn = True
 
 # save variables
-def save_parameters():
-    pass
+def save_variables(config, log, task_seq_id):
+    np.save(config.FILEPATH + f'{task_seq_id}_' + config.FILENAME['config'], config)
+    np.save(config.FILEPATH + f'{task_seq_id}_' + config.FILENAME['log'], log)
+    # log = np.load('./files/'+'log.npy', allow_pickle=True).item()
+    # config = np.load('./files/'+'config.npy', allow_pickle=True).item()

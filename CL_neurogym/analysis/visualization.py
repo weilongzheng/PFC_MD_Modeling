@@ -139,7 +139,7 @@ def plot_perf(config, log, task_seq_id=None):
         plt.yticks([0.1*i for i in range(11)])
         plt.tight_layout()
         if (task_seq_id is not None) and (config.save_fig):
-            plt.savefig('./files/'+f'{task_seq_id}_performance_PFCEWC_task_{env_id}.png')
+            plt.savefig(config.FILEPATH + f'{task_seq_id}_taskseq_{env_id}_task' + config.FILENAME['plot_perf'])
             plt.close()
         else:
             plt.show()
