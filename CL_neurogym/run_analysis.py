@@ -18,7 +18,7 @@ if True:
     # settings = ['PFCMD', 'EWC', 'SI', 'PFC']
     settings = ['PFCMD']
 
-    ITER = list(range(1)) + list(range(16, 18))
+    ITER = list(range(4)) + list(range(16, 22))
     LEN = len(ITER)
     for setting in settings:
         for i in ITER:
@@ -38,11 +38,11 @@ if True:
     settings = ['PFCMD', 'EWC', 'SI', 'PFC']
     colors = ['red', 'blue', 'purple', 'black']
     labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
-    linewidths = [2, 2, 2, 2]
+    linewidths = [2, 1, 1, 1]
     label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
     title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
-    for env_id in range(2): # 2 tasks
+    for env_id in range(4): # 2 tasks
         plt.figure()
         for i in range(len(settings)):
             act_perfs = np.load(FILE_PATH + 'avg_perfs_' + settings[i] + '.npy')
