@@ -126,9 +126,46 @@ class SIConfig(BaseConfig):
         self.c = self.SI_c
         self.SI_xi = 0.5
         self.xi = self.SI_xi
+
         # save variables
         self.FILENAME = {
                         'config':    'config_SI.npy',
                         'log':       'log_SI.npy',
                         'plot_perf': 'performance_SI_task.png',
         }
+
+class SerialConfig(BaseConfig):
+    def __init__(self):
+        super(SerialConfig, self).__init__()
+        # PFC context
+        self.hidden_ctx_size = 400
+        self.sub_size = 100
+        # MD
+        self.MDeffect = False
+        self.md_size = 4
+        self.md_active_size = 2
+        self.md_dt = 0.001
+        self.use_gates = False
+
+        self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
+        self.num_task = len(self.task_seq)
+        self.env_kwargs = {'dt': 100}
+        self.batch_size = 1
+
+        # block training
+        self.trials_per_task = 1000
+        self.total_trials = int(self.num_task * self.trials_per_task)
+        self.switch_points = list(range(0, self.total_trials, self.trials_per_task))
+        self.switch_taskid = list(range(self.num_task) ) # this config is deprecated right now
+        assert len(self.switch_points) == len(self.switch_taskid)
+
+        # RNN model
+        self.input_size = 33
+        self.hidden_size = 400
+        self.output_size = 17
+        self.lr = 1e-4
+
+        # test & plot
+        self.test_every_trials = 500
+        self.test_num_trials = 30
+        self.plot_every_trials = 4000

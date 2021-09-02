@@ -14,16 +14,29 @@ import gym
 import neurogym as ngym
 import matplotlib.pyplot as plt
 import seaborn as sns
+from tqdm import tqdm, trange
 
-from configs.configs import PFCMDConfig
+from configs.configs import *
 from logger.logger import PFCMDLogger
 from data.ngym import NGYM
 from models.PFCMD import RNN_MD
-from utils import set_seed, get_task_id, forward_backward, get_optimizer, test_in_training
+from utils import set_seed, get_task_id, forward_backward, get_optimizer, test_in_training, get_args_from_parser
 from analysis.visualization import plot_rnn_activity, plot_MD_variables, plot_loss, plot_perf, plot_fullperf
 
+import argparse
+my_parser = argparse.ArgumentParser(description='Train neurogym tasks sequentially')
+args = get_args_from_parser(my_parser)
+
+exp_name = args.exp_name
+os.makedirs('./files/'+exp_name, exist_ok=True)
+
+
 # configs
-config = PFCMDConfig()
+if len(sys.argv) > 1:   # if arguments passed to the python file 
+    config = SerialConfig()
+    config.use_gates= bool(args.use_gates)
+else:
+    config = PFCMDConfig()
 print(config.task_seq)
 
 # datasets
@@ -57,7 +70,7 @@ task_id = 0
 running_loss = 0.0
 running_train_time = 0
 
-for i in range(config.total_trials):
+for i in trange(config.total_trials):
 
     train_time_start = time.time()    
 

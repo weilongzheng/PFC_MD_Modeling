@@ -181,6 +181,41 @@ def test_in_training(net, dataset, config, log, trial_idx):
         if config.MDeffect:
             net.rnn.md.learn = True
 
+# Parse argunents passed to python file.:
+def get_args_from_parser(my_parser):
+    my_parser.add_argument('exp_name',
+                       default='unamed_exps',
+                       type=str, nargs='?',
+                       help='Experiment name, also used to create the path to save results')
+    my_parser.add_argument('use_gates',
+                        default=0, nargs='?',
+                        type=int,
+                        help='Use multiplicative gating or not')
+    my_parser.add_argument('same_rnn',
+                        default=1, nargs='?',
+                        type=int,
+                        help='Train the same RNN for all task or create a separate RNN for each task')
+    my_parser.add_argument('train_to_criterion',
+                        default=1, nargs='?',
+                        type=int,
+                        help='TODO')
+    my_parser.add_argument('--var1',
+                        default=1.0, nargs='?',
+                        type=float,
+                        help='Generic var to be used in various places, Currently, the variance of the fixed multiplicative MD to RNN weights')
+    my_parser.add_argument('--var2',
+                        default=1.0, nargs='?',
+                        type=float,
+                        help='Generic var to be used in various places, Currently, tthe variance of the fixed multiplicative MD to RNN weights')
+    my_parser.add_argument('--num_of_tasks',
+                        default=30, nargs='?',
+                        type=int,
+                        help='number of tasks to train on')
+    args = my_parser.parse_args()
+
+    return (args)
+
+
 # save variables
 def save_variables(config, log, task_seq_id):
     np.save(config.FILEPATH + f'{task_seq_id}_' + config.FILENAME['config'], config)
