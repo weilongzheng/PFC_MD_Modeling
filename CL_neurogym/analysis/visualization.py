@@ -119,7 +119,7 @@ def plot_fullperf(config, log):
         plt.show()
 
 # performance curve
-def plot_perf(config, log):
+def plot_perf(config, log, task_seq_id=None):
     label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
@@ -138,5 +138,8 @@ def plot_perf(config, log):
         plt.ylim([0.0, 1.01])
         plt.yticks([0.1*i for i in range(11)])
         plt.tight_layout()
-        # plt.savefig('./animation/'+'performance.png')
-        plt.show()
+        if (task_seq_id is not None) and (config.save_fig):
+            plt.savefig(config.FILEPATH + f'{task_seq_id}_taskseq_{env_id}_task' + config.FILENAME['plot_perf'])
+            plt.close()
+        else:
+            plt.show()

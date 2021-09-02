@@ -25,7 +25,7 @@ from analysis.visualization import plot_rnn_activity, plot_loss, plot_perf, plot
 
 
 # choose a mode from 'Base', 'EWC', 'SI'
-mode = 'SI'
+mode = 'Base'
 print(mode, '\n')
 
 # configs

@@ -35,16 +35,28 @@ def get_task_seqs():
     # task_seqs = list(itertools.permutations(tasks, 2))
     # task_seqs = [val for val in task_seqs for i in range(2)]
     ## 2. pairs from different task families
-    GoFamily = ['yang19.dlygo-v0', 'yang19.dlyanti-v0']
-    DMFamily = ['yang19.dm1-v0', 'yang19.ctxdm2-v0', 'yang19.multidm-v0']
+    GoFamily = ['yang19.dlygo-v0', 'yang19.go-v0']
+    AntiFamily = ['yang19.dlyanti-v0', 'yang19.anti-v0']
+    DMFamily = ['yang19.dm1-v0', 'yang19.dm2-v0', 'yang19.ctxdm1-v0', 'yang19.ctxdm2-v0', 'yang19.multidm-v0']
     MatchFamily = ['yang19.dms-v0', 'yang19.dmc-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0']
-    TaskA = GoFamily + DMFamily
-    TaskB = MatchFamily
+    ### 2.1 two tasks
+    # TaskA = GoFamily + DMFamily
+    # TaskB = MatchFamily
+    # task_seqs = []
+    # for a in TaskA:
+    #     for b in TaskB:
+    #         task_seqs.append((a, b))
+    #         task_seqs.append((b, a))
+    ### 2.2 four tasks
     task_seqs = []
-    for a in TaskA:
-        for b in TaskB:
-            task_seqs.append((a, b))
-            task_seqs.append((b, a))
+    for a in itertools.combinations(GoFamily, 2):
+        for b in itertools.combinations(MatchFamily, 2):
+            task_seqs.append(list(a) + list(b))
+            task_seqs.append(list(b) + list(a))
+    for a in itertools.combinations(AntiFamily, 2):
+        for b in itertools.combinations(DMFamily, 2):
+            task_seqs.append(list(a) + list(b))
+            task_seqs.append(list(b) + list(a))
     return task_seqs
 
 # training
@@ -169,6 +181,44 @@ def test_in_training(net, dataset, config, log, trial_idx):
         if config.MDeffect:
             net.rnn.md.learn = True
 
+# Parse argunents passed to python file.:
+def get_args_from_parser(my_parser):
+    my_parser.add_argument('exp_name',
+                       default='unamed_exps',
+                       type=str, nargs='?',
+                       help='Experiment name, also used to create the path to save results')
+    my_parser.add_argument('use_gates',
+                        default=0, nargs='?',
+                        type=int,
+                        help='Use multiplicative gating or not')
+    my_parser.add_argument('same_rnn',
+                        default=1, nargs='?',
+                        type=int,
+                        help='Train the same RNN for all task or create a separate RNN for each task')
+    my_parser.add_argument('train_to_criterion',
+                        default=1, nargs='?',
+                        type=int,
+                        help='TODO')
+    my_parser.add_argument('--var1',
+                        default=1.0, nargs='?',
+                        type=float,
+                        help='Generic var to be used in various places, Currently, the variance of the fixed multiplicative MD to RNN weights')
+    my_parser.add_argument('--var2',
+                        default=1.0, nargs='?',
+                        type=float,
+                        help='Generic var to be used in various places, Currently, tthe variance of the fixed multiplicative MD to RNN weights')
+    my_parser.add_argument('--num_of_tasks',
+                        default=30, nargs='?',
+                        type=int,
+                        help='number of tasks to train on')
+    args = my_parser.parse_args()
+
+    return (args)
+
+
 # save variables
-def save_parameters():
-    pass
+def save_variables(config, log, task_seq_id):
+    np.save(config.FILEPATH + f'{task_seq_id}_' + config.FILENAME['config'], config)
+    np.save(config.FILEPATH + f'{task_seq_id}_' + config.FILENAME['log'], log)
+    # log = np.load('./files/'+'log.npy', allow_pickle=True).item()
+    # config = np.load('./files/'+'config.npy', allow_pickle=True).item()

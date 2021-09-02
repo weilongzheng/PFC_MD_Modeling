@@ -12,10 +12,12 @@ class BaseConfig(object):
     def __init__(self):
         # system
         self.device = 'cpu'
+        # self.device = 'cuda:0'
         self.RNGSEED = 5
         self.ROOT_DIR = os.getcwd()
         
         # dataset
+        # 1. Two tasks
         # self.task_seq = ['yang19.go-v0', 'yang19.rtgo-v0']
         # self.task_seq = ['yang19.dms-v0', 'yang19.dmc-v0']
         # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0']
@@ -24,9 +26,10 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dms-v0']
         # self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0']
-        self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
+        # 2. Four tasks
+        # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
+        self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.anti-v0', 'yang19.dlyanti-v0']
 
-        
         self.num_task = len(self.task_seq)
         self.env_kwargs = {'dt': 100}
         self.batch_size = 1
@@ -54,13 +57,27 @@ class BaseConfig(object):
         self.output_size = 17
         self.lr = 1e-4
 
-        # test & plot
+        # test
         self.test_every_trials = 500
         self.test_num_trials = 30
-        self.plot_every_trials = 4000
 
+        # plot
+        self.plot_every_trials = 4000
+        self.save_fig = True
+
+        # save variables
+        self.FILEPATH = './files/'
+        self.FILENAME = {
+                        'config':    'config_PFC.npy',
+                        'log':       'log_PFC.npy',
+                        'plot_perf': 'performance_PFC_task.png',
+        }
         # continual learning mode
         self.mode = None
+    
+    def set_task_seq(self, task_seq):
+        self.task_seq = task_seq
+        self.num_task = len(self.task_seq)
     
     def update(self, new_config):
         self.__dict__.update(new_config.__dict__)
@@ -79,6 +96,12 @@ class PFCMDConfig(BaseConfig):
         self.md_size = 4
         self.md_active_size = 2
         self.md_dt = 0.001
+        # save variables
+        self.FILENAME = {
+                        'config':    'config_PFCMD.npy',
+                        'log':       'log_PFCMD.npy',
+                        'plot_perf': 'performance_PFCMD_task.png',
+        }
 
 class EWCConfig(BaseConfig):
     def __init__(self):
@@ -87,6 +110,12 @@ class EWCConfig(BaseConfig):
         self.EWC = True
         self.EWC_weight = 1e6
         self.EWC_num_trials = 1500
+        # save variables
+        self.FILENAME = {
+                        'config':    'config_EWC.npy',
+                        'log':       'log_EWC.npy',
+                        'plot_perf': 'performance_EWC_task.png',
+        }
 
 class SIConfig(BaseConfig):
     def __init__(self):
@@ -97,6 +126,13 @@ class SIConfig(BaseConfig):
         self.c = self.SI_c
         self.SI_xi = 0.5
         self.xi = self.SI_xi
+
+        # save variables
+        self.FILENAME = {
+                        'config':    'config_SI.npy',
+                        'log':       'log_SI.npy',
+                        'plot_perf': 'performance_SI_task.png',
+        }
 
 class SerialConfig(BaseConfig):
     def __init__(self):
@@ -117,7 +153,7 @@ class SerialConfig(BaseConfig):
         self.batch_size = 1
 
         # block training
-        self.trials_per_task = 100
+        self.trials_per_task = 1000
         self.total_trials = int(self.num_task * self.trials_per_task)
         self.switch_points = list(range(0, self.total_trials, self.trials_per_task))
         self.switch_taskid = list(range(self.num_task) ) # this config is deprecated right now
@@ -133,4 +169,3 @@ class SerialConfig(BaseConfig):
         self.test_every_trials = 500
         self.test_num_trials = 30
         self.plot_every_trials = 4000
-

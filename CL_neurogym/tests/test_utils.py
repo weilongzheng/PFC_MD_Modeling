@@ -13,4 +13,6 @@ def test_set_seed():
 def test_get_task_seqs():
     from utils import get_task_seqs
     task_seqs = get_task_seqs()
-    print(task_seqs)
+    for task_seq in task_seqs:
+       print(task_seq)
+    print(len(task_seqs))
