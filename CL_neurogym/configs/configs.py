@@ -30,7 +30,6 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
         self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.anti-v0', 'yang19.dlyanti-v0']
 
-        
         self.num_task = len(self.task_seq)
         self.env_kwargs = {'dt': 100}
         self.batch_size = 1
@@ -58,13 +57,20 @@ class BaseConfig(object):
         self.output_size = 17
         self.lr = 1e-4
 
-        # test & plot
+        # test
         self.test_every_trials = 500
         self.test_num_trials = 30
+
+        # plot
         self.plot_every_trials = 4000
+        self.save_fig = True
 
         # continual learning mode
         self.mode = None
+    
+    def set_task_seq(self, task_seq):
+        self.task_seq = task_seq
+        self.num_task = len(self.task_seq)
     
     def update(self, new_config):
         self.__dict__.update(new_config.__dict__)
