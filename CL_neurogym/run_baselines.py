@@ -76,9 +76,9 @@ for i in range(config.total_trials):
 
     # register parameters an the end of each block
     if i == config.switch_points[1]:
-        CL_model.end_task(dataset=dataset, task_ids=config.switch_taskid[0:2], config=config)
+        CL_model.end_task(dataset=dataset, task_ids=config.switch_taskid[0:1], config=config)
     elif i == config.switch_points[2]:
-        CL_model.end_task(dataset=dataset, task_ids=config.switch_taskid[0:4], config=config)
+        CL_model.end_task(dataset=dataset, task_ids=config.switch_taskid[0:2], config=config)
 
     inputs, labels = dataset(task_id=task_id)
 
