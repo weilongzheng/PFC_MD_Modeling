@@ -17,6 +17,7 @@ def get_task_seqs():
     Generate task sequences
     '''
     ## 1. all pairs
+    # num_tasks = 2
     # tasks = ['yang19.dms-v0',
     #          'yang19.dnms-v0',
     #          'yang19.dmc-v0',
@@ -32,31 +33,31 @@ def get_task_seqs():
     #          'yang19.anti-v0',
     #          'yang19.rtgo-v0',
     #          'yang19.rtanti-v0']
-    # task_seqs = list(itertools.permutations(tasks, 2))
-    # task_seqs = [val for val in task_seqs for i in range(2)]
+    # task_seqs = list(itertools.permutations(tasks, num_tasks))
+    # task_seqs = [val for val in task_seqs for i in range(num_tasks)]
     ## 2. pairs from different task families
     GoFamily = ['yang19.dlygo-v0', 'yang19.go-v0']
     AntiFamily = ['yang19.dlyanti-v0', 'yang19.anti-v0']
     DMFamily = ['yang19.dm1-v0', 'yang19.dm2-v0', 'yang19.ctxdm1-v0', 'yang19.ctxdm2-v0', 'yang19.multidm-v0']
     MatchFamily = ['yang19.dms-v0', 'yang19.dmc-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0']
     ### 2.1 two tasks
-    # TaskA = GoFamily + DMFamily
-    # TaskB = MatchFamily
-    # task_seqs = []
-    # for a in TaskA:
-    #     for b in TaskB:
-    #         task_seqs.append((a, b))
-    #         task_seqs.append((b, a))
-    ### 2.2 four tasks
+    TaskA = GoFamily + AntiFamily
+    TaskB = MatchFamily + ['yang19.ctxdm1-v0', 'yang19.dm2-v0']
     task_seqs = []
-    for a in itertools.combinations(GoFamily, 2):
-        for b in itertools.combinations(MatchFamily, 2):
-            task_seqs.append(list(a) + list(b))
-            task_seqs.append(list(b) + list(a))
-    for a in itertools.combinations(AntiFamily, 2):
-        for b in itertools.combinations(DMFamily, 2):
-            task_seqs.append(list(a) + list(b))
-            task_seqs.append(list(b) + list(a))
+    for a in TaskA:
+        for b in TaskB:
+            task_seqs.append((a, b))
+            task_seqs.append((b, a))
+    ### 2.2 four tasks
+    # task_seqs = []
+    # for a in itertools.combinations(GoFamily, 2):
+    #     for b in itertools.combinations(MatchFamily, 2):
+    #         task_seqs.append(list(a) + list(b))
+    #         task_seqs.append(list(b) + list(a))
+    # for a in itertools.combinations(AntiFamily, 2):
+    #     for b in itertools.combinations(DMFamily, 2):
+    #         task_seqs.append(list(a) + list(b))
+    #         task_seqs.append(list(b) + list(a))
     return task_seqs
 
 # training
