@@ -7,7 +7,7 @@ import sys
 
 #%% Create the parameters for experiments in a table (expVars list of lists)
 # Var1 = range(500,1501, 500)
-Var1 = ['serial_CL_neurogym']
+Var1 = ['search_gates']
 Var2 = [0] #range(0,3, 1)
 Var3 = [0]#[0.1, 0.5, 1.] #range(30,91, 20)
 Var4 = [0] #, 3.5, 4, 4.5, 5, 5.5, 6, 6.5]

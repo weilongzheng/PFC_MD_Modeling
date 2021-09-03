@@ -68,11 +68,8 @@ log = PFCMDLogger(config=config)
 # training
 task_id = 0
 running_loss = 0.0
-running_train_time = 0
 
 for i in trange(config.total_trials):
-
-    train_time_start = time.time()    
 
     # control training paradigm
     task_id = get_task_id(config=config, trial_idx=i, prev_task_id=task_id)
@@ -90,7 +87,6 @@ for i in trange(config.total_trials):
     # statistics
     log.losses.append(loss.item())
     running_loss += loss.item()
-    running_train_time += time.time() - train_time_start
     if i % config.test_every_trials == (config.test_every_trials - 1):
         print('Total trial: {:d}'.format(config.total_trials))
         print('Training sample index: {:d}-{:d}'.format(i+1-config.test_every_trials, i+1))
@@ -98,14 +94,8 @@ for i in trange(config.total_trials):
         print('MSE loss: {:0.9f}'.format(running_loss / config.test_every_trials))
         running_loss = 0.0
         # test during training
-        test_time_start = time.time()
         test_in_training(net=net, dataset=dataset, config=config, log=log, trial_idx=i)
-        running_test_time = time.time() - test_time_start
-        # left training time
-        print('Predicted left training time: {:0.0f} s'.format(
-             (running_train_time + running_test_time) * (config.total_trials - i - 1) / config.test_every_trials),
-             end='\n\n')
-        running_train_time = 0
+
 
 # save variables
 # np.save('./files/'+'config.npy', config)

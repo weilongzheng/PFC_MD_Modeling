@@ -294,9 +294,16 @@ class CTRNN_MD(nn.Module):
         self.oneminusalpha = 1 - alpha
 
         if self.use_multiplicative_gates:
-            self.gates = torch.normal(config['md_mean'], config['md_range'], size=(config['md_size'], config['hidden_size'], ),
-             device=self.device, dtype=torch.float) #.type(torch.LongTensor)
-            torch.abs_(self.gates)
+            self.gates = torch.normal(config['md_mean'], 1., size=(config['md_size'], config['hidden_size'], ),
+              dtype=torch.float) #.type(torch.LongTensor) device=self.device,
+            # control density 
+            self.gates_mask = np.random.uniform(0, 1, size=(config['md_size'], config['hidden_size'], )) 
+            self.gates_mask = (self.gates_mask < config['md_range']).astype(float)
+            self.gates = torch.from_numpy(self.gates_mask) #* torch.abs(self.gates) 
+            self.gates = self.gates.to(device).float() #
+            # import pdb; pdb.set_trace()
+            # torch.uniform(config['md_mean'], 1., size=(config['md_size'], config['hidden_size'], ),
+            #  device=self.device, dtype=torch.float)
                 # *config.G/np.sqrt(config.Nsub*2)
             # Substract mean from each row.
             # self.gates -= np.mean(self.gates, axis=1)[:, np.newaxis]
@@ -398,10 +405,7 @@ class RNN_MD(nn.Module):
 def create_model():
     # model
     if config['use_lstm']:
-        from model_dev import Net
-        net = Net(input_size     = config['input_size'],
-                 hidden_size    = config['hidden_size'],
-                 output_size    = config['output_size'],)
+        pass
     else:
         net = RNN_MD(config)
     net.to(device)
@@ -542,8 +546,8 @@ for logi in range(num_tasks):
         if li == num_tasks-1 and logi in [num_tasks//2 - 4, num_tasks//2, num_tasks//2 + 4] :
             ax.set_xlabel('batch #')
 axes[num_tasks-1, num_tasks//2-2].text(-8., -2.5, title_label, fontsize=12)     
-exp_parameters = f'Exp parameters: {config["exp_name"]}\nRNN: {"same" if config["same_rnn"] else "separate"}\
-      mul_gate: {"True" if config["use_gates"] else "False"}\
+exp_parameters = f'Exp parameters: {config["exp_name"]}\nRNN: {"same" if config["same_rnn"] else "separate"}'+'\n'+\
+      f'mul_gate: {"True" if config["use_gates"] else "False"}\
           {exp_signature}'
 axes[num_tasks-1, 0].text(-7., -2.2, exp_parameters, fontsize=7)     
 # plt.show()
