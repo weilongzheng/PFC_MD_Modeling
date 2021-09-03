@@ -40,11 +40,13 @@ for task_seq_id, task_seq in enumerate(task_seqs, start=0):
                  hidden_size      =  config.hidden_size,
                  hidden_ctx_size  =  config.hidden_ctx_size,
                  sub_size         =  config.sub_size,
+                 sub_active_size  =  config.sub_active_size,
                  output_size      =  config.output_size,
                  MDeffect         =  config.MDeffect,
                  md_size          =  config.md_size,
                  md_active_size   =  config.md_active_size,
-                 md_dt            =  config.md_dt)
+                 md_dt            =  config.md_dt,
+                 config           =  config)
     net = net.to(config.device)
     print(net, '\n')
 

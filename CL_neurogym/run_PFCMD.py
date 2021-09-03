@@ -23,18 +23,20 @@ from models.PFCMD import RNN_MD
 from utils import set_seed, get_task_id, forward_backward, get_optimizer, test_in_training, get_args_from_parser
 from analysis.visualization import plot_rnn_activity, plot_MD_variables, plot_loss, plot_perf, plot_fullperf
 
-import argparse
-my_parser = argparse.ArgumentParser(description='Train neurogym tasks sequentially')
-args = get_args_from_parser(my_parser)
-
-exp_name = args.exp_name
-os.makedirs('./files/'+exp_name, exist_ok=True)
-
-
 # configs
-if len(sys.argv) > 1:   # if arguments passed to the python file 
-    config = SerialConfig()
-    config.use_gates= bool(args.use_gates)
+USE_PARSER = False
+if USE_PARSER:
+    import argparse
+    my_parser = argparse.ArgumentParser(description='Train neurogym tasks sequentially')
+    args = get_args_from_parser(my_parser)
+
+    exp_name = args.exp_name
+    os.makedirs('./files/'+exp_name, exist_ok=True)
+
+    if len(sys.argv) > 1:   # if arguments passed to the python file 
+        config = SerialConfig()
+        config.use_gates= bool(args.use_gates)
+
 else:
     config = PFCMDConfig()
 print(config.task_seq)
@@ -50,11 +52,13 @@ net = RNN_MD(input_size       =  config.input_size,
              hidden_size      =  config.hidden_size,
              hidden_ctx_size  =  config.hidden_ctx_size,
              sub_size         =  config.sub_size,
+             sub_active_size  =  config.sub_active_size,
              output_size      =  config.output_size,
              MDeffect         =  config.MDeffect,
              md_size          =  config.md_size,
              md_active_size   =  config.md_active_size,
-             md_dt            =  config.md_dt)
+             md_dt            =  config.md_dt,
+             config           =  config)
 net = net.to(config.device)
 print(net, '\n')
 
@@ -69,7 +73,7 @@ log = PFCMDLogger(config=config)
 task_id = 0
 running_loss = 0.0
 
-for i in trange(config.total_trials):
+for i in range(config.total_trials):
 
     # control training paradigm
     task_id = get_task_id(config=config, trial_idx=i, prev_task_id=task_id)

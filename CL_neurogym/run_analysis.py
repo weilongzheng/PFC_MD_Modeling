@@ -15,10 +15,12 @@ import matplotlib.pyplot as plt
 if True:
     FILE_PATH = './files/scaleup_fourtasks/'
 
-    # settings = ['PFCMD', 'EWC', 'SI', 'PFC']
-    settings = ['PFCMD']
+    settings = ['PFCMD', 'EWC', 'SI', 'PFC']
+    # settings = ['PFCMD']
 
-    ITER = list(range(4)) + list(range(16, 22))
+    ITER = list(range(32))
+    # ITER = list(range(6)) + list(range(16, 22))
+    
     LEN = len(ITER)
     for setting in settings:
         for i in ITER:
@@ -38,7 +40,7 @@ if True:
     settings = ['PFCMD', 'EWC', 'SI', 'PFC']
     colors = ['red', 'blue', 'purple', 'black']
     labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
-    linewidths = [2, 1, 1, 1]
+    linewidths = [3, 2, 2, 2]
     label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
     title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}

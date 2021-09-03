@@ -1,6 +1,8 @@
+import random
 import numpy as np
 import torch
 import torch.nn as nn
+import matplotlib.pyplot as plt
 
 # MD for neurogym tasks
 class MD_GYM():
@@ -196,15 +198,18 @@ class CTRNN_MD(nn.Module):
         hidden: (batch, hidden_size), initial hidden activity
     """
 
-    def __init__(self, input_size, hidden_size, hidden_ctx_size, sub_size, output_size, MDeffect, md_size, md_active_size, md_dt, dt=None, **kwargs):
+    def __init__(self, input_size, hidden_size, hidden_ctx_size, sub_size, sub_active_size, output_size, MDeffect, md_size, md_active_size, md_dt, config, dt=None, **kwargs):
         super().__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.hidden_ctx_size = hidden_ctx_size
         self.sub_size = sub_size
+        self.sub_active_size = sub_active_size
         self.output_size = output_size
-        self.md_size = md_size
         self.MDeffect = MDeffect
+        self.md_size = md_size
+        self.config = config
+        
 
         self.tau = 100
         if dt is None:
@@ -319,8 +324,10 @@ class CTRNN_MD(nn.Module):
         if self.MDeffect:
             ext_input_ctx = self.input2PFCctx(input)
             ext_input_mask = torch.zeros_like(ext_input_ctx)
-            ext_input_mask[:, sub_id*self.sub_size:(sub_id+1)*self.sub_size] = 1
-            PFC_input_ctx = torch.relu(ext_input_ctx.mul(ext_input_mask))
+            mask_idx = random.sample(range(0, self.sub_size), self.sub_active_size)
+            for batch_idx in range(ext_input_mask.shape[0]):
+                ext_input_mask[batch_idx, sub_id*self.sub_size:(sub_id+1)*self.sub_size][mask_idx] = 1
+            PFC_ctx_input = torch.relu(ext_input_ctx.mul(ext_input_mask) + (self.config.hidden_ctx_noise)*torch.randn(ext_input_ctx.size()))
 
         # md inputs
         if self.MDeffect:
@@ -338,7 +345,7 @@ class CTRNN_MD(nn.Module):
 
             # only MD additive inputs
             # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
-            self.md.md_output = self.md(PFC_input_ctx.cpu().detach().numpy()[0, :])
+            self.md.md_output = self.md(PFC_ctx_input.cpu().detach().numpy()[0, :])
             md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), self.md.md_output)
             md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
@@ -440,10 +447,10 @@ class RNN_MD(nn.Module):
         rnn: str, type of RNN, lstm, rnn, ctrnn, or eirnn
     """
 
-    def __init__(self, input_size, hidden_size, hidden_ctx_size, sub_size, output_size, MDeffect, md_size, md_active_size, md_dt, **kwargs):
+    def __init__(self, input_size, hidden_size, hidden_ctx_size, sub_size, sub_active_size, output_size, MDeffect, md_size, md_active_size, md_dt, config, **kwargs):
         super().__init__()
 
-        self.rnn = CTRNN_MD(input_size, hidden_size, hidden_ctx_size, sub_size, output_size, MDeffect, md_size, md_active_size, md_dt, **kwargs)
+        self.rnn = CTRNN_MD(input_size, hidden_size, hidden_ctx_size, sub_size, sub_active_size, output_size, MDeffect, md_size, md_active_size, md_dt, config, **kwargs)
         self.drop_layer = nn.Dropout(p=0.0)
         self.fc = nn.Linear(hidden_size, output_size)
 
