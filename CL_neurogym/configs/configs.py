@@ -31,6 +31,7 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.dms-v0', 'yang19.dnms-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.go-v0', 'yang19.dmc-v0', 'yang19.dnmc-v0']
         # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.anti-v0', 'yang19.dlyanti-v0']
+        self.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in self.task_seq] #removes yang19 and -v0
 
         self.num_task = len(self.task_seq)
         self.env_kwargs = {'dt': 100}
@@ -139,7 +140,7 @@ class SIConfig(BaseConfig):
         }
 
 class SerialConfig(BaseConfig):
-    def __init__(self):
+    def __init__(self, args= []):
         super(SerialConfig, self).__init__()
         # PFC context
         self.hidden_ctx_size = 400
@@ -150,6 +151,8 @@ class SerialConfig(BaseConfig):
         self.md_active_size = 2
         self.md_dt = 0.001
         self.use_gates = False
+        self.train_to_criterion = False
+        self.same_rnn = True
 
         self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
         self.num_task = len(self.task_seq)
@@ -173,3 +176,14 @@ class SerialConfig(BaseConfig):
         self.test_every_trials = 500
         self.test_num_trials = 30
         self.plot_every_trials = 4000
+        self.args= args
+
+        self.exp_signature = self.exp_name +f'_{self.args}_'+\
+        f'{"same_rnn" if self.same_rnn else "separate"}_{"gates" if self.use_gates else "nogates"}'+\
+        f'_{"tc" if self.train_to_criterion else "nc"}'
+
+        # Add tasks gradually with rehearsal 1 2 1 2 3 1 2 3 4 ...
+        task_sub_seqs = [[(i, self.task_seq[i]) for i in range(s)] for s in range(2, len(self.task_seq))] # interleave tasks and add one task at a time
+        self.task_seq_with_rehearsal = []
+        for sub_seq in task_sub_seqs: self.task_seq_with_rehearsal+=sub_seq
+
