@@ -21,11 +21,11 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.go-v0', 'yang19.rtgo-v0']
         # self.task_seq = ['yang19.dms-v0', 'yang19.dmc-v0']
         # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0']
-        self.task_seq = ['yang19.dlygo-v0', 'yang19.dnmc-v0']
+        # self.task_seq = ['yang19.dlygo-v0', 'yang19.dnmc-v0']
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dnms-v0']
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dms-v0']
         # self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
-        # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0']
+        self.task_seq = ['yang19.dlygo-v0', 'yang19.dmc-v0']
         # 2. Four tasks
         # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
         # self.task_seq = ['yang19.dms-v0', 'yang19.dnms-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
@@ -94,7 +94,7 @@ class PFCMDConfig(BaseConfig):
         self.hidden_ctx_size = 400
         self.sub_size = 200
         self.sub_active_size = 50
-        self.hidden_ctx_noise = 0.1
+        self.hidden_ctx_noise = 0.01
         # MD
         self.MDeffect = True
         self.md_size = 4
