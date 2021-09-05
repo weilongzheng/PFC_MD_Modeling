@@ -13,12 +13,12 @@ import matplotlib.pyplot as plt
 # TODO: make this a helper function
 ## compute averages of performance
 if True:
-    FILE_PATH = './files/scaleup_fourtasks/'
+    FILE_PATH = './files/scaleup/noiselevel0dot1/'
 
     settings = ['PFCMD', 'EWC', 'SI', 'PFC']
     # settings = ['PFCMD']
 
-    ITER = list(range(32))
+    ITER = list(range(14))
     # ITER = list(range(6)) + list(range(16, 22))
     
     LEN = len(ITER)
@@ -44,7 +44,7 @@ if True:
     label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
     title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
-    for env_id in range(4): # 2 tasks
+    for env_id in range(2): # 2 tasks
         plt.figure()
         for i in range(len(settings)):
             act_perfs = np.load(FILE_PATH + 'avg_perfs_' + settings[i] + '.npy')

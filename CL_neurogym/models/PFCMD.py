@@ -323,8 +323,11 @@ class CTRNN_MD(nn.Module):
         # external inputs & activities of PFC neurons containing context info
         if self.MDeffect:
             ext_input_ctx = self.input2PFCctx(input)
+            # PFC-context neurons get disjoint inputs
+            # 1. The context information is not deterministic
+            # 2. The PFC-context layer is noisy
             ext_input_mask = torch.zeros_like(ext_input_ctx)
-            mask_idx = random.sample(range(0, self.sub_size), self.sub_active_size)
+            mask_idx = torch.where(torch.rand(self.sub_size) < self.config.sub_active_prob)[0].tolist()
             for batch_idx in range(ext_input_mask.shape[0]):
                 ext_input_mask[batch_idx, sub_id*self.sub_size:(sub_id+1)*self.sub_size][mask_idx] = 1
             PFC_ctx_input = torch.relu(ext_input_ctx.mul(ext_input_mask) + (self.config.hidden_ctx_noise)*torch.randn(ext_input_ctx.size()))
