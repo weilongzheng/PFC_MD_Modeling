@@ -12,13 +12,15 @@ import matplotlib.pyplot as plt
 # scale up test
 # TODO: make this a helper function
 ## compute averages of performance
-if True:
-    FILE_PATH = './files/scaleup/noiselevel0dot1/'
+if False:
+    # FILE_PATH = './files/scaleup_twotasks_1/baselines/'
+    # FILE_PATH = './files/scaleup_twotasks_1/noisestd0dot01/'
+    FILE_PATH = './files/scaleup_twotasks_1/noisestd0dot1/'
 
-    settings = ['PFCMD', 'EWC', 'SI', 'PFC']
-    # settings = ['PFCMD']
+    # settings = ['EWC', 'SI', 'PFC']
+    settings = ['PFCMD']
 
-    ITER = list(range(14))
+    ITER = list(range(48))
     # ITER = list(range(6)) + list(range(16, 22))
     
     LEN = len(ITER)
@@ -36,23 +38,23 @@ if True:
         np.save('./files/'+'time_stamps_'+setting+'.npy', time_stamps)
 ## PFC+MD VS PFC+EWC, PFC
 if True:
-    FILE_PATH = './files/'
-    settings = ['PFCMD', 'EWC', 'SI', 'PFC']
-    colors = ['red', 'blue', 'purple', 'black']
-    labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
-    linewidths = [3, 2, 2, 2]
+    FILE_PATH = './files/scaleup_twotasks_1/'
+    settings = ['PFCMDnoise0dot01', 'PFCMDnoise0dot1', 'EWC', 'SI', 'PFC']
+    colors = ['red', 'orange', 'blue', 'purple', 'black']
+    labels = ['PFC+MD ($\sigma_{noise}=0.01$)', 'PFC+MD ($\sigma_{noise}=0.1$)', 'PFC+EWC', 'PFC+SI', 'PFC']
+    linewidths = [3, 3, 2, 2, 2]
     label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
     title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
     for env_id in range(2): # 2 tasks
-        plt.figure()
+        plt.figure(figsize=(9, 6))
         for i in range(len(settings)):
             act_perfs = np.load(FILE_PATH + 'avg_perfs_' + settings[i] + '.npy')
             time_stamps = np.load(FILE_PATH + 'time_stamps_' + settings[i] + '.npy')
             plt.plot(time_stamps, act_perfs[env_id, :], linewidth=linewidths[i], color=colors[i], label=labels[i])
-            plt.fill_between(x=[    0, 20000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.02)
-            plt.fill_between(x=[20000, 40000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.02)
-            plt.fill_between(x=[40000, 50000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.02)
+            plt.fill_between(x=[    0, 20000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.01)
+            plt.fill_between(x=[20000, 40000] , y1=0.0, y2=1.01, facecolor='green', alpha=0.01)
+            plt.fill_between(x=[40000, 50000] , y1=0.0, y2=1.01, facecolor='red', alpha=0.01)
             plt.legend(bbox_to_anchor = (1.35, 0.65), prop=legend_font)
             plt.xlabel('Trials', fontdict=label_font)
             plt.ylabel('Performance', fontdict=label_font)
