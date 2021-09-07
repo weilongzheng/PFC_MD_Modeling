@@ -24,7 +24,7 @@ from utils import set_seed, get_task_id, forward_backward, get_optimizer, test_i
 from analysis.visualization import plot_rnn_activity, plot_MD_variables, plot_loss, plot_perf, plot_fullperf
 
 # configs
-USE_PARSER = False
+USE_PARSER = True
 if USE_PARSER:
     import argparse
     my_parser = argparse.ArgumentParser(description='Train neurogym tasks sequentially')
@@ -32,7 +32,7 @@ if USE_PARSER:
 
     exp_name = args.exp_name
     os.makedirs('./files/'+exp_name, exist_ok=True)
-
+    exp_signature = ''.join([str(a) for a in args])
     if len(sys.argv) > 1:   # if arguments passed to the python file 
         config = SerialConfig()
         config.use_gates= bool(args.use_gates)
@@ -73,7 +73,7 @@ log = PFCMDLogger(config=config)
 task_id = 0
 running_loss = 0.0
 
-for i in range(config.total_trials):
+for i in trange(config.total_trials):
 
     # control training paradigm
     task_id = get_task_id(config=config, trial_idx=i, prev_task_id=task_id)
@@ -102,8 +102,8 @@ for i in range(config.total_trials):
 
 
 # save variables
-# np.save('./files/'+'config.npy', config)
-# np.save('./files/'+'log.npy', log)
+np.save('./files/'+exp_name+f'/config_{exp_signature}.npy', config)
+np.save('./files/'+exp_name+f'/log_{exp_signature}.npy', log)
 # log = np.load('./files/'+'log.npy', allow_pickle=True).item()
 # config = np.load('./files/'+'config.npy', allow_pickle=True).item()
 
