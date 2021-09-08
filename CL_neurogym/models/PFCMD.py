@@ -162,16 +162,20 @@ class MD_GYM():
         '''
 
         # Thresholding
-        MDout = np.zeros(self.md_size)
-        MDinp_sorted = np.sort(MDinp)
+        # MDout = np.zeros(self.md_size)
+        # MDinp_sorted = np.sort(MDinp)
 
-        MDthreshold = np.median(MDinp_sorted[-int(self.num_active) * 2:])
-        # MDthreshold = np.mean(MDinp_sorted[-int(self.num_active) * 2:])
-        # MDthreshold  = np.mean(MDinp)
-        index_pos = np.where(MDinp >= MDthreshold)
-        index_neg = np.where(MDinp < MDthreshold)
-        MDout[index_pos] = 1
-        MDout[index_neg] = 0
+        # MDthreshold = np.median(MDinp_sorted[-int(self.num_active) * 2:])
+        # # MDthreshold = np.mean(MDinp_sorted[-int(self.num_active) * 2:])
+        # # MDthreshold  = np.mean(MDinp)
+        # index_pos = np.where(MDinp >= MDthreshold)
+        # index_neg = np.where(MDinp < MDthreshold)
+        # MDout[index_pos] = 1
+        # MDout[index_neg] = 0
+
+        # An equivalent thresholding
+        MDout = np.zeros(self.md_size)
+        MDout[np.argsort(MDinp)[-int(self.num_active):]] = 1
 
         return MDout
 
@@ -349,7 +353,7 @@ class CTRNN_MD(nn.Module):
             # only MD additive inputs
             # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
             self.md.md_output = self.md(PFC_ctx_input.cpu().detach().numpy()[0, :])
-            md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), self.md.md_output)
+            md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), np.logical_not(self.md.md_output).astype(float))
             md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             # ideal MD inputs analysis
@@ -430,9 +434,12 @@ class CTRNN_MD(nn.Module):
                 curr = (self.prev_actMD > np.median(curr_actMD_sorted[-int(self.md.num_active)*2:])).astype(float)
                 # compare prev and curr
                 flag = sum(np.logical_xor(prev, curr).astype(float))
-                if flag >= 2*self.md.num_active: # when task switching correctly, flag = 2*num_active
+                if (flag >= 2*self.md.num_active) and (sum(self.prev_actMD) > 0.4*self.md.num_active):
+                    # when task switching correctly, flag = 2*num_active
+                    # At the beginning of training, MD activities are not stable. So we use sum(self.prev_actMD) to determine whether this is the beginning of training.
                     print('Switching!')
                     print(prev, curr, self.prev_actMD, sep='\n')
+                    self.md.update_mask(prev=prev)
                     # change self.prev_actMD to penalize many switching
                     self.prev_actMD[:] = curr
 

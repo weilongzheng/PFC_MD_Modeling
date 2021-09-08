@@ -9,13 +9,14 @@ mpl.rcParams['ps.fonttype'] = 42
 import matplotlib.pyplot as plt
 
 
-# scale up test
+# scale up test performance
 # TODO: make this a helper function
 ## compute averages of performance
 if False:
     # FILE_PATH = './files/scaleup_twotasks_1/baselines/'
-    # FILE_PATH = './files/scaleup_twotasks_1/noisestd0dot01/'
-    FILE_PATH = './files/scaleup_twotasks_1/noisestd0dot1/'
+    # FILE_PATH = './files/scaleup_twotasks_1/Bernoulli_noisestd0dot1/'
+    # FILE_PATH = './files/scaleup_twotasks_1/Bernoulli_noisestd0dot01/'
+    FILE_PATH = './files/scaleup_twotasks_1/Bernoulli_noisestd0/'
 
     # settings = ['EWC', 'SI', 'PFC']
     settings = ['PFCMD']
@@ -34,15 +35,15 @@ if False:
                 act_perfs += np.array(log.act_perfs)
         time_stamps = log.stamps
         act_perfs = act_perfs/LEN
-        np.save('./files/'+'avg_perfs_'+setting+'.npy', act_perfs)
-        np.save('./files/'+'time_stamps_'+setting+'.npy', time_stamps)
+        np.save('./files/'+'avg_perfs_'+setting+'noisestd0.npy', act_perfs)
+        np.save('./files/'+'time_stamps_'+setting+'noisestd0.npy', time_stamps)
 ## PFC+MD VS PFC+EWC, PFC
 if True:
     FILE_PATH = './files/scaleup_twotasks_1/'
-    settings = ['PFCMDnoise0dot01', 'PFCMDnoise0dot1', 'EWC', 'SI', 'PFC']
-    colors = ['red', 'orange', 'blue', 'purple', 'black']
-    labels = ['PFC+MD ($\sigma_{noise}=0.01$)', 'PFC+MD ($\sigma_{noise}=0.1$)', 'PFC+EWC', 'PFC+SI', 'PFC']
-    linewidths = [3, 3, 2, 2, 2]
+    settings = ['PFCMDnoisestd0', 'PFCMDnoisestd0dot01', 'PFCMDnoisestd0dot1', 'EWC', 'SI', 'PFC']
+    colors = ['red', 'orange', 'green', 'blue', 'purple', 'black']
+    labels = ['PFC+MD ($\sigma_{noise}=0$)', 'PFC+MD ($\sigma_{noise}=0.01$)', 'PFC+MD ($\sigma_{noise}=0.1$)', 'PFC+EWC', 'PFC+SI', 'PFC']
+    linewidths = [3, 3, 3, 2, 2, 2]
     label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
     title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}

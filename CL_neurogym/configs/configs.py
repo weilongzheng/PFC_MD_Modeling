@@ -24,9 +24,12 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dnmc-v0']
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dnms-v0']
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dms-v0']
-        self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
+        # self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dmc-v0']
-        # 2. Four tasks
+        # 2. Three tasks
+        # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0', 'yang19.dnmc-v0']
+        self.task_seq = ['yang19.dlygo-v0', 'yang19.dm2-v0', 'yang19.dmc-v0']
+        # 3. Four tasks
         # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
         # self.task_seq = ['yang19.dms-v0', 'yang19.dnms-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.go-v0', 'yang19.dmc-v0', 'yang19.dnmc-v0']
@@ -49,14 +52,14 @@ class BaseConfig(object):
         2. Change utils.get_task_id
         3. Change the task_ids of CL_model.end_task() in the run_baselines.py 
         '''
-        self.total_trials = 50000
-        self.switch_points = [0, 20000, 40000]
-        self.switch_taskid = [0, 1, 0] # this config is deprecated right now
-        assert len(self.switch_points) == len(self.switch_taskid)
+        self.total_trials = 70000
+        self.switch_points = [0, 20000, 40000, 60000]
+        # self.switch_taskid = [0, 1, 0] # this config is deprecated right now
+        # assert len(self.switch_points) == len(self.switch_taskid)
 
         # RNN model
         self.input_size = 33
-        self.hidden_size = 400
+        self.hidden_size = 600
         self.output_size = 17
         self.lr = 1e-4
 
@@ -92,15 +95,15 @@ class PFCMDConfig(BaseConfig):
     def __init__(self):
         super(PFCMDConfig, self).__init__()
         # PFC context
-        self.hidden_ctx_size = 400
-        self.sub_size = 200
-        self.sub_active_size = 50
+        self.hidden_ctx_size = 450
+        self.sub_size = 150
+        self.sub_active_size = 50 # this config is deprecated right now
         self.sub_active_prob = 0.25
         self.hidden_ctx_noise = 0.01
         # MD
         self.MDeffect = True
-        self.md_size = 4
-        self.md_active_size = 2
+        self.md_size = 3
+        self.md_active_size = 1
         self.md_dt = 0.001
         # save variables
         self.FILENAME = {
