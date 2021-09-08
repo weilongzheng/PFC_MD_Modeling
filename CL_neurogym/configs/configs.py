@@ -54,8 +54,8 @@ class BaseConfig(object):
         '''
         self.total_trials = 70000
         self.switch_points = [0, 20000, 40000, 60000]
-        # self.switch_taskid = [0, 1, 0] # this config is deprecated right now
-        # assert len(self.switch_points) == len(self.switch_taskid)
+        self.switch_taskid = [0, 1, 2, 0] # this config is deprecated right now
+        assert len(self.switch_points) == len(self.switch_taskid)
 
         # RNN model
         self.input_size = 33
