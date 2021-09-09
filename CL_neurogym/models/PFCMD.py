@@ -154,6 +154,7 @@ class MD_GYM():
         
         # update and clip the PFC context -> MD weights
         wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
+        self.wPFC2MDdelta_mask = 5e-2 * np.exp(np.log(1/5e-2) * np.outer(MDoutTrace, self.MDpreTrace_binary))
         wPFC2MDdelta = wPFC2MDdelta * self.wPFC2MDdelta_mask
         self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
 
@@ -439,7 +440,6 @@ class CTRNN_MD(nn.Module):
                     # At the beginning of training, MD activities are not stable. So we use sum(self.prev_actMD) to determine whether this is the beginning of training.
                     print('Switching!')
                     print(prev, curr, self.prev_actMD, sep='\n')
-                    self.md.update_mask(prev=prev)
                     # change self.prev_actMD to penalize many switching
                     self.prev_actMD[:] = curr
 
