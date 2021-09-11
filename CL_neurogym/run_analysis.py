@@ -35,8 +35,8 @@ if False:
                 act_perfs += np.array(log.act_perfs)
         time_stamps = log.stamps
         act_perfs = act_perfs/LEN
-        np.save('./files/'+'avg_perfs_'+setting+'noisestd0.npy', act_perfs)
-        np.save('./files/'+'time_stamps_'+setting+'noisestd0.npy', time_stamps)
+        np.save('./files/'+'avg_perfs_'+setting+'.npy', act_perfs)
+        np.save('./files/'+'time_stamps_'+setting+'.npy', time_stamps)
 ## PFC+MD VS PFC+EWC, PFC
 if True:
     FILE_PATH = './files/scaleup_twotasks_1/'
