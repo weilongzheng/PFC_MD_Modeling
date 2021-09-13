@@ -490,9 +490,9 @@ for task_i, (task_id, task_name) in bar_tasks:
         
         if config['save_all']:
             training_log['rnn_activity'].append(rnn_activity.detach().cpu().numpy().mean(0))
-            training_log['inputs'].append(inputs.detach().cpu().numpy().T)
-            training_log['outputs'].append(outputs.detach().cpu().numpy().T)
-            training_log['labels'].append(labels.detach().cpu().numpy().T)
+            training_log['inputs'].append(  inputs.detach().cpu().numpy())
+            training_log['outputs'].append(outputs.detach().cpu().numpy()[-1, :, :])
+            training_log['labels'].append(  labels.detach().cpu().numpy()[-1, :, :])
        
         training_bar.set_description('loss, acc: {:0.4F}, {:0.3F}'.format(loss.item(), acc))
 #         training_bar.set_description('loss, acc: {:0.3F}, {0.3F}'.format(loss.item(), acc))
