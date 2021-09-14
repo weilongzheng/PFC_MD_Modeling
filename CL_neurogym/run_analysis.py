@@ -12,18 +12,14 @@ import matplotlib.pyplot as plt
 # scale up test performance
 # TODO: make this a helper function
 ## compute averages of performance
-if False:
+if 0:
     # FILE_PATH = './files/scaleup_twotasks_1/baselines/'
-    # FILE_PATH = './files/scaleup_twotasks_1/Bernoulli_noisestd0dot1/'
-    # FILE_PATH = './files/scaleup_twotasks_1/Bernoulli_noisestd0dot01/'
-    FILE_PATH = './files/scaleup_twotasks_1/Bernoulli_noisestd0/'
+    FILE_PATH = './files/scaleup_twotasks_2/Bernoulli_noisestd0dot1/'
 
     # settings = ['EWC', 'SI', 'PFC']
     settings = ['PFCMD']
 
     ITER = list(range(48))
-    # ITER = list(range(6)) + list(range(16, 22))
-    
     LEN = len(ITER)
     for setting in settings:
         for i in ITER:
@@ -35,11 +31,11 @@ if False:
                 act_perfs += np.array(log.act_perfs)
         time_stamps = log.stamps
         act_perfs = act_perfs/LEN
-        np.save('./files/'+'avg_perfs_'+setting+'.npy', act_perfs)
-        np.save('./files/'+'time_stamps_'+setting+'.npy', time_stamps)
+        np.save('./files/'+'avg_perfs_'+setting+'noisestd0dot1.npy', act_perfs)
+        np.save('./files/'+'time_stamps_'+setting+'noisestd0dot1.npy', time_stamps)
 ## PFC+MD VS PFC+EWC, PFC
-if True:
-    FILE_PATH = './files/scaleup_twotasks_1/'
+if 1:
+    FILE_PATH = './files/scaleup_twotasks_2/'
     settings = ['PFCMDnoisestd0', 'PFCMDnoisestd0dot01', 'PFCMDnoisestd0dot1', 'EWC', 'SI', 'PFC']
     colors = ['red', 'orange', 'green', 'blue', 'purple', 'black']
     labels = ['PFC+MD ($\sigma_{noise}=0$)', 'PFC+MD ($\sigma_{noise}=0.01$)', 'PFC+MD ($\sigma_{noise}=0.1$)', 'PFC+EWC', 'PFC+SI', 'PFC']
