@@ -7,9 +7,9 @@ import sys
 
 #%% Create the parameters for experiments in a table (expVars list of lists)
 # Var1 = range(500,1501, 500)
-exp_name = 'relaxaing_separation'
+exp_name = 'lower_separation'
 Var1 = [0,1,2,3] #range(0,3, 1)
-Var2 = [0.5]#[0.2, 0.5, 0.7] #range(0,3, 1)
+Var2 = [0.2, 0.5, 0.7] #range(0,3, 1)
 Var3 = [0]#[0.1, 0.5, 1.] #range(30,91, 20)
 Var4 = [0] #, 3.5, 4, 4.5, 5, 5.5, 6, 6.5]
 
@@ -35,7 +35,7 @@ for par_set in expVars:
     , "#  SBATCH CONFIG"
     , "#-------------------------------------------------------------------------------"
     , "#SBATCH --nodes=1"
-    , "#SBATCH -t 01:20:00"
+    , "#SBATCH -t 02:00:00"
     , "#SBATCH --gres=gpu:0"
     , "#SBATCH --mem=4G"
     # , '#SBATCH --output="showme.out"'

@@ -26,7 +26,7 @@ from analysis.visualization import plot_rnn_activity, plot_MD_variables, plot_lo
 # configs
 config = PFCMDConfig()
 
-USE_PARSER = False
+USE_PARSER = True
 if USE_PARSER:
     import argparse
     my_parser = argparse.ArgumentParser(description='Train neurogym tasks sequentially')
@@ -34,11 +34,11 @@ if USE_PARSER:
 
     exp_name = args.exp_name
     config.task_seq = config.sequences[args.var1]
-    config.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in config.task_seq] #removes yang19 and -v0
+    config.human_task_names = ['{}'.format(tn[7:-3]) for tn in config.task_seq] #removes yang19 and -v0    {:<6}
     config.EXPSIGNATURE = f'{config.human_task_names[0]}_{config.human_task_names[1]}_'
     
     config.MD2PFC_prob = args.var2
-    # config.EXPSIGNATURE = config.EXPSIGNATURE
+    config.EXPSIGNATURE = config.EXPSIGNATURE + f'MDprob_{config.MD2PFC_prob}_'
     config.FILEPATH += exp_name +'/'
     os.makedirs(config.FILEPATH, exist_ok=True)
 

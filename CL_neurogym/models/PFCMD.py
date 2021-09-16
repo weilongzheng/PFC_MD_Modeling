@@ -61,6 +61,7 @@ class MD_GYM():
         for i in range(self.wMD2PFC.shape[0]):
             j = np.floor(np.random.rand()*self.md_size).astype(int)
             self.wMD2PFC[i, j] = -5
+
         self.wMD2PFCMult = np.random.normal(0,
                                             1 / np.sqrt(self.md_size * self.hidden_size),
                                             size=(self.hidden_size, self.md_size))
