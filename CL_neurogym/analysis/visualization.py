@@ -126,11 +126,11 @@ def plot_fullperf(config, log):
 
 # performance curve
 def plot_perf(config, log, task_seq_id=None):
-    label_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    title_font = {'family':'Times New Roman','weight':'normal', 'size':25}
-    legend_font = {'family':'Times New Roman','weight':'normal', 'size':12}
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':12}
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
     for env_id in range(config.num_task):
-        plt.figure()
+        plt.figure(figsize=[4,3])
         plt.plot(log.stamps, log.act_perfs[env_id], color='red', label='$ MD+ $')
         plt.fill_between(x=[config.switch_points[0], config.switch_points[1]], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
         plt.fill_between(x=[config.switch_points[1], config.switch_points[2]], y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
@@ -145,7 +145,7 @@ def plot_perf(config, log, task_seq_id=None):
         plt.yticks([0.1*i for i in range(11)])
         plt.tight_layout()
         if config.save_plots:
-            plt.savefig(config.FILEPATH +'_'+config.EXPSIGNATURE + f'{task_seq_id}_taskseq_{env_id}_task' + config.FILENAME['plot_perf'] )
+            plt.savefig(config.FILEPATH +config.EXPSIGNATURE + '_'+ f'{task_seq_id}_taskseq_{env_id}_task' + config.FILENAME['plot_perf'] )
             plt.close()
         else:
             plt.show()

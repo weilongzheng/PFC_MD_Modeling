@@ -26,7 +26,7 @@ from analysis.visualization import plot_rnn_activity, plot_MD_variables, plot_lo
 # configs
 config = PFCMDConfig()
 
-USE_PARSER = True
+USE_PARSER = False
 if USE_PARSER:
     import argparse
     my_parser = argparse.ArgumentParser(description='Train neurogym tasks sequentially')
@@ -34,11 +34,15 @@ if USE_PARSER:
 
     exp_name = args.exp_name
     config.task_seq = config.sequences[args.var1]
+    config.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in config.task_seq] #removes yang19 and -v0
+    config.EXPSIGNATURE = f'{config.human_task_names[0]}_{config.human_task_names[1]}_'
+    
     config.MD2PFC_prob = args.var2
-    config.EXPSIGNATURE = exp_name + '_' +config.EXPSIGNATURE
+    # config.EXPSIGNATURE = config.EXPSIGNATURE
     config.FILEPATH += exp_name +'/'
     os.makedirs(config.FILEPATH, exist_ok=True)
 
+# config.total_trials = 1000 # when needing to adjust workflow and debug
 print(config.task_seq)
 
 # datasets
@@ -63,7 +67,7 @@ log = PFCMDLogger(config=config)
 task_id = 0
 running_loss = 0.0
 running_train_time = 0
-config.total_trials = 1000
+
 for i in range(config.total_trials):
 
     train_time_start = time.time()    

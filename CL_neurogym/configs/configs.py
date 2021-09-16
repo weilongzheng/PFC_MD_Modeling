@@ -86,7 +86,7 @@ class BaseConfig(object):
 
         # save variables
         self.FILEPATH = './files/'
-        self.EXPSIGNATURE = f'{self.task_seq[0][7:-3]}_{self.task_seq[0][7:-3]}_'
+        self.EXPSIGNATURE = f'{self.human_task_names[0]}_{self.human_task_names[1]}_'
         self.FILENAME = {
                         'config':    'config_PFC.npy',
                         'log':       'log_PFC.npy',

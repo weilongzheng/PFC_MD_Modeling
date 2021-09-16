@@ -7,8 +7,9 @@ import sys
 
 #%% Create the parameters for experiments in a table (expVars list of lists)
 # Var1 = range(500,1501, 500)
-Var1 = ['search_gates']
-Var2 = [0] #range(0,3, 1)
+exp_name = 'relaxaing_separation'
+Var1 = [0,1,2,3] #range(0,3, 1)
+Var2 = [0.5]#[0.2, 0.5, 0.7] #range(0,3, 1)
 Var3 = [0]#[0.1, 0.5, 1.] #range(30,91, 20)
 Var4 = [0] #, 3.5, 4, 4.5, 5, 5.5, 6, 6.5]
 
@@ -34,16 +35,16 @@ for par_set in expVars:
     , "#  SBATCH CONFIG"
     , "#-------------------------------------------------------------------------------"
     , "#SBATCH --nodes=1"
-    , "#SBATCH -t 01:50:00"
-    , "#SBATCH --gres=gpu:1"
+    , "#SBATCH -t 01:20:00"
+    , "#SBATCH --gres=gpu:0"
     , "#SBATCH --mem=4G"
     # , '#SBATCH --output="showme.out"'
-    , "#SBATCH --job-name=cl_{}".format(par_set[0])
+    , "#SBATCH --job-name=cl_{}".format(exp_name)
     , "#-------------------------------------------------------------------------------"
     , "## Run model "]
     
     # args = ['-c "x%d=%g" ' % (i, par_set[i]) for i in range(len(par_set))]
-    exp_name, var1, var2, _ = par_set
+    var1, var2, _, _ = par_set
 
     command_line = 'python run_PFCMD.py  {} 1 1 0 --var1={} --var2={}'.format(exp_name, var1, var2)
     win_command_line = command_line + ' --os=windows'
