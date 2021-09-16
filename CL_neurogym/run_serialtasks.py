@@ -69,11 +69,11 @@ my_parser.add_argument('train_to_criterion',
 my_parser.add_argument('--var1',
                        default=1.0, nargs='?',
                        type=float,
-                       help='the variance of the fixed multiplicative MD to RNN weights')
+                       help='the mean of the fixed multiplicative MD to RNN weights')
 my_parser.add_argument('--var2',
                        default=1.0, nargs='?',
                        type=float,
-                       help='the variance of the fixed multiplicative MD to RNN weights')
+                       help='the ratio of active neurons in gates ')
 my_parser.add_argument('--num_of_tasks',
                        default=30, nargs='?',
                        type=int,
@@ -94,6 +94,7 @@ device = 'cuda' # always CPU
 config = {
     # exp:
     'exp_name': exp_name,
+    'save_all': True, 
     # envs
     'tasks': ['yang19.dlygo-v0',
             'yang19.rtgo-v0',
@@ -194,7 +195,7 @@ def get_performance(net, envs, context_ids, batch_size=100):
 
 
 def create_log (task_i, task_id, task_name):
-    return     ({
+    _log = {
         'task_i': task_i,
         'task_id': task_id,
         'task_name' : task_name,
@@ -203,7 +204,16 @@ def create_log (task_i, task_id, task_name):
         'gradients': [],
         'accuracy' : [],
         'fixation_accuracy': [],
-    })
+    }
+    if config['save_all']:
+        _log.update({'rnn_activity' : [],
+                                'inputs': [],
+                                'outputs': [],
+                                'labels': [],
+        })
+    return(_log)
+
+    
 
 
 # In[5]:
@@ -294,8 +304,8 @@ class CTRNN_MD(nn.Module):
         self.oneminusalpha = 1 - alpha
 
         if self.use_multiplicative_gates:
-            self.gates = torch.normal(config['md_mean'], 1., size=(config['md_size'], config['hidden_size'], ),
-              dtype=torch.float) #.type(torch.LongTensor) device=self.device,
+            # self.gates = torch.normal(config['md_mean'], 1., size=(config['md_size'], config['hidden_size'], ),
+            #   dtype=torch.float) #.type(torch.LongTensor) device=self.device,
             # control density 
             self.gates_mask = np.random.uniform(0, 1, size=(config['md_size'], config['hidden_size'], )) 
             self.gates_mask = (self.gates_mask < config['md_range']).astype(float)
@@ -444,6 +454,7 @@ for task_i, (task_id, task_name) in bar_tasks:
     # training
     training_log = create_log(task_i,task_id, task_name,)
     testing_log = create_log(task_i,task_id, task_name,)
+    massive_log = create_log(task_i,task_id, task_name,)
     
     if config['MDeffect']:
         net.rnn.md.learn = True
@@ -465,6 +476,8 @@ for task_i, (task_id, task_name) in bar_tasks:
             outputs, rnn_activity = net(inputs)
         else:
             outputs, rnn_activity = net(inputs, sub_id=context_id)
+        # print(f'shape of outputs: {outputs.shape},    and shape of rnn_activity: {rnn_activity.shape}')
+        #Shape of outputs: torch.Size([20, 100, 17]),    and shape of rnn_activity: torch.Size ([20, 100, 256
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
@@ -475,6 +488,12 @@ for task_i, (task_id, task_name) in bar_tasks:
         training_log['stamps'].append(i)
         training_log['accuracy'].append(acc)
         
+        if config['save_all']:
+            training_log['rnn_activity'].append(rnn_activity.detach().cpu().numpy().mean(0))
+            training_log['inputs'].append(  inputs.detach().cpu().numpy())
+            training_log['outputs'].append(outputs.detach().cpu().numpy()[-1, :, :])
+            training_log['labels'].append(  labels.detach().cpu().numpy()[-1, :, :])
+       
         training_bar.set_description('loss, acc: {:0.4F}, {:0.3F}'.format(loss.item(), acc))
 #         training_bar.set_description('loss, acc: {:0.3F}, {0.3F}'.format(loss.item(), acc))
 
@@ -498,7 +517,6 @@ for task_i, (task_id, task_name) in bar_tasks:
                 
                 testing_log['fixation_accuracy'].append(fix_perf)
                 testing_log['accuracy'].append(act_perf)
-
 #                 for env_id in range(num_tasks):
 #                     print('  act performance, task #, name {:d} {}, batch# {:d}: {:0.2f}'.format(
 #                         env_id+1, config['human_task_names'][env_id], i+1,

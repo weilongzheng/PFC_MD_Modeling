@@ -43,6 +43,11 @@ if USE_PARSER:
     os.makedirs(config.FILEPATH, exist_ok=True)
 
 # config.total_trials = 1000 # when needing to adjust workflow and debug
+    # os.makedirs('./files/'+exp_name, exist_ok=True)
+    # exp_signature = ''.join([str(a) for a in args])
+    # if len(sys.argv) > 1:   # if arguments passed to the python file 
+    #     config = SerialConfig()
+    #     config.use_gates= bool(args.use_gates)
 print(config.task_seq)
 
 # datasets
@@ -68,7 +73,7 @@ task_id = 0
 running_loss = 0.0
 running_train_time = 0
 
-for i in range(config.total_trials):
+for i in trange(config.total_trials):
 
     train_time_start = time.time()    
 

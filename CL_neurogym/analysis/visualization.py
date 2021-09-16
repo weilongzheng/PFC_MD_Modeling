@@ -149,3 +149,37 @@ def plot_perf(config, log, task_seq_id=None):
             plt.close()
         else:
             plt.show()
+
+
+
+def plot_accuracy_matrix(logs, config):
+    num_tasks = len(config['tasks'])
+    title_label = 'Training tasks sequentially ---> \n    ' + label 
+    plt.close('all')
+    max_x = config['trials_per_task']//config['batch_size']
+    fig, axes = plt.subplots(num_tasks,num_tasks, figsize=[9,7])
+    for logi in range(num_tasks):
+        for li in range(num_tasks):
+            ax = axes[ li, logi ] # log i goes to the col direction -->
+            ax.set_ylim([-0.1,1.1])
+            ax.set_xlim([0, max_x])
+    #         ax.axis('off')
+            log = testing_logs[logi]
+            ax.plot(log['stamps'], [test[li] for test in log['accuracy']], linewidth=2)
+            ax.plot(log['stamps'], np.ones_like(log['stamps'])*0.5, ':', color='grey', linewidth=0.5)
+            if li == 0: ax.set_title(config['human_task_names'][logi])
+            if logi == 0: ax.set_ylabel(config['human_task_names'][li])
+            ax.set_yticklabels([]) 
+            ax.set_xticklabels([])
+            if logi== li:
+                ax.axvspan(*ax.get_xlim(), facecolor='grey', alpha=0.2)
+            if li == num_tasks-1 and logi in [num_tasks//2 - 4, num_tasks//2, num_tasks//2 + 4] :
+                ax.set_xlabel('batch #')
+    axes[num_tasks-1, num_tasks//2-2].text(-8., -2.5, title_label, fontsize=12)     
+    # exp_parameters = f'Exp parameters: {config["exp_name"]}\nRNN: {"same" if config["same_rnn"] else "separate"}\n\
+    #       mul_gate: {"True" if config["use_gates"] else "False"}\
+    #           {exp_signature}'
+    # axes[num_tasks-1, 0].text(-7., -2.2, exp_parameters, fontsize=7)
+    # plt.show(fig)
+    plt.savefig('./files/'+label+'_all_logs.png', dpi=300)
+    
