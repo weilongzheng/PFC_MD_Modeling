@@ -130,8 +130,8 @@ class MD_GYM():
         # self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
         # self.MDpreTrace_binary = (self.MDpreTrace>self.MDpreTrace_threshold).astype(float)
         # 1. mean of small part
-        pretrace_part = int(0.8*len(self.MDpreTrace))
-        self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[0:pretrace_part])
+        pretrace_part = int(1.0*len(self.MDpreTrace))
+        self.MDpreTrace_threshold = 0.8 * np.mean(np.sort(self.MDpreTrace)[0:pretrace_part])
         self.MDpreTrace_binary = (self.MDpreTrace>self.MDpreTrace_threshold).astype(float)
         # 2. mean of big part
         # pretrace_part = int(0.8*len(self.MDpreTrace))
@@ -148,15 +148,18 @@ class MD_GYM():
         # self.MDpreTrace_binary = (self.MDpreTrace_filtered>self.MDpreTrace_threshold).astype(float)
         
         # compute thresholds
-        # self.MDpreTrace_binary_threshold = np.mean(self.MDpreTrace_binary)
-        self.MDpreTrace_binary_threshold = 0.5
+        self.MDpreTrace_binary_threshold = 0.6 * np.mean(self.MDpreTrace_binary)
         MDoutTrace_threshold = 0.5
         
         # update and clip the PFC context -> MD weights
-        wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
-        self.wPFC2MDdelta_mask = 5e-2 * np.exp(np.log(1/5e-2) * np.outer(MDoutTrace, self.MDpreTrace_binary))
-        wPFC2MDdelta = wPFC2MDdelta * self.wPFC2MDdelta_mask
-        self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 1.)
+        wPFC2MDdelta = 0.5 * 0.2 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
+            # deprecated
+            # no using binary pretrace
+            # wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)
+            # Hebbian learning rate is a fucntion of pre and post traces
+            # self.wPFC2MDdelta_mask = 0.5 * np.exp(np.log(1/0.5) * np.outer(MDoutTrace, self.MDpreTrace_binary))
+            # wPFC2MDdelta = wPFC2MDdelta * self.wPFC2MDdelta_mask
+        self.wPFC2MD = np.clip(self.wPFC2MD + wPFC2MDdelta, 0., 2.)
 
     def winner_take_all(self, MDinp):
         '''Winner take all on the MD

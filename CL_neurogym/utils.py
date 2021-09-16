@@ -41,22 +41,22 @@ def get_task_seqs():
     DMFamily = ['yang19.dm1-v0', 'yang19.dm2-v0', 'yang19.ctxdm1-v0', 'yang19.ctxdm2-v0', 'yang19.multidm-v0']
     MatchFamily = ['yang19.dms-v0', 'yang19.dmc-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0']
     ### 2.1 two tasks
-    TaskA = GoFamily + AntiFamily
-    TaskB = MatchFamily + ['yang19.ctxdm1-v0', 'yang19.dm2-v0']
-    task_seqs = []
-    for a in TaskA:
-        for b in TaskB:
-            task_seqs.append((a, b))
-            task_seqs.append((b, a))
-    ### 2.2 three tasks
     # TaskA = GoFamily + AntiFamily
-    # TaskB = ['yang19.dm2-v0', 'yang19.ctxdm1-v0', 'yang19.multidm-v0']
-    # TaskC = ['yang19.dms-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0']
+    # TaskB = MatchFamily + ['yang19.ctxdm1-v0', 'yang19.dm2-v0']
     # task_seqs = []
     # for a in TaskA:
     #     for b in TaskB:
-    #         for c in TaskC:
-    #             task_seqs.append((a, b, c))
+    #         task_seqs.append((a, b))
+    #         task_seqs.append((b, a))
+    ### 2.2 three tasks
+    TaskA = GoFamily + AntiFamily
+    TaskB = ['yang19.dm2-v0', 'yang19.ctxdm1-v0', 'yang19.multidm-v0']
+    TaskC = ['yang19.dms-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0']
+    task_seqs = []
+    for a in TaskA:
+        for b in TaskB:
+            for c in TaskC:
+                task_seqs.append((a, b, c))
     ### 2.3 four tasks
     # task_seqs = []
     # for a in itertools.combinations(GoFamily, 2):
@@ -73,22 +73,22 @@ def get_task_seqs():
 def get_task_id(config, trial_idx, prev_task_id):
     # 1. Two tasks
     # Sequential training between blocks
-    if trial_idx >= config.switch_points[0] and trial_idx < config.switch_points[1]:
-        task_id = 0
-    elif trial_idx >= config.switch_points[1] and trial_idx < config.switch_points[2]:
-        task_id = 1
-    elif trial_idx >= config.switch_points[2]:
-        task_id = 0
-    # 2. Three tasks
-    # Sequential training between blocks
     # if trial_idx >= config.switch_points[0] and trial_idx < config.switch_points[1]:
     #     task_id = 0
     # elif trial_idx >= config.switch_points[1] and trial_idx < config.switch_points[2]:
     #     task_id = 1
-    # elif trial_idx >= config.switch_points[2] and trial_idx < config.switch_points[3]:
-    #     task_id = 2
-    # elif trial_idx >= config.switch_points[3]:
+    # elif trial_idx >= config.switch_points[2]:
     #     task_id = 0
+    # 2. Three tasks
+    # Sequential training between blocks
+    if trial_idx >= config.switch_points[0] and trial_idx < config.switch_points[1]:
+        task_id = 0
+    elif trial_idx >= config.switch_points[1] and trial_idx < config.switch_points[2]:
+        task_id = 1
+    elif trial_idx >= config.switch_points[2] and trial_idx < config.switch_points[3]:
+        task_id = 2
+    elif trial_idx >= config.switch_points[3]:
+        task_id = 0
     # 3. Four tasks
     # # Sequential training between blocks
     # if trial_idx == config.switch_points[0]:
