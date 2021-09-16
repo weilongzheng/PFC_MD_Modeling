@@ -6,14 +6,15 @@ import matplotlib.pyplot as plt
 
 # MD for neurogym tasks
 class MD_GYM():
-    def __init__(self, hidden_size, hidden_ctx_size, md_size, num_active=1, positiveRates=True, dt=0.001):
-        self.hidden_size = hidden_size
-        self.hidden_ctx_size = hidden_ctx_size
-        self.md_size = md_size
+    def __init__(self, config, positiveRates=True, dt=0.001):
+        self.hidden_size = config.hidden_size
+        self.hidden_ctx_size = config.hidden_ctx_size
+        self.md_size = config.md_size
         self.positiveRates = positiveRates
-        self.num_active = num_active # num_active: num MD active per context
+        self.num_active = config.md_active_size # num_active: num MD active per context
         self.learn = True # update MD weights or not
         self.sendinputs = True # send inputs to RNN or not
+        self.config = config
 
         self.tau = 0.02
         self.tau_times = 4
@@ -203,16 +204,19 @@ class CTRNN_MD(nn.Module):
         hidden: (batch, hidden_size), initial hidden activity
     """
 
-    def __init__(self, input_size, hidden_size, hidden_ctx_size, sub_size, sub_active_size, output_size, MDeffect, md_size, md_active_size, md_dt, config, dt=None, **kwargs):
+    def __init__(self, config, dt=None, **kwargs):
         super().__init__()
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.hidden_ctx_size = hidden_ctx_size
-        self.sub_size = sub_size
-        self.sub_active_size = sub_active_size
-        self.output_size = output_size
-        self.MDeffect = MDeffect
-        self.md_size = md_size
+
+        self.input_size = config.input_size
+        self.hidden_size = config.hidden_size
+        self.hidden_ctx_size = config.hidden_ctx_size
+        self.sub_size = config.sub_size
+        self.sub_active_size = config.sub_active_size
+        self.output_size = config.output_size
+        self.MDeffect = config.MDeffect
+        self.md_size = config.md_size
+        self.md_active_size = config.md_active_size
+        self.md_dt = config.md_dt
         self.config = config
         
 
@@ -225,27 +229,27 @@ class CTRNN_MD(nn.Module):
         self.oneminusalpha = 1 - alpha
 
         # sensory input -> PFC layer
-        self.input2h = nn.Linear(input_size, hidden_size)
+        self.input2h = nn.Linear(self.input_size, self.hidden_size)
 
         # PFC layer
-        self.h2h = nn.Linear(hidden_size, hidden_size)
+        self.h2h = nn.Linear(self.hidden_size, self.hidden_size)
         
         # MD related layers
         if self.MDeffect:
             # sensory input -> PFC context layer
-            self.input2PFCctx = nn.Linear(input_size, hidden_ctx_size, bias=False)
+            self.input2PFCctx = nn.Linear(self.input_size, self.hidden_ctx_size, bias=False)
             # MD layer
-            self.md = MD_GYM(hidden_size=hidden_size, hidden_ctx_size=hidden_ctx_size, md_size=md_size, num_active=md_active_size, dt=md_dt, positiveRates=True)
-            self.md.md_output = np.zeros(md_size)
-            index = np.random.permutation(md_size)
-            self.md.md_output[index[:md_active_size]] = 1 # randomly set part of md_output to 1
+            self.md = MD_GYM(config, positiveRates=True)
+            self.md.md_output = np.zeros(self.md_size)
+            index = np.random.permutation(self.md_size)
+            self.md.md_output[index[:self.md_active_size]] = 1 # randomly set part of md_output to 1
             self.md.md_output_t = np.array([])
         
         self.reset_parameters()
         
         # report block switching
         if self.MDeffect:
-            self.prev_actMD = np.zeros(shape=(md_size)) # actiavted MD neurons in the previous <odd number> trials
+            self.prev_actMD = np.zeros(shape=(self.md_size)) # actiavted MD neurons in the previous <odd number> trials
 
     def reset_parameters(self):
         ### input weights initialization
@@ -457,12 +461,12 @@ class RNN_MD(nn.Module):
         rnn: str, type of RNN, lstm, rnn, ctrnn, or eirnn
     """
 
-    def __init__(self, input_size, hidden_size, hidden_ctx_size, sub_size, sub_active_size, output_size, MDeffect, md_size, md_active_size, md_dt, config, **kwargs):
+    def __init__(self, config, **kwargs):
         super().__init__()
 
-        self.rnn = CTRNN_MD(input_size, hidden_size, hidden_ctx_size, sub_size, sub_active_size, output_size, MDeffect, md_size, md_active_size, md_dt, config, **kwargs)
+        self.rnn = CTRNN_MD(config, **kwargs)
         self.drop_layer = nn.Dropout(p=0.0)
-        self.fc = nn.Linear(hidden_size, output_size)
+        self.fc = nn.Linear(config.hidden_size, config.output_size)
 
     def forward(self, x, task_id):
         rnn_activity, _ = self.rnn(x, sub_id=task_id)

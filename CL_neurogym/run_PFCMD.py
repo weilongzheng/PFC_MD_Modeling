@@ -24,21 +24,21 @@ from utils import set_seed, get_task_id, forward_backward, get_optimizer, test_i
 from analysis.visualization import plot_rnn_activity, plot_MD_variables, plot_loss, plot_perf, plot_fullperf
 
 # configs
-USE_PARSER = False
+config = PFCMDConfig()
+
+USE_PARSER = True
 if USE_PARSER:
     import argparse
     my_parser = argparse.ArgumentParser(description='Train neurogym tasks sequentially')
     args = get_args_from_parser(my_parser)
 
     exp_name = args.exp_name
-    os.makedirs('./files/'+exp_name, exist_ok=True)
+    config.task_seq = config.sequences[args.var1]
+    config.MD2PFC_prob = args.var2
+    config.EXPSIGNATURE = exp_name + '_' +config.EXPSIGNATURE
+    config.FILEPATH += exp_name +'/'
+    os.makedirs(config.FILEPATH, exist_ok=True)
 
-    if len(sys.argv) > 1:   # if arguments passed to the python file 
-        config = SerialConfig()
-        config.use_gates= bool(args.use_gates)
-
-else:
-    config = PFCMDConfig()
 print(config.task_seq)
 
 # datasets
@@ -48,17 +48,7 @@ dataset = NGYM(config)
 set_seed(seed=config.RNGSEED)
 
 # model
-net = RNN_MD(input_size       =  config.input_size,
-             hidden_size      =  config.hidden_size,
-             hidden_ctx_size  =  config.hidden_ctx_size,
-             sub_size         =  config.sub_size,
-             sub_active_size  =  config.sub_active_size,
-             output_size      =  config.output_size,
-             MDeffect         =  config.MDeffect,
-             md_size          =  config.md_size,
-             md_active_size   =  config.md_active_size,
-             md_dt            =  config.md_dt,
-             config           =  config)
+net = RNN_MD(config           =  config)
 net = net.to(config.device)
 print(net, '\n')
 
@@ -73,7 +63,7 @@ log = PFCMDLogger(config=config)
 task_id = 0
 running_loss = 0.0
 running_train_time = 0
-
+config.total_trials = 1000
 for i in range(config.total_trials):
 
     train_time_start = time.time()    
@@ -87,7 +77,7 @@ for i in range(config.total_trials):
 
     # plots
     if i % config.plot_every_trials == config.plot_every_trials-1:
-        plot_rnn_activity(rnn_activity)
+        plot_rnn_activity(rnn_activity, config)
         if hasattr(config, 'MDeffect'):
             if config.MDeffect:
                 plot_MD_variables(net, config)
@@ -112,12 +102,12 @@ for i in range(config.total_trials):
         running_train_time = 0
 
 # save variables
-# np.save('./files/'+'config.npy', config)
-# np.save('./files/'+'log.npy', log)
+np.save(config.FILEPATH+'config_' + config.EXPSIGNATURE + '.npy', config)
+np.save(config.FILEPATH+'log_' + config.EXPSIGNATURE + '.npy', log)
 # log = np.load('./files/'+'log.npy', allow_pickle=True).item()
 # config = np.load('./files/'+'config.npy', allow_pickle=True).item()
 
 # visualization
-plot_loss(log)
+plot_loss(config, log)
 plot_fullperf(config, log)
 plot_perf(config, log)

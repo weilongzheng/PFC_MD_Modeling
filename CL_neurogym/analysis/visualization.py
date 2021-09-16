@@ -16,7 +16,7 @@ import imageio
 from pygifsicle import optimize
 
 # RNN activities
-def plot_rnn_activity(rnn_activity):
+def plot_rnn_activity(rnn_activity, confing):
     font = {'family':'Times New Roman','weight':'normal', 'size':20}
     plt.figure()
     plt.plot(rnn_activity[-1, 0, :].cpu().detach().numpy())
@@ -84,15 +84,19 @@ def plot_MD_variables(net, config):
     plt.show()
 
 # loss curve
-def plot_loss(log):
+def plot_loss(config, log):
     font = {'family':'Times New Roman','weight':'normal', 'size':25}
     plt.figure()
     plt.plot(np.array(log.losses))
     plt.xlabel('Trials', fontdict=font)
     plt.ylabel('Training MSE loss', fontdict=font)
     plt.tight_layout()
-    # plt.savefig('./animation/'+'CEloss.png')
-    plt.show()
+    if config.save_plots:
+        import os
+        os.makedirs('./animation/', exist_ok = True)
+        plt.savefig('./animation/'+'CEloss.png')
+    else:   
+        plt.show()
 
 # performance curve (fixation performance and action performance)
 def plot_fullperf(config, log):
@@ -115,8 +119,10 @@ def plot_fullperf(config, log):
         plt.ylim([0.0, 1.01])
         plt.yticks([0.1*i for i in range(11)])
         plt.tight_layout()
-        # plt.savefig('./animation/'+'performance.png')
-        plt.show()
+        if config.save_plots:
+            plt.savefig('./animation/'+'performance.png')
+        else:
+            plt.show()
 
 # performance curve
 def plot_perf(config, log, task_seq_id=None):
@@ -138,8 +144,8 @@ def plot_perf(config, log, task_seq_id=None):
         plt.ylim([0.0, 1.01])
         plt.yticks([0.1*i for i in range(11)])
         plt.tight_layout()
-        if (task_seq_id is not None) and (config.save_fig):
-            plt.savefig(config.FILEPATH + f'{task_seq_id}_taskseq_{env_id}_task' + config.FILENAME['plot_perf'])
+        if config.save_plots:
+            plt.savefig(config.FILEPATH +'_'+config.EXPSIGNATURE + f'{task_seq_id}_taskseq_{env_id}_task' + config.FILENAME['plot_perf'] )
             plt.close()
         else:
             plt.show()

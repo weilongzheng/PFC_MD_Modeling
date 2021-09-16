@@ -214,7 +214,7 @@ def test_in_training(net, dataset, config, log, trial_idx):
 # Parse argunents passed to python file.:
 def get_args_from_parser(my_parser):
     my_parser.add_argument('exp_name',
-                       default='unamed_exps',
+                       default='relaxing_separation',
                        type=str, nargs='?',
                        help='Experiment name, also used to create the path to save results')
     my_parser.add_argument('use_gates',
@@ -230,11 +230,11 @@ def get_args_from_parser(my_parser):
                         type=int,
                         help='TODO')
     my_parser.add_argument('--var1',
-                        default=1.0, nargs='?',
-                        type=float,
+                        default=0, nargs='?',
+                        type=int,
                         help='Generic var to be used in various places, Currently, the variance of the fixed multiplicative MD to RNN weights')
     my_parser.add_argument('--var2',
-                        default=1.0, nargs='?',
+                        default=0.5, nargs='?',
                         type=float,
                         help='Generic var to be used in various places, Currently, tthe variance of the fixed multiplicative MD to RNN weights')
     my_parser.add_argument('--num_of_tasks',
