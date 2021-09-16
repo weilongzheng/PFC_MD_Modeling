@@ -506,8 +506,8 @@ for task_i, (task_id, task_name) in bar_tasks:
             net.train()
             if config['MDeffect']:
                 net.rnn.md.learn = True
-
-            if (running_acc > 0.98) and config['train_to_criterion']:
+            criterion_accuaracy = 0.89 if task_name in ['yang19.dm1-v0', 'yang19.dm2-v0', 'yang19.ctxdm1-v0','yang19.ctxdm2-v0','yang19.multidm-v0'] else 0.98
+            if (running_acc > criterion_accuaracy) and config['train_to_criterion']:
                 # import pdb; pdb.set_trace()
                 break # stop training current task if sufficient accuracy. Note placed here to allow at least one performance run before this is triggered.
         running_acc = 0.7 * running_acc + 0.3 * acc

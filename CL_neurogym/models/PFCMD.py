@@ -61,6 +61,16 @@ class MD_GYM():
         for i in range(self.wMD2PFC.shape[0]):
             j = np.floor(np.random.rand()*self.md_size).astype(int)
             self.wMD2PFC[i, j] = -5
+        
+        ### Relaxing the separation.
+        # stats(self.gates)
+        # Mean, -2.45417, var 6.24790, min -5.000, max 0.000, norm 121.34661099511597
+        # stats(self.wMD2PFC)
+        # Mean, -2.50000, var 6.25000, min -5.000, max 0.000, norm 122.47448713915891
+
+        self.gates = np.random.uniform(size=(self.hidden_size, self.md_size))
+        self.gates = ((self.gates < self.config.MD2PFC_prob).astype(float) -1) * 5 #shift it to match Zhongxuan's -5 inhibition.
+        self.wMD2PFC = self.gates
 
         self.wMD2PFCMult = np.random.normal(0,
                                             1 / np.sqrt(self.md_size * self.hidden_size),
