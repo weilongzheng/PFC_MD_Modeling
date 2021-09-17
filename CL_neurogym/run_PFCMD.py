@@ -111,7 +111,7 @@ for i in trange(config.total_trials):
         running_train_time = 0
 
 # save variables
-np.save(config.FILEPATH+'config_' + config.EXPSIGNATURE + '.npy', config)
+np.save(config.FILEPATH+'config_' + config.EXPSIGNATURE + '.npy', config, pickle_)
 np.save(config.FILEPATH+'log_' + config.EXPSIGNATURE + '.npy', log)
 # log = np.load('./files/'+'log.npy', allow_pickle=True).item()
 # config = np.load('./files/'+'config.npy', allow_pickle=True).item()
