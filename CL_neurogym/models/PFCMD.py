@@ -127,12 +127,12 @@ class MD_GYM():
 
         # compute binary pretraces
         # mean
-        # self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
-        # self.MDpreTrace_binary = (self.MDpreTrace>self.MDpreTrace_threshold).astype(float)
-        # 1. mean of small part
-        pretrace_part = int(1.0*len(self.MDpreTrace))
-        self.MDpreTrace_threshold = 0.8 * np.mean(np.sort(self.MDpreTrace)[0:pretrace_part])
+        self.MDpreTrace_threshold = np.mean(self.MDpreTrace)
         self.MDpreTrace_binary = (self.MDpreTrace>self.MDpreTrace_threshold).astype(float)
+        # 1. mean of small part
+        # pretrace_part = int(1.0*len(self.MDpreTrace))
+        # self.MDpreTrace_threshold = 1.0 * np.mean(np.sort(self.MDpreTrace)[0:pretrace_part])
+        # self.MDpreTrace_binary = (self.MDpreTrace>self.MDpreTrace_threshold).astype(float)
         # 2. mean of big part
         # pretrace_part = int(0.8*len(self.MDpreTrace))
         # self.MDpreTrace_threshold = np.mean(np.sort(self.MDpreTrace)[-pretrace_part:])
