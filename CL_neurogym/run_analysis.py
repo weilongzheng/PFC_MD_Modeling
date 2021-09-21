@@ -1,4 +1,8 @@
 import numpy as np
+import torch
+import torch.nn as nn
+from torch.nn import init
+from torch.nn import functional as F
 import matplotlib as mpl
 mpl.rcParams['axes.spines.left'] = True
 mpl.rcParams['axes.spines.right'] = False
@@ -148,8 +152,43 @@ if 0:
     plt.savefig(FILE_PATH + 'performance{:d}.pdf'.format(env_id+1))
     plt.close()
 
+# PFC+MD VS baselines: three tasks
+if 0:
+    FILE_PATH = './files/scaleup_threetasks_3/'
+    settings = ['PFCMDnoisestd0dot01', 'EWC', 'SI', 'PFC']
+    line_colors = ['tab:red', 'darkviolet', 'darkgreen', 'black']
+    labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
+    linewidths = [3, 2, 2, 2]
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+
+    fig, axes = plt.subplots(1, 3, figsize=(13, 4))
+    for env_id in range(3): # 2 tasks
+        color1, color2, color3= 'tab:red', 'tab:blue', 'tab:green'
+        axes[env_id].axvspan(    0, 20000, alpha=0.1, color=color1)
+        axes[env_id].axvspan(20000, 40000, alpha=0.1, color=color2)
+        axes[env_id].axvspan(40000, 60000, alpha=0.1, color=color3)
+        axes[env_id].axvspan(60000, 70000, alpha=0.1, color=color1)
+        for i in range(len(settings)):
+            act_perfs_mean = np.load(FILE_PATH + 'avg_perfs_mean_' + settings[i] + '.npy')
+            act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + settings[i] + '.npy')
+            time_stamps = np.load(FILE_PATH + 'time_stamps_' + settings[i] + '.npy')
+            axes[env_id].plot(time_stamps, act_perfs_mean[env_id, :], linewidth=linewidths[i], color=line_colors[i], label=labels[i])
+            axes[env_id].set_xlabel('Trials', fontdict=label_font)
+            axes[env_id].set_ylabel('Performance', fontdict=label_font)
+            axes[env_id].set_title('Task{:d} Performance'.format(env_id+1), fontdict=title_font)
+            axes[env_id].set_xlim([0.0, 71000])
+            axes[env_id].set_ylim([0.0, 1.01])
+            axes[env_id].set_yticks([0.1*i for i in range(11)])
+    axes[-1].legend(bbox_to_anchor = (1.0, 0.65), prop=legend_font)
+    plt.tight_layout()
+    plt.show()
+    # plt.savefig(FILE_PATH + 'performance{:d}.pdf'.format(env_id+1))
+    # plt.close()
+
 # Parametric noise
-if 1:
+if 0:
     FILE_PATH = './files/scaleup_twotasks_4/'
     settings = ['PFCMDnoisestd0dot01', 'PFCMDnoisestd0dot1']
     line_colors = ['tab:red', 'tab:blue']
@@ -186,3 +225,24 @@ if 1:
     # plt.show()
     plt.savefig(FILE_PATH + 'performance{:d}.pdf'.format(env_id+1))
     plt.close()
+
+# Trajectory
+if 1:
+    log = np.load('./files/trajectory/'+'log.npy', allow_pickle=True).item()
+    config = np.load('./files/trajectory/'+'config.npy', allow_pickle=True).item()
+    dataset = np.load('./files/trajectory/'+'dataset.npy', allow_pickle=True).item()
+    net = torch.load('./files/trajectory/'+'net.pt')
+    crit = nn.MSELoss()
+
+    # turn on test mode
+    net.eval()
+    if hasattr(config, 'MDeffect'):
+        if config.MDeffect:
+            net.rnn.md.learn = False
+    # testing
+    with torch.no_grad():
+        task_id = 0
+        inputs, labels = dataset(task_id=task_id)
+        outputs, rnn_activity = net(inputs, task_id=task_id)
+        loss = crit(outputs, labels)
+        print(loss)
