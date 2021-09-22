@@ -339,6 +339,8 @@ class CTRNN_MD(nn.Module):
             for batch_idx in range(ext_input_mask.shape[0]):
                 ext_input_mask[batch_idx, sub_id*self.sub_size:(sub_id+1)*self.sub_size][mask_idx] = 1
             PFC_ctx_input = torch.relu(ext_input_ctx.mul(ext_input_mask) + (self.config.hidden_ctx_noise)*torch.randn(ext_input_ctx.size()))
+            # save PFC-ctx activity
+            self.PFC_ctx_act = PFC_ctx_input
 
         # md inputs
         if self.MDeffect:
@@ -400,6 +402,7 @@ class CTRNN_MD(nn.Module):
         # initialize variables for saving network activities
         output = []
         if self.MDeffect:
+            self.PFC_ctx_acts = np.zeros(shape=(num_tsteps, self.hidden_ctx_size))
             self.md.md_preTraces = np.zeros(shape=(num_tsteps, self.hidden_ctx_size))
             self.md.md_preTraces_binary = np.zeros(shape=(num_tsteps, self.hidden_ctx_size))
             self.md.md_preTrace_thresholds = np.zeros(shape=(num_tsteps, 1))
@@ -413,6 +416,7 @@ class CTRNN_MD(nn.Module):
             output.append(hidden)
             # save MD activities
             if self.MDeffect:
+                self.PFC_ctx_acts[i, :] = self.PFC_ctx_act.detach().numpy()
                 self.md.md_preTraces[i, :] = self.md.MDpreTrace
                 self.md.md_preTraces_binary[i, :] = self.md.MDpreTrace_binary
                 self.md.md_preTrace_thresholds[i, :] = self.md.MDpreTrace_threshold

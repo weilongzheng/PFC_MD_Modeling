@@ -114,8 +114,12 @@ for i in range(config.total_trials):
 # save variables
 # np.save('./files/'+'config.npy', config)
 # np.save('./files/'+'log.npy', log)
+# np.save('./files/'+'dataset.npy', dataset)
+# torch.save(net, './files/'+'net.pt')
 # log = np.load('./files/'+'log.npy', allow_pickle=True).item()
 # config = np.load('./files/'+'config.npy', allow_pickle=True).item()
+# dataset = np.load('./files/'+'dataset.npy', allow_pickle=True).item()
+# net = torch.load('./files/'+'net.pt')
 
 # visualization
 plot_loss(log)
