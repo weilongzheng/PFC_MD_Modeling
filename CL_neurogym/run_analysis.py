@@ -11,6 +11,7 @@ mpl.rcParams['axes.spines.bottom'] = True
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 # scale up test performance
@@ -226,12 +227,15 @@ if 0:
     plt.savefig(FILE_PATH + 'performance{:d}.pdf'.format(env_id+1))
     plt.close()
 
-# Trajectory
-if 1:
-    log = np.load('./files/trajectory/'+'log.npy', allow_pickle=True).item()
-    config = np.load('./files/trajectory/'+'config.npy', allow_pickle=True).item()
-    dataset = np.load('./files/trajectory/'+'dataset.npy', allow_pickle=True).item()
-    net = torch.load('./files/trajectory/'+'net.pt')
+
+from sklearn.decomposition import PCA
+# Record activity
+if 0:
+    FILE_PATH = './files/trajectory/PFC/'
+    log = np.load(FILE_PATH + 'log.npy', allow_pickle=True).item()
+    config = np.load(FILE_PATH + 'config.npy', allow_pickle=True).item()
+    dataset = np.load(FILE_PATH + 'dataset.npy', allow_pickle=True).item()
+    net = torch.load(FILE_PATH + 'net.pt')
     crit = nn.MSELoss()
 
     # turn on test mode
@@ -241,8 +245,172 @@ if 1:
             net.rnn.md.learn = False
     # testing
     with torch.no_grad():
-        task_id = 0
-        inputs, labels = dataset(task_id=task_id)
-        outputs, rnn_activity = net(inputs, task_id=task_id)
-        loss = crit(outputs, labels)
-        print(loss)
+        for task_id in [0, 1]:
+            inputs, labels = dataset(task_id=task_id)
+            outputs, rnn_activity = net(inputs, task_id=task_id)
+            loss = crit(outputs, labels)
+            np.save('./files/'+f'PFC_activity_{task_id}.npy', rnn_activity)
+            if hasattr(config, 'MDeffect'):
+                if config.MDeffect:
+                    np.save('./files/'+f'MD_activity_{task_id}.npy', net.rnn.md.md_output_t)
+                    np.save('./files/'+f'PFC_ctx_activity_{task_id}.npy', net.rnn.PFC_ctx_acts)
+            print(loss)
+
+# PFC trajectory
+if 0:
+    mode = 'PFC'
+    if mode == 'PFCMD':
+        FILE_PATH = './files/trajectory/PFCMD/'
+    elif mode == 'PFC':
+        FILE_PATH = './files/trajectory/PFC/'
+
+    # fit PCA
+    PFC_activity = []
+    for task_id in [0, 1]:
+        PFC_activity.append(np.mean(np.load(FILE_PATH+f'PFC_activity_{task_id}.npy'), axis=1))
+    PFC_activity_concat = np.concatenate(PFC_activity, axis=0)
+    
+    pca = PCA(n_components=2)
+    pca.fit(PFC_activity_concat)
+    print('explained variance ratio:', pca.explained_variance_ratio_)
+    print('explained variance', pca.explained_variance_)
+    PFC_activity_reduced = []
+    for activity in PFC_activity:
+        PFC_activity_reduced.append(pca.transform(activity))
+
+    # make plots
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    plt.figure(figsize=(5, 4))
+    plt.quiver(PFC_activity_reduced[0][:-1, 0],
+               PFC_activity_reduced[0][:-1, 1],
+               PFC_activity_reduced[0][1:, 0]-PFC_activity_reduced[0][:-1, 0],
+               PFC_activity_reduced[0][1:, 1]-PFC_activity_reduced[0][:-1, 1],
+               scale_units='xy', angles='xy', scale=1.2, width=0.01, color='tab:red')
+    plt.plot(PFC_activity_reduced[0][:, 0], PFC_activity_reduced[0][:, 1],
+             c='tab:red', marker='', linewidth=2.5, alpha=1.0, label='Task1')
+    plt.quiver(PFC_activity_reduced[1][:-1, 0],
+               PFC_activity_reduced[1][:-1, 1],
+               PFC_activity_reduced[1][1:, 0]-PFC_activity_reduced[1][:-1, 0],
+               PFC_activity_reduced[1][1:, 1]-PFC_activity_reduced[1][:-1, 1],
+               scale_units='xy', angles='xy', scale=1.2, width=0.01, color='tab:blue')
+    plt.plot(PFC_activity_reduced[1][:, 0], PFC_activity_reduced[1][:, 1],
+             c='tab:blue', marker='', linewidth=2.5, alpha=1.0, label='Task2')
+    plt.xticks([])
+    plt.yticks([])
+    plt.xlabel('PC1', fontdict=label_font)
+    plt.ylabel('PC2', fontdict=label_font)
+    plt.legend(bbox_to_anchor = (1.3, 0.6), prop=legend_font)
+    plt.title('PFC activity of a trial', fontdict=title_font)
+    plt.tight_layout()
+    plt.show()
+    # plt.savefig(FILE_PATH + 'trajectory.pdf')
+    # plt.close()
+
+# MD trajectory
+if 0:
+    # fit PCA
+    MD_activity = []
+    for task_id in [0, 1]:
+        MD_activity.append(np.load('./files/'+f'MD_activity_{task_id}.npy'))
+    MD_activity_concat = np.concatenate(MD_activity, axis=0)
+    
+    pca = PCA(n_components=2)
+    pca.fit(MD_activity_concat)
+    print('explained variance ratio:', pca.explained_variance_ratio_)
+    print('explained variance', pca.explained_variance_)
+    MD_activity_reduced = []
+    for activity in MD_activity:
+        MD_activity_reduced.append(pca.transform(activity))
+
+    # make plots
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    plt.figure(figsize=(6, 6))
+    plt.scatter(MD_activity_reduced[0][:, 0], MD_activity_reduced[0][:, 1],
+                c='tab:red', marker='o', s=100, alpha=1.0, label='Task1')
+    plt.scatter(MD_activity_reduced[1][:, 0], MD_activity_reduced[1][:, 1],
+                c='tab:blue', marker='o', s=100, alpha=1.0, label='Task2')
+    plt.xticks([])
+    plt.yticks([])
+    plt.xlabel('PC1', fontdict=label_font)
+    plt.ylabel('PC2', fontdict=label_font)
+    plt.legend(bbox_to_anchor = (1.2, 0.6), prop=legend_font)
+    plt.title('MD activity in two tasks', fontdict=title_font)
+    plt.show()
+
+# PFC trajectory
+if 0:
+    # fit PCA
+    PFC_ctx_activity = []
+    for task_id in [0, 1]:
+        PFC_ctx_activity.append(np.load('./files/'+f'PFC_ctx_activity_{task_id}.npy'))
+    PFC_ctx_activity_concat = np.concatenate(PFC_ctx_activity, axis=0)
+    
+    pca = PCA(n_components=2)
+    pca.fit(PFC_ctx_activity_concat)
+    print('explained variance ratio:', pca.explained_variance_ratio_)
+    print('explained variance', pca.explained_variance_)
+    PFC_ctx_activity_reduced = []
+    for activity in PFC_ctx_activity:
+        PFC_ctx_activity_reduced.append(pca.transform(activity))
+
+    # make plots
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    plt.figure(figsize=(6, 6))
+    plt.scatter(PFC_ctx_activity_reduced[0][:, 0], PFC_ctx_activity_reduced[0][:, 1], c='tab:red', marker='o', alpha=1.0, label='Task1')
+    plt.scatter(PFC_ctx_activity_reduced[1][:, 0], PFC_ctx_activity_reduced[1][:, 1], c='tab:blue', marker='o', alpha=1.0, label='Task2')
+    plt.xticks([])
+    plt.yticks([])
+    plt.xlabel('PC1', fontdict=label_font)
+    plt.ylabel('PC2', fontdict=label_font)
+    plt.legend(bbox_to_anchor = (1.2, 0.6), prop=legend_font)
+    plt.title('PFC_ctx activity in two tasks', fontdict=title_font)
+    plt.show()
+
+# MD related weights
+if 0:
+    FILE_PATH = './files/trajectory/PFCMD/'
+    log = np.load(FILE_PATH + 'log.npy', allow_pickle=True).item()
+    config = np.load(FILE_PATH + 'config.npy', allow_pickle=True).item()
+    dataset = np.load(FILE_PATH + 'dataset.npy', allow_pickle=True).item()
+    net = torch.load(FILE_PATH + 'net.pt')
+
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    # winput2PFC-ctx
+    fig, axes = plt.subplots(figsize=(6, 4))
+    ax = axes
+    sns.heatmap(net.rnn.input2PFCctx.weight.data, cmap='Reds', ax=ax, vmin=0, vmax=0.05)
+    ax.set_xticks([0, config.input_size])
+    ax.set_xticklabels([1, config.input_size], rotation=0)
+    ax.set_yticks([0, config.hidden_ctx_size])
+    ax.set_yticklabels([1, config.hidden_ctx_size], rotation=0)
+    ax.set_xlabel('Input index', fontdict=label_font)
+    ax.set_ylabel('PFC-ctx index', fontdict=label_font)
+    ax.set_title('Input to PFC-ctx weights', fontdict=title_font)
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('connection weight', fontdict=label_font)
+    plt.show()
+    # plt.savefig(FILE_PATH + 'weights_winput2PFC-ctx.pdf')
+    # plt.close()
+    # wMD2PFC
+    fig, axes = plt.subplots(figsize=(6, 4))
+    ax = axes
+    sns.heatmap(net.rnn.md.wMD2PFC, cmap='Blues_r', ax=ax, vmin=-5, vmax=0)
+    ax.set_xticklabels([i+1 for i in range(config.md_size)], rotation=0)
+    ax.set_yticks([0, config.hidden_size-1])
+    ax.set_yticklabels([1, config.hidden_size], rotation=0)
+    ax.set_xlabel('MD index', fontdict=label_font)
+    ax.set_ylabel('PFC index', fontdict=label_font)
+    ax.set_title('MD to PFC weights', fontdict=title_font)
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('connection weight', fontdict=label_font)
+    plt.show()
+    # plt.savefig(FILE_PATH + 'weights_wMD2PFC.pdf')
+    # plt.close()
