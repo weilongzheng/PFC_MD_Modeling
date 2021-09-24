@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from torch.nn import init
 from torch.nn import functional as F
+from utils import get_task_seqs, get_task_seq_id
 import matplotlib as mpl
 mpl.rcParams['axes.spines.left'] = True
 mpl.rcParams['axes.spines.right'] = False
@@ -399,6 +400,21 @@ if 0:
     plt.show()
     # plt.savefig(FILE_PATH + 'weights_winput2PFC-ctx.pdf')
     # plt.close()
+    # wPFC-ctx2MD
+    fig, axes = plt.subplots(figsize=(6, 4))
+    ax = axes
+    ax = sns.heatmap(net.rnn.md.wPFC2MD, cmap='Reds', ax=ax, vmin=0, vmax=2)
+    ax.set_xticks([0, config.hidden_ctx_size-1])
+    ax.set_xticklabels([1, config.hidden_ctx_size], rotation=0)
+    ax.set_yticklabels([i+1 for i in range(config.md_size)], rotation=0)
+    ax.set_xlabel('PFC index', fontdict=label_font)
+    ax.set_ylabel('MD index', fontdict=label_font)
+    ax.set_title('wPFC2MD', fontdict=title_font)
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('connection weight', fontdict=label_font)
+    plt.show()
+    # plt.savefig(FILE_PATH + 'weights_wPFC-ctx2MD.pdf')
+    # plt.close()
     # wMD2PFC
     fig, axes = plt.subplots(figsize=(6, 4))
     ax = axes
@@ -413,4 +429,140 @@ if 0:
     cbar.set_label('connection weight', fontdict=label_font)
     plt.show()
     # plt.savefig(FILE_PATH + 'weights_wMD2PFC.pdf')
+    # plt.close()
+
+# Task similarity analysis
+if 1:
+    FILE_PATH = './files/similarity/'
+    tick_names = np.load(FILE_PATH + 'tick_names.npy')
+    norm_task_variance = np.load(FILE_PATH + 'norm_task_variance.npy')
+    task_ids = []
+    for i in range(len(tick_names)):
+        if tick_names[i] not in ['dlydm1', 'dlydm2', 'ctxdlydm1', 'ctxdlydm2', 'multidlydm']: # we don't use delayed DM family
+            task_ids.append(i)
+    tick_names = tick_names[task_ids]
+    tick_names_dict = dict()
+    for id, tick_name in enumerate(tick_names):
+        tick_names_dict[str(id)] = tick_name
+    
+    norm_task_variance = norm_task_variance[task_ids, :]
+    similarity_matrix = norm_task_variance @ norm_task_variance.T
+    # normalized by max
+    # max_similarity_matrix = np.amax(similarity_matrix, axis=0)
+    # norm_similarity_matrix = 0.5 * (similarity_matrix/max_similarity_matrix[np.newaxis, :] +
+    #                                 similarity_matrix/max_similarity_matrix[:, np.newaxis])
+    # normalized by diagonal elements
+    diag_similarity_matrix = np.diag(similarity_matrix)
+    norm_similarity_matrix = 0.5 * (similarity_matrix/diag_similarity_matrix[np.newaxis, :] +
+                                    similarity_matrix/diag_similarity_matrix[:, np.newaxis])
+
+    # heatmap norm_task_variance
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    fig, axes = plt.subplots(figsize=(7, 4))
+    ax = axes
+    ax = sns.heatmap(norm_task_variance,
+                     vmin=0, vmax=1, cmap='hot', ax=ax,
+                     cbar_kws={'fraction':0.046, 'pad':0.04})
+    plt.yticks([i+0.5 for i in range(len(tick_names))], tick_names, 
+               rotation=0, va='center', font='Times New Roman', fontsize=12)
+    plt.xticks([])
+    plt.title('Units', fontdict=title_font)
+    plt.xlabel('Clusters', fontdict=label_font)
+    ax.tick_params('both', length=0)
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('Normalized task variance', fontdict=label_font, labelpad=15)
+    plt.show()
+    # plt.savefig(FILE_PATH + 'norm_task_variance.pdf')
+    # plt.close()
+
+    # heatmap norm_similarity_matrix
+    fig, axes = plt.subplots(figsize=(8, 6))
+    ax = axes
+    mask = np.zeros_like(norm_similarity_matrix, dtype=bool)
+    mask[np.triu_indices_from(mask)] = True
+    mask[np.diag_indices_from(mask)] = False
+    ax = sns.heatmap(norm_similarity_matrix,
+                     vmin=0, vmax=1, mask=mask,
+                     cmap='OrRd', ax=ax, square=True,
+                     cbar_kws={'fraction':0.046, 'pad':0.04})
+    ax.xaxis.tick_bottom()
+    plt.xticks([i+0.5 for i in range(len(tick_names))], tick_names, 
+               rotation='vertical', ha='center', font='Times New Roman', fontsize=12)
+    plt.yticks([i+0.5 for i in range(len(tick_names))], tick_names, 
+               rotation=0, va='center', font='Times New Roman', fontsize=12)
+    ax.tick_params('both', length=0)
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('Normalized task similarity', fontdict=label_font, labelpad=15)
+    cbar.outline.set_linewidth(0.5)
+    plt.show()
+    # plt.savefig(FILE_PATH + 'norm_similarity_matrix.pdf')
+    # plt.close()
+
+    # select task seqs with high similarity
+    sim_task_seqs = []
+    similarity_threshold = 0.6
+    for sim_task_seq_id in np.argwhere(norm_similarity_matrix > similarity_threshold):
+        if sim_task_seq_id[0] == sim_task_seq_id[1]: # exclude two identical tasks
+            continue
+        sim_task_seqs.append(
+            ('yang19.' + tick_names_dict[f'{sim_task_seq_id[0]}'] + '-v0',
+             'yang19.' + tick_names_dict[f'{sim_task_seq_id[1]}'] + '-v0')
+            )
+    print(sim_task_seqs)
+    # match the task seqs with high similarity with those in the scale up test
+    scaleup_task_seqs = get_task_seqs()
+    take_seq_ids = []
+    for sim_task_seq in sim_task_seqs:
+        take_seq_ids += get_task_seq_id(task_seqs=scaleup_task_seqs, task_seq=sim_task_seq)
+    take_seq_ids.sort()
+    print(take_seq_ids)
+    
+    # compute performance of the task seqs with high similarity
+    FILE_PATH = './files/temp_2/'
+    settings = ['PFC']
+    ITER = take_seq_ids[0:70]
+    LEN = len(ITER)
+    for setting in settings:
+        act_perfs_all = []
+        for i in ITER:
+            PATH = FILE_PATH + str(i) + '_log_' + setting + '.npy'
+            log = np.load(PATH, allow_pickle=True).item()
+            act_perfs_all.append(np.array(log.act_perfs))
+        act_perfs_all = np.stack(act_perfs_all, axis=0)
+        time_stamps = log.stamps
+        act_perfs_mean = np.mean(act_perfs_all, axis=0)
+        act_perfs_std = np.std(act_perfs_all, axis=0)
+
+    # plot performance
+    fig, axes = plt.subplots(figsize=(6, 4))
+    ax = axes
+    line_colors = ['tab:red', 'tab:blue']
+    labels = ['Task1', 'Task2']
+    linewidth = 2
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    ax.axvspan(    0, 20000, alpha=0.08, color=line_colors[0])
+    ax.axvspan(20000, 40000, alpha=0.08, color=line_colors[1])
+    ax.axvspan(40000, 50000, alpha=0.08, color=line_colors[0])
+
+    for env_id in range(2): # 2 tasks
+        plt.plot(time_stamps, act_perfs_mean[env_id, :],
+                 linewidth=linewidth, color=line_colors[env_id], label=labels[env_id])
+        plt.fill_between(time_stamps, 
+                         act_perfs_mean[env_id, :]-act_perfs_std[env_id, :],
+                         act_perfs_mean[env_id, :]+act_perfs_std[env_id, :],
+                         alpha=0.2, color=line_colors[env_id])
+    plt.xlabel('Trials', fontdict=label_font)
+    plt.ylabel('Performance', fontdict=label_font)
+    plt.title('Task Performance', fontdict=title_font)
+    plt.xlim([0.0, 51000])
+    plt.ylim([0.0, 1.01])
+    plt.yticks([0.1*i for i in range(11)])
+    plt.legend(bbox_to_anchor=(1.0, 0.65), prop=legend_font)
+    plt.tight_layout()
+    plt.show()
+    # plt.savefig(FILE_PATH + 'performance.pdf')
     # plt.close()

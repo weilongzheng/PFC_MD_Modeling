@@ -69,6 +69,9 @@ def get_task_seqs():
     #         task_seqs.append(list(b) + list(a))
     return task_seqs
 
+def get_task_seq_id(task_seqs, task_seq):
+    return [i for i,val in enumerate(task_seqs) if tuple(val)==tuple(task_seq)]
+
 # training
 def get_task_id(config, trial_idx, prev_task_id):
     # 1. Two tasks
