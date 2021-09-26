@@ -20,12 +20,12 @@ import seaborn as sns
 ## compute mean & std of performance
 if 0:
     # FILE_PATH = './files/scaleup_threetasks/baselines/'
-    FILE_PATH = './files/scaleup_threetasks_3/noisestd0dot01/'
+    FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
 
     # settings = ['EWC', 'SI', 'PFC']
     settings = ['PFCMD']
 
-    ITER = list(range(36))
+    ITER = list(range(420))
     LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
@@ -37,14 +37,14 @@ if 0:
         time_stamps = log.stamps
         act_perfs_mean = np.mean(act_perfs_all, axis=0)
         act_perfs_std = np.std(act_perfs_all, axis=0)
-        np.save('./files/'+'avg_perfs_mean_'+setting+'noisestd0dot01.npy', act_perfs_mean)
-        np.save('./files/'+'avg_perfs_std_'+setting+'noisestd0dot01.npy', act_perfs_std)
-        np.save('./files/'+'time_stamps_'+setting+'noisestd0dot01.npy', time_stamps)
+        np.save('./files/'+'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
+        np.save('./files/'+'avg_perfs_std_'+setting+'.npy', act_perfs_std)
+        np.save('./files/'+'time_stamps_'+setting+'.npy', time_stamps)
 
 # main performance curve: two tasks
 if 0:
-    FILE_PATH = './files/scaleup_twotasks_4/'
-    setting = 'PFCMDnoisestd0dot01'
+    FILE_PATH = './files/scaleup_twotasks_5/'
+    setting = 'PFCMD'
     act_perfs_mean = np.load(FILE_PATH + 'avg_perfs_mean_' + setting + '.npy')
     act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + setting + '.npy')
     time_stamps = np.load(FILE_PATH + 'time_stamps_' + setting + '.npy')
@@ -76,9 +76,9 @@ if 0:
     plt.yticks([0.1*i for i in range(11)])
     plt.legend(bbox_to_anchor=(1.0, 0.65), prop=legend_font)
     plt.tight_layout()
-    plt.show()
-    # plt.savefig(FILE_PATH + 'performance.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig(FILE_PATH + 'performance.pdf')
+    plt.close()
 
 # main performance curve: three tasks
 if 0:
@@ -510,19 +510,22 @@ if 1:
             ('yang19.' + tick_names_dict[f'{sim_task_seq_id[0]}'] + '-v0',
              'yang19.' + tick_names_dict[f'{sim_task_seq_id[1]}'] + '-v0')
             )
-    print(sim_task_seqs)
     # match the task seqs with high similarity with those in the scale up test
-    scaleup_task_seqs = get_task_seqs()
+    scaleup_task_seqs = np.load('./files/similarity/scaleup_task_seqs.npy').tolist()
     take_seq_ids = []
     for sim_task_seq in sim_task_seqs:
         take_seq_ids += get_task_seq_id(task_seqs=scaleup_task_seqs, task_seq=sim_task_seq)
     take_seq_ids.sort()
+    # sort the sim_task_seqs
+    sim_task_seqs = []
+    for take_seq_id in take_seq_ids:
+        sim_task_seqs.append(scaleup_task_seqs[take_seq_id])
     print(take_seq_ids)
-    
+    print(sim_task_seqs)
     # compute performance of the task seqs with high similarity
-    FILE_PATH = './files/temp_2/'
+    FILE_PATH = './files/scaleup_twotasks_5/baselines/'
     settings = ['PFC']
-    ITER = take_seq_ids[0:70]
+    ITER = take_seq_ids
     LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
