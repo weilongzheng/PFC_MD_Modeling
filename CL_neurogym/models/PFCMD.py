@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 # MD for neurogym tasks
 class MD_GYM():
-    def __init__(self, hidden_size, hidden_ctx_size, md_size, num_active=1, positiveRates=True, dt=0.001):
+    def __init__(self, hidden_size, hidden_ctx_size, md_size, num_active=1, positiveRates=True, dt=0.001, config=None):
         self.hidden_size = hidden_size
         self.hidden_ctx_size = hidden_ctx_size
         self.md_size = md_size
@@ -14,6 +14,7 @@ class MD_GYM():
         self.num_active = num_active # num_active: num MD active per context
         self.learn = True # update MD weights or not
         self.sendinputs = True # send inputs to RNN or not
+        self.config = config
 
         self.tau = 0.02
         self.tau_times = 4
@@ -58,8 +59,9 @@ class MD_GYM():
         #                                 size=(self.hidden_size, self.md_size))
         self.wMD2PFC = np.zeros(shape=(self.hidden_size, self.md_size))
         for i in range(self.wMD2PFC.shape[0]):
-            j = np.floor(np.random.rand()*self.md_size).astype(int)
-            self.wMD2PFC[i, j] = -5
+            if np.random.rand() < self.config.MDtoPFC_connect_prob:
+                j = np.floor(np.random.rand()*self.md_size).astype(int)
+                self.wMD2PFC[i, j] = -0.5 # original -5
         self.wMD2PFCMult = np.random.normal(0,
                                             1 / np.sqrt(self.md_size * self.hidden_size),
                                             size=(self.hidden_size, self.md_size))
@@ -238,7 +240,7 @@ class CTRNN_MD(nn.Module):
             # sensory input -> PFC context layer
             self.input2PFCctx = nn.Linear(input_size, hidden_ctx_size, bias=False)
             # MD layer
-            self.md = MD_GYM(hidden_size=hidden_size, hidden_ctx_size=hidden_ctx_size, md_size=md_size, num_active=md_active_size, dt=md_dt, positiveRates=True)
+            self.md = MD_GYM(hidden_size=hidden_size, hidden_ctx_size=hidden_ctx_size, md_size=md_size, num_active=md_active_size, dt=md_dt, positiveRates=True, config=config)
             self.md.md_output = np.zeros(md_size)
             index = np.random.permutation(md_size)
             self.md.md_output[index[:md_active_size]] = 1 # randomly set part of md_output to 1

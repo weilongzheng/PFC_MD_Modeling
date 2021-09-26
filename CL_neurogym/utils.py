@@ -17,24 +17,24 @@ def get_task_seqs():
     Generate task sequences
     '''
     ## 1. all pairs
-    num_tasks = 2
-    tasks = ['yang19.dms-v0',
-             'yang19.dnms-v0',
-             'yang19.dmc-v0',
-             'yang19.dnmc-v0',
-             'yang19.dm1-v0',
-             'yang19.dm2-v0',
-             'yang19.ctxdm1-v0',
-             'yang19.ctxdm2-v0',
-             'yang19.multidm-v0',
-             'yang19.dlygo-v0',
-             'yang19.dlyanti-v0',
-             'yang19.go-v0',
-             'yang19.anti-v0',
-             'yang19.rtgo-v0',
-             'yang19.rtanti-v0']
-    task_seqs = list(itertools.permutations(tasks, num_tasks))
-    task_seqs = [val for val in task_seqs for i in range(num_tasks)]
+    # num_tasks = 2
+    # tasks = ['yang19.dms-v0',
+    #          'yang19.dnms-v0',
+    #          'yang19.dmc-v0',
+    #          'yang19.dnmc-v0',
+    #          'yang19.dm1-v0',
+    #          'yang19.dm2-v0',
+    #          'yang19.ctxdm1-v0',
+    #          'yang19.ctxdm2-v0',
+    #          'yang19.multidm-v0',
+    #          'yang19.dlygo-v0',
+    #          'yang19.dlyanti-v0',
+    #          'yang19.go-v0',
+    #          'yang19.anti-v0',
+    #          'yang19.rtgo-v0',
+    #          'yang19.rtanti-v0']
+    # task_seqs = list(itertools.permutations(tasks, num_tasks))
+    # task_seqs = [val for val in task_seqs for i in range(num_tasks)]
     ## 2. pairs from different task families
     # GoFamily = ['yang19.dlygo-v0', 'yang19.go-v0']
     # AntiFamily = ['yang19.dlyanti-v0', 'yang19.anti-v0']
@@ -67,6 +67,9 @@ def get_task_seqs():
     #     for b in itertools.combinations(DMFamily, 2):
     #         task_seqs.append(list(a) + list(b))
     #         task_seqs.append(list(b) + list(a))
+    ### 2.4 Task seqs with high similarity
+    sim_task_seqs = np.load('./files/similarity/sim_task_seqs.npy').tolist()
+    task_seqs = sim_task_seqs
     return task_seqs
 
 def get_task_seq_id(task_seqs, task_seq):
