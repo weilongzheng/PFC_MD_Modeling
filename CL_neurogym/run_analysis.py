@@ -433,6 +433,7 @@ if 0:
 
 # Task similarity analysis
 if 1:
+    # Retrieve Yang 2019 results
     FILE_PATH = './files/similarity/'
     tick_names = np.load(FILE_PATH + 'tick_names.npy')
     norm_task_variance = np.load(FILE_PATH + 'norm_task_variance.npy')
@@ -452,9 +453,12 @@ if 1:
     # norm_similarity_matrix = 0.5 * (similarity_matrix/max_similarity_matrix[np.newaxis, :] +
     #                                 similarity_matrix/max_similarity_matrix[:, np.newaxis])
     # normalized by diagonal elements
-    diag_similarity_matrix = np.diag(similarity_matrix)
-    norm_similarity_matrix = 0.5 * (similarity_matrix/diag_similarity_matrix[np.newaxis, :] +
-                                    similarity_matrix/diag_similarity_matrix[:, np.newaxis])
+    # diag_similarity_matrix = np.diag(similarity_matrix)
+    # norm_similarity_matrix = 0.5 * (similarity_matrix/diag_similarity_matrix[np.newaxis, :] +
+    #                                 similarity_matrix/diag_similarity_matrix[:, np.newaxis])
+    # normalized Euclidean norm
+    Euclid_norm = np.sqrt(np.diag(similarity_matrix))
+    norm_similarity_matrix = similarity_matrix / np.outer(Euclid_norm, Euclid_norm)
 
     # heatmap norm_task_variance
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
@@ -523,10 +527,14 @@ if 1:
     print(take_seq_ids)
     print(sim_task_seqs)
     # compute performance of the task seqs with high similarity
-    FILE_PATH = './files/scaleup_twotasks_5/baselines/'
-    settings = ['PFC']
-    ITER = take_seq_ids
+    FILE_PATH = './files/similarity/scaleup_twotasks/'
+    settings = ['PFCMD']
+    ITER = range(124)
     LEN = len(ITER)
+    # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # settings = ['PFC']
+    # ITER = take_seq_ids
+    # LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
         for i in ITER:

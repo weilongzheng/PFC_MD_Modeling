@@ -25,8 +25,8 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dnms-v0']
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dms-v0']
         # self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
-        # self.task_seq = ['yang19.dlygo-v0', 'yang19.dnmc-v0']
-        self.task_seq = ['yang19.dnmc-v0', 'yang19.dms-v0']
+        self.task_seq = ['yang19.dlygo-v0', 'yang19.dnmc-v0']
+        # self.task_seq = ['yang19.dnmc-v0', 'yang19.dms-v0']
         # 2. Three tasks
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0', 'yang19.dnmc-v0']
         # self.task_seq = ['yang19.dm1-v0', 'yang19.dlygo-v0', 'yang19.dnmc-v0']
@@ -109,7 +109,7 @@ class PFCMDConfig(BaseConfig):
         self.md_size = 2
         self.md_active_size = 1
         self.md_dt = 0.001
-        self.MDtoPFC_connect_prob = 0.10 # original 1.00
+        self.MDtoPFC_connect_prob = 1.00 # original 1.00
         # save variables
         self.FILENAME = {
                         'config':    'config_PFCMD.npy',
