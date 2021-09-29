@@ -435,7 +435,7 @@ if 0:
     # plt.close()
 
 # Task similarity analysis
-if 0:
+if 1:
     # Retrieve Yang 2019 results
     FILE_PATH = './files/similarity/'
     tick_names = np.load(FILE_PATH + 'tick_names.npy')
@@ -517,13 +517,70 @@ if 0:
             ('yang19.' + tick_names_dict[f'{sim_task_seq_id[0]}'] + '-v0',
              'yang19.' + tick_names_dict[f'{sim_task_seq_id[1]}'] + '-v0')
             )
+    
+    '''
+    sim_task_seqs based on similarity_matrix:
+    [('yang19.go-v0', 'yang19.rtgo-v0'), ('yang19.go-v0', 'yang19.dlygo-v0'),
+     ('yang19.go-v0', 'yang19.anti-v0'), ('yang19.go-v0', 'yang19.dlyanti-v0'),
+     ('yang19.go-v0', 'yang19.dm1-v0'), ('yang19.go-v0', 'yang19.dm2-v0'),
+     ('yang19.rtgo-v0', 'yang19.go-v0'), ('yang19.rtgo-v0', 'yang19.rtanti-v0'),
+     ('yang19.dlygo-v0', 'yang19.go-v0'), ('yang19.dlygo-v0', 'yang19.anti-v0'),
+     ('yang19.dlygo-v0', 'yang19.dlyanti-v0'), ('yang19.anti-v0', 'yang19.go-v0'),
+     ('yang19.anti-v0', 'yang19.dlygo-v0'), ('yang19.anti-v0', 'yang19.rtanti-v0'),
+     ('yang19.anti-v0', 'yang19.dlyanti-v0'), ('yang19.rtanti-v0', 'yang19.rtgo-v0'),
+     ('yang19.rtanti-v0', 'yang19.anti-v0'), ('yang19.rtanti-v0', 'yang19.dlyanti-v0'),
+     ('yang19.dlyanti-v0', 'yang19.go-v0'), ('yang19.dlyanti-v0', 'yang19.dlygo-v0'),
+     ('yang19.dlyanti-v0', 'yang19.anti-v0'), ('yang19.dlyanti-v0', 'yang19.rtanti-v0'),
+     ('yang19.dm1-v0', 'yang19.go-v0'), ('yang19.dm1-v0', 'yang19.dm2-v0'),
+     ('yang19.dm1-v0', 'yang19.ctxdm1-v0'), ('yang19.dm1-v0', 'yang19.ctxdm2-v0'),
+     ('yang19.dm1-v0', 'yang19.multidm-v0'), ('yang19.dm2-v0', 'yang19.go-v0'),
+     ('yang19.dm2-v0', 'yang19.dm1-v0'), ('yang19.dm2-v0', 'yang19.ctxdm1-v0'),
+     ('yang19.dm2-v0', 'yang19.ctxdm2-v0'), ('yang19.dm2-v0', 'yang19.multidm-v0'),
+     ('yang19.ctxdm1-v0', 'yang19.dm1-v0'), ('yang19.ctxdm1-v0', 'yang19.dm2-v0'),
+     ('yang19.ctxdm1-v0', 'yang19.ctxdm2-v0'), ('yang19.ctxdm1-v0', 'yang19.multidm-v0'),
+     ('yang19.ctxdm2-v0', 'yang19.dm1-v0'), ('yang19.ctxdm2-v0', 'yang19.dm2-v0'),
+     ('yang19.ctxdm2-v0', 'yang19.ctxdm1-v0'), ('yang19.ctxdm2-v0', 'yang19.multidm-v0'),
+     ('yang19.multidm-v0', 'yang19.dm1-v0'), ('yang19.multidm-v0', 'yang19.dm2-v0'),
+     ('yang19.multidm-v0', 'yang19.ctxdm1-v0'), ('yang19.multidm-v0', 'yang19.ctxdm2-v0'),
+     ('yang19.dms-v0', 'yang19.dnms-v0'), ('yang19.dms-v0', 'yang19.dmc-v0'),
+     ('yang19.dms-v0', 'yang19.dnmc-v0'), ('yang19.dnms-v0', 'yang19.dms-v0'),
+     ('yang19.dnms-v0', 'yang19.dmc-v0'), ('yang19.dnms-v0', 'yang19.dnmc-v0'),
+     ('yang19.dmc-v0', 'yang19.dms-v0'), ('yang19.dmc-v0', 'yang19.dnms-v0'),
+     ('yang19.dmc-v0', 'yang19.dnmc-v0'), ('yang19.dnmc-v0', 'yang19.dms-v0'),
+     ('yang19.dnmc-v0', 'yang19.dnms-v0'), ('yang19.dnmc-v0', 'yang19.dmc-v0')]
+    
+    Based on the meaning of task, removed some task seqs in sim_task_seqs:
+    1. One task is in Go task family, and the other is in Anti task family. e.g. ('yang19.go-v0', 'yang19.anti-v0').
+    2. One task is a Match task, and the other is a non-match task. e.g. ('yang19.dms-v0', 'yang19.dnms-v0').
+    '''
+    sim_task_seqs = \
+    [('yang19.go-v0', 'yang19.rtgo-v0'), ('yang19.go-v0', 'yang19.dlygo-v0'),
+     ('yang19.go-v0', 'yang19.dm1-v0'), ('yang19.go-v0', 'yang19.dm2-v0'),
+     ('yang19.rtgo-v0', 'yang19.go-v0'), ('yang19.dlygo-v0', 'yang19.go-v0'),
+     ('yang19.anti-v0', 'yang19.rtanti-v0'), ('yang19.anti-v0', 'yang19.dlyanti-v0'),
+     ('yang19.rtanti-v0', 'yang19.anti-v0'), ('yang19.rtanti-v0', 'yang19.dlyanti-v0'),
+     ('yang19.dlyanti-v0', 'yang19.anti-v0'), ('yang19.dlyanti-v0', 'yang19.rtanti-v0'),
+     ('yang19.dm1-v0', 'yang19.go-v0'), ('yang19.dm1-v0', 'yang19.dm2-v0'),
+     ('yang19.dm1-v0', 'yang19.ctxdm1-v0'), ('yang19.dm1-v0', 'yang19.ctxdm2-v0'),
+     ('yang19.dm1-v0', 'yang19.multidm-v0'), ('yang19.dm2-v0', 'yang19.go-v0'),
+     ('yang19.dm2-v0', 'yang19.dm1-v0'), ('yang19.dm2-v0', 'yang19.ctxdm1-v0'),
+     ('yang19.dm2-v0', 'yang19.ctxdm2-v0'), ('yang19.dm2-v0', 'yang19.multidm-v0'),
+     ('yang19.ctxdm1-v0', 'yang19.dm1-v0'), ('yang19.ctxdm1-v0', 'yang19.dm2-v0'),
+     ('yang19.ctxdm1-v0', 'yang19.ctxdm2-v0'), ('yang19.ctxdm1-v0', 'yang19.multidm-v0'),
+     ('yang19.ctxdm2-v0', 'yang19.dm1-v0'), ('yang19.ctxdm2-v0', 'yang19.dm2-v0'),
+     ('yang19.ctxdm2-v0', 'yang19.ctxdm1-v0'), ('yang19.ctxdm2-v0', 'yang19.multidm-v0'),
+     ('yang19.multidm-v0', 'yang19.dm1-v0'), ('yang19.multidm-v0', 'yang19.dm2-v0'),
+     ('yang19.multidm-v0', 'yang19.ctxdm1-v0'), ('yang19.multidm-v0', 'yang19.ctxdm2-v0'),
+     ('yang19.dms-v0', 'yang19.dmc-v0'), ('yang19.dnms-v0', 'yang19.dnmc-v0'),
+     ('yang19.dmc-v0', 'yang19.dms-v0'), ('yang19.dnmc-v0', 'yang19.dnms-v0')]
+
     # match the task seqs with high similarity with those in the scale up test
     scaleup_task_seqs = np.load('./files/similarity/scaleup_task_seqs.npy').tolist()
     take_seq_ids = []
     for sim_task_seq in sim_task_seqs:
         take_seq_ids += get_task_seq_id(task_seqs=scaleup_task_seqs, task_seq=sim_task_seq)
     take_seq_ids.sort()
-    # sort the sim_task_seqs
+    # update the sim_task_seqs
     sim_task_seqs = []
     for take_seq_id in take_seq_ids:
         sim_task_seqs.append(scaleup_task_seqs[take_seq_id])
@@ -651,7 +708,7 @@ if 0:
             np.save(FILE_PATH + 'MD_score_std', np.std(MD_scores))
 
 # plot scores VS noise std
-if 1:
+if 0:
     noise_stds = ['0dot0001', '0dot001', '0dot01', '0dot02', '0dot03', '0dot04', '0dot05', '0dot06', '0dot07', '0dot08']
     sub_active_prob = '0dot40'
     noise_std_data = []
@@ -676,8 +733,8 @@ if 1:
     title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
     plt.figure(figsize=(5, 4))
-    plt.semilogx(noise_std_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=10, label='PFC-ctx')
-    plt.semilogx(noise_std_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=10, label='MD')
+    plt.semilogx(noise_std_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=9, label='PFC-ctx')
+    plt.semilogx(noise_std_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=9, label='MD')
     plt.fill_between(noise_std_data,
                      PFCctx_scores_mean - PFCctx_scores_std,
                      np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
@@ -696,7 +753,7 @@ if 1:
     plt.show()
 
 # plot scores VS activated probability
-if 1:
+if 0:
     noise_std = '0dot01'
     sub_active_probs = ['0dot04', '0dot05', '0dot06', '0dot07', '0dot08', '0dot09', '0dot10', '0dot40', '0dot70', '1dot00']
     sub_active_prob_data = []
@@ -721,8 +778,8 @@ if 1:
     title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
     plt.figure(figsize=(5, 4))
-    plt.plot(sub_active_prob_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=10, label='PFC-ctx')
-    plt.plot(sub_active_prob_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=10, label='MD')
+    plt.plot(sub_active_prob_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=9, label='PFC-ctx')
+    plt.plot(sub_active_prob_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=9, label='MD')
     plt.fill_between(sub_active_prob_data,
                      PFCctx_scores_mean - PFCctx_scores_std,
                      np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
@@ -737,6 +794,6 @@ if 1:
     plt.xlim([-0.01, 1.08])
     plt.ylim([0.6, 1.01])
     plt.xticks([0.1*i for i in range(11)], fontsize=10)
-    plt.yticks([0.1*i for i in range(7, 11)], fontsize=10)
+    plt.yticks([0.1*i for i in range(6, 11)], fontsize=10)
     plt.tight_layout()
     plt.show()
