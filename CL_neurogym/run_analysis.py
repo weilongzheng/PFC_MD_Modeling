@@ -1,9 +1,14 @@
+import os
+import random
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn import init
 from torch.nn import functional as F
+from sklearn.decomposition import PCA
+from sklearn.linear_model import LinearRegression
 from utils import get_task_seqs, get_task_seq_id
+from tqdm import tqdm
 import matplotlib as mpl
 mpl.rcParams['axes.spines.left'] = True
 mpl.rcParams['axes.spines.right'] = False
@@ -228,8 +233,6 @@ if 0:
     plt.savefig(FILE_PATH + 'performance{:d}.pdf'.format(env_id+1))
     plt.close()
 
-
-from sklearn.decomposition import PCA
 # Record activity
 if 0:
     FILE_PATH = './files/trajectory/PFC/'
@@ -432,7 +435,7 @@ if 0:
     # plt.close()
 
 # Task similarity analysis
-if 1:
+if 0:
     # Retrieve Yang 2019 results
     FILE_PATH = './files/similarity/'
     tick_names = np.load(FILE_PATH + 'tick_names.npy')
@@ -577,3 +580,163 @@ if 1:
     plt.show()
     # plt.savefig(FILE_PATH + 'performance.pdf')
     # plt.close()
+
+# decoding analysis
+# train and score linear decoder
+if 0:
+    dir_names = os.listdir('./files/MDisnecessary/')
+    for dir_name in tqdm(dir_names):
+        if dir_name in ['backup', 'settings.txt']:
+            continue
+        FILE_PATH = './files/MDisnecessary/' + dir_name + '/'
+        log = np.load(FILE_PATH + 'log.npy', allow_pickle=True).item()
+        config = np.load(FILE_PATH + 'config.npy', allow_pickle=True).item()
+        dataset = np.load(FILE_PATH + 'dataset.npy', allow_pickle=True).item()
+        net = torch.load(FILE_PATH + 'net.pt')
+        
+        num_test = 10
+        num_trials = 500
+        num_train_trials = 400
+
+        # turn on test mode
+        net.eval()
+        if hasattr(config, 'MDeffect'):
+            if config.MDeffect:
+                net.rnn.md.learn = False
+        # prepare train & test data for decoder
+        with torch.no_grad():
+            PFCctx_scores = []
+            MD_scores = []
+            for _ in range(num_test):
+                PFCctx_train, MD_train, context_train = [], [], []
+                PFCctx_test, MD_test, context_test = [], [], []
+                for i in range(num_trials):
+                    # randomly choose a task
+                    task_id = random.choice(range(config.num_task))
+                    # record PFCctx and MD activities
+                    inputs, labels = dataset(task_id=task_id)
+                    outputs, rnn_activity = net(inputs, task_id=task_id)
+                    # context labels
+                    context_label = np.zeros(shape=(inputs.shape[0], config.num_task))
+                    context_label[:, task_id] = 1
+                    if i < num_train_trials:
+                        PFCctx_train.append(net.rnn.PFC_ctx_acts.copy())
+                        MD_train.append(net.rnn.md.md_output_t.copy())
+                        context_train.append(context_label.copy())
+                    else:
+                        PFCctx_test.append(net.rnn.PFC_ctx_acts.copy())
+                        MD_test.append(net.rnn.md.md_output_t.copy())
+                        context_test.append(context_label.copy())
+                PFCctx_train = np.concatenate(PFCctx_train, axis=0)
+                MD_train = np.concatenate(MD_train, axis=0)
+                context_train = np.concatenate(context_train, axis=0)
+                PFCctx_test = np.concatenate(PFCctx_test, axis=0)
+                MD_test = np.concatenate(MD_test, axis=0)
+                context_test = np.concatenate(context_test, axis=0)
+            
+                # train & score linear decoder
+                PFCctx_reg = LinearRegression()
+                PFCctx_reg.fit(PFCctx_train, context_train)
+                PFCctx_score = PFCctx_reg.score(PFCctx_test, context_test)
+                PFCctx_scores.append(PFCctx_score)
+                MD_reg = LinearRegression()
+                MD_reg.fit(MD_train, context_train)
+                MD_score = MD_reg.score(MD_test, context_test)
+                MD_scores.append(MD_score)
+            
+            # save mean & std of score
+            np.save(FILE_PATH + 'PFCctx_score_mean', np.mean(PFCctx_scores))
+            np.save(FILE_PATH + 'PFCctx_score_std', np.std(PFCctx_scores))
+            np.save(FILE_PATH + 'MD_score_mean', np.mean(MD_scores))
+            np.save(FILE_PATH + 'MD_score_std', np.std(MD_scores))
+
+# plot scores VS noise std
+if 1:
+    noise_stds = ['0dot0001', '0dot001', '0dot01', '0dot02', '0dot03', '0dot04', '0dot05', '0dot06', '0dot07', '0dot08']
+    sub_active_prob = '0dot40'
+    noise_std_data = []
+    PFCctx_scores_mean = []
+    PFCctx_scores_std = []
+    MD_scores_mean = []
+    MD_scores_std = []
+    for noise_std in noise_stds:
+        FILE_PATH = './files/MDisnecessary/noisestd' + noise_std + 'prob' + sub_active_prob +'/'
+        config = np.load(FILE_PATH + 'config.npy', allow_pickle=True).item()
+        noise_std_data.append(config.hidden_ctx_noise)
+        PFCctx_scores_mean.append(np.load(FILE_PATH + 'PFCctx_score_mean.npy').item())
+        PFCctx_scores_std.append(np.load(FILE_PATH + 'PFCctx_score_std.npy').item())
+        MD_scores_mean.append(np.load(FILE_PATH + 'MD_score_mean.npy').item())
+        MD_scores_std.append(np.load(FILE_PATH + 'MD_score_std.npy').item())
+    PFCctx_scores_mean = np.array(PFCctx_scores_mean)
+    PFCctx_scores_std = np.array(PFCctx_scores_std)
+    MD_scores_mean = np.array(MD_scores_mean)
+    MD_scores_std = np.array(MD_scores_std)
+
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    plt.figure(figsize=(5, 4))
+    plt.semilogx(noise_std_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=10, label='PFC-ctx')
+    plt.semilogx(noise_std_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=10, label='MD')
+    plt.fill_between(noise_std_data,
+                     PFCctx_scores_mean - PFCctx_scores_std,
+                     np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
+                     alpha=0.2, color='tab:red')
+    plt.fill_between(noise_std_data,
+                     MD_scores_mean - MD_scores_std,
+                     np.clip(MD_scores_mean + MD_scores_std, 0, 1),
+                     alpha=0.2, color='tab:blue')
+    plt.legend(bbox_to_anchor=(1.3, 0.65), prop=legend_font)
+    plt.xlabel('Input Noise STD', fontdict=label_font) 
+    plt.ylabel('Decoding Context', fontdict=label_font)
+    plt.ylim([0.8, 1.01])
+    plt.xticks(fontsize=10)
+    plt.yticks([0.1*i for i in range(8, 11)], fontsize=10)
+    plt.tight_layout()
+    plt.show()
+
+# plot scores VS activated probability
+if 1:
+    noise_std = '0dot01'
+    sub_active_probs = ['0dot04', '0dot05', '0dot06', '0dot07', '0dot08', '0dot09', '0dot10', '0dot40', '0dot70', '1dot00']
+    sub_active_prob_data = []
+    PFCctx_scores_mean = []
+    PFCctx_scores_std = []
+    MD_scores_mean = []
+    MD_scores_std = []
+    for sub_active_prob in sub_active_probs:
+        FILE_PATH = './files/MDisnecessary/noisestd' + noise_std + 'prob' + sub_active_prob +'/'
+        config = np.load(FILE_PATH + 'config.npy', allow_pickle=True).item()
+        sub_active_prob_data.append(config.sub_active_prob)
+        PFCctx_scores_mean.append(np.load(FILE_PATH + 'PFCctx_score_mean.npy').item())
+        PFCctx_scores_std.append(np.load(FILE_PATH + 'PFCctx_score_std.npy').item())
+        MD_scores_mean.append(np.load(FILE_PATH + 'MD_score_mean.npy').item())
+        MD_scores_std.append(np.load(FILE_PATH + 'MD_score_std.npy').item())
+    PFCctx_scores_mean = np.array(PFCctx_scores_mean)
+    PFCctx_scores_std = np.array(PFCctx_scores_std)
+    MD_scores_mean = np.array(MD_scores_mean)
+    MD_scores_std = np.array(MD_scores_std)
+
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    plt.figure(figsize=(5, 4))
+    plt.plot(sub_active_prob_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=10, label='PFC-ctx')
+    plt.plot(sub_active_prob_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=10, label='MD')
+    plt.fill_between(sub_active_prob_data,
+                     PFCctx_scores_mean - PFCctx_scores_std,
+                     np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
+                     alpha=0.2, color='tab:red')
+    plt.fill_between(sub_active_prob_data,
+                     MD_scores_mean - MD_scores_std,
+                     np.clip(MD_scores_mean + MD_scores_std, 0, 1),
+                     alpha=0.2, color='tab:blue')
+    plt.legend(bbox_to_anchor=(1.3, 0.65), prop=legend_font)
+    plt.xlabel('Activated Probability', fontdict=label_font) 
+    plt.ylabel('Decoding Context', fontdict=label_font)
+    plt.xlim([-0.01, 1.08])
+    plt.ylim([0.6, 1.01])
+    plt.xticks([0.1*i for i in range(11)], fontsize=10)
+    plt.yticks([0.1*i for i in range(7, 11)], fontsize=10)
+    plt.tight_layout()
+    plt.show()
