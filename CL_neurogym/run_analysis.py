@@ -435,7 +435,7 @@ if 0:
     # plt.close()
 
 # Task similarity analysis
-if 1:
+if 0:
     # Retrieve Yang 2019 results
     FILE_PATH = './files/similarity/'
     tick_names = np.load(FILE_PATH + 'tick_names.npy')
@@ -587,18 +587,18 @@ if 1:
     print(take_seq_ids)
     print(sim_task_seqs)
     
-    # compute performance of the task seqs with low similarity (model: original PFCMD)
+    # 1. compute performance of the task seqs with low similarity (model: original PFCMD)
     # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
     # settings = ['PFCMD']
     # ITER = list(range(420))
     # ITER = list(set(ITER) - set(take_seq_ids))
     # LEN = len(ITER)
-    # compute performance of the task seqs with high similarity (model: PFCMD with reduced assumptions)
+    # 2. compute performance of the task seqs with high similarity (model: PFCMD with reduced assumptions)
     FILE_PATH = './files/similarity/scaleup_twotasks_2/'
     settings = ['PFCMD']
     ITER = range(76)
     LEN = len(ITER)
-    # compute performance of the task seqs with high similarity (model: PFC)
+    # 3. compute performance of the task seqs with high similarity (model: PFC)
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
     # settings = ['PFC']
     # ITER = take_seq_ids
