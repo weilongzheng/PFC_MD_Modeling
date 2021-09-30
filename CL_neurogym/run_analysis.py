@@ -740,16 +740,16 @@ if 0:
     title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
     plt.figure(figsize=(5, 4))
-    plt.semilogx(noise_std_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=9, label='PFC-ctx')
     plt.semilogx(noise_std_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=9, label='MD')
-    plt.fill_between(noise_std_data,
-                     PFCctx_scores_mean - PFCctx_scores_std,
-                     np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
-                     alpha=0.2, color='tab:red')
+    plt.semilogx(noise_std_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=9, label='PFC-ctx')
     plt.fill_between(noise_std_data,
                      MD_scores_mean - MD_scores_std,
                      np.clip(MD_scores_mean + MD_scores_std, 0, 1),
                      alpha=0.2, color='tab:blue')
+    plt.fill_between(noise_std_data,
+                     PFCctx_scores_mean - PFCctx_scores_std,
+                     np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
+                     alpha=0.2, color='tab:red')
     plt.legend(bbox_to_anchor=(1.3, 0.65), prop=legend_font)
     plt.xlabel('Input Noise STD', fontdict=label_font) 
     plt.ylabel('Decoding Context', fontdict=label_font)
@@ -758,6 +758,8 @@ if 0:
     plt.yticks([0.1*i for i in range(8, 11)], fontsize=10)
     plt.tight_layout()
     plt.show()
+    # plt.savefig('files/' + 'decoding_vs_noisestd.pdf')
+    # plt.close()
 
 # plot scores VS activated probability
 if 0:
@@ -785,16 +787,16 @@ if 0:
     title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
     legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
     plt.figure(figsize=(5, 4))
-    plt.plot(sub_active_prob_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=9, label='PFC-ctx')
     plt.plot(sub_active_prob_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=9, label='MD')
-    plt.fill_between(sub_active_prob_data,
-                     PFCctx_scores_mean - PFCctx_scores_std,
-                     np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
-                     alpha=0.2, color='tab:red')
+    plt.plot(sub_active_prob_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=9, label='PFC-ctx')
     plt.fill_between(sub_active_prob_data,
                      MD_scores_mean - MD_scores_std,
                      np.clip(MD_scores_mean + MD_scores_std, 0, 1),
                      alpha=0.2, color='tab:blue')
+    plt.fill_between(sub_active_prob_data,
+                     PFCctx_scores_mean - PFCctx_scores_std,
+                     np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
+                     alpha=0.2, color='tab:red')
     plt.legend(bbox_to_anchor=(1.3, 0.65), prop=legend_font)
     plt.xlabel('Activated Probability', fontdict=label_font) 
     plt.ylabel('Decoding Context', fontdict=label_font)
@@ -804,3 +806,5 @@ if 0:
     plt.yticks([0.1*i for i in range(6, 11)], fontsize=10)
     plt.tight_layout()
     plt.show()
+    # plt.savefig('files/' + 'decoding_vs_activatedprob.pdf')
+    # plt.close()

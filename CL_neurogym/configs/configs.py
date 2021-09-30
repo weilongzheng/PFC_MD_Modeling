@@ -55,6 +55,7 @@ class BaseConfig(object):
            Change PFCMD configs.
         2. Change utils.get_task_id, utils.get_task_seqs
         3. Change the task_ids of CL_model.end_task() in the run_baselines.py & scaleup_baselines.py
+        4. Change self.FILEPATH
         '''
         self.total_trials = 50000
         self.switch_points = [0, 20000, 40000]
