@@ -586,11 +586,19 @@ if 1:
         sim_task_seqs.append(scaleup_task_seqs[take_seq_id])
     print(take_seq_ids)
     print(sim_task_seqs)
-    # compute performance of the task seqs with high similarity
-    FILE_PATH = './files/similarity/scaleup_twotasks/'
+    
+    # compute performance of the task seqs with low similarity (model: original PFCMD)
+    # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
+    # settings = ['PFCMD']
+    # ITER = list(range(420))
+    # ITER = list(set(ITER) - set(take_seq_ids))
+    # LEN = len(ITER)
+    # compute performance of the task seqs with high similarity (model: PFCMD with reduced assumptions)
+    FILE_PATH = './files/similarity/scaleup_twotasks_2/'
     settings = ['PFCMD']
-    ITER = range(124)
+    ITER = range(76)
     LEN = len(ITER)
+    # compute performance of the task seqs with high similarity (model: PFC)
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
     # settings = ['PFC']
     # ITER = take_seq_ids
@@ -618,7 +626,6 @@ if 1:
     ax.axvspan(    0, 20000, alpha=0.08, color=line_colors[0])
     ax.axvspan(20000, 40000, alpha=0.08, color=line_colors[1])
     ax.axvspan(40000, 50000, alpha=0.08, color=line_colors[0])
-
     for env_id in range(2): # 2 tasks
         plt.plot(time_stamps, act_perfs_mean[env_id, :],
                  linewidth=linewidth, color=line_colors[env_id], label=labels[env_id])
