@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
+from utils import stats
 
 # MD for neurogym tasks
 class MD_GYM():
@@ -68,13 +69,31 @@ class MD_GYM():
         # stats(self.wMD2PFC)
         # Mean, -2.50000, var 6.25000, min -5.000, max 0.000, norm 122.47448713915891
 
-        self.gates = np.random.uniform(size=(self.hidden_size, self.md_size))
-        self.gates = ((self.gates < self.config.MD2PFC_prob).astype(float) -1) * 5 #shift it to match Zhongxuan's -5 inhibition.
+            
+            # Binary gates formulation:
+        # self.gates = np.random.uniform(size=(self.hidden_size, self.md_size))
+        # self.gates = (self.gates < self.config.MD2PFC_prob).astype(float) 
+        # self.wMD2PFC = (self.gates -1) *5 #shift it to match Zhongxuan's -5 inhibition.
+        # self.wMD2PFCMult = self.gates
+        
+            #Sparse uniform formulation
+        self.gates = torch.ones(size=(self.hidden_size, self.md_size))
+        torch.nn.init.sparse_(self.gates, self.config.gates_sparsity, std=self.config.gates_std)
+        self.wMD2PFCMult = self.gates + self.config.gates_mean
         self.wMD2PFC = self.gates
+        stats(self.wMD2PFCMult, 'wMD2PFC mul: ')
+        stats(self.wMD2PFC, 'wMD2PFC add:')
 
-        self.wMD2PFCMult = np.random.normal(0,
-                                            1 / np.sqrt(self.md_size * self.hidden_size),
-                                            size=(self.hidden_size, self.md_size))
+
+        
+        # torch.nn.init.sparse_(tensor, sparsity, std=0.01)
+        # N(0, std=0.01)
+        # sparsity – The fraction of elements in each column to be set to zero
+        # std – the standard deviation of the normal distribution used to generate the non-zero values
+
+        # self.wMD2PFCMult = np.random.normal(0,
+                                            # 1 / np.sqrt(self.md_size * self.hidden_size),
+                                            # size=(self.hidden_size, self.md_size))
         # Hebbian learning mask
         self.wPFC2MDdelta_mask = np.ones(shape=(self.md_size, self.hidden_ctx_size))
         self.MD_mask = np.array([])
@@ -229,7 +248,7 @@ class CTRNN_MD(nn.Module):
         self.md_active_size = config.md_active_size
         self.md_dt = config.md_dt
         self.config = config
-        
+        self.plot_pre_dist = False # delete this. Only temp        
 
         self.tau = 100
         if dt is None:
@@ -369,8 +388,11 @@ class CTRNN_MD(nn.Module):
             # only MD additive inputs
             # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
             self.md.md_output = self.md(PFC_ctx_input.cpu().detach().numpy()[0, :])
-            md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), np.logical_not(self.md.md_output).astype(float))
+            # md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), np.logical_not(self.md.md_output).astype(float))
+            md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), (self.md.md_output).astype(float))
+            md2pfc_mul = np.dot((self.md.wMD2PFCMult), (self.md.md_output).astype(float))
             md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
+            md2pfc_mul = torch.from_numpy(md2pfc_mul).view_as(hidden).to(input.device)
 
             # ideal MD inputs analysis
             # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
@@ -385,10 +407,17 @@ class CTRNN_MD(nn.Module):
             # #  ideal inputs
             # md2pfc = md2pfcAdd
             # md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
-
+            # stats(pre_activation)
             if self.md.sendinputs:
-                pre_activation += md2pfc
-        
+                if self.config.MDeffect_mul:
+                    pre_activation *= md2pfc_mul
+                if self.config.MDeffect_add:
+                    pre_activation += md2pfc
+        if self.plot_pre_dist:
+            plt.close('all')
+            plt.hist(pre_activation.detach().numpy(), 100)
+            plt.savefig('pre_activation.jpg')
+            
         h_new = torch.relu(hidden * self.oneminusalpha + pre_activation * self.alpha)
         
         # shutdown analysis
@@ -460,7 +489,7 @@ class CTRNN_MD(nn.Module):
 
 
         output = torch.stack(output, dim=0)
-        return output, hidden
+        return output, hidden, np.mean(self.md.md_output_t, axis=0)
 
 class RNN_MD(nn.Module):
     """Recurrent network model.
@@ -478,9 +507,10 @@ class RNN_MD(nn.Module):
         self.rnn = CTRNN_MD(config, **kwargs)
         self.drop_layer = nn.Dropout(p=0.0)
         self.fc = nn.Linear(config.hidden_size, config.output_size)
+        self.md_activities = []
 
     def forward(self, x, task_id):
-        rnn_activity, _ = self.rnn(x, sub_id=task_id)
+        rnn_activity, _, md_mean_activity = self.rnn(x, sub_id=task_id)
         rnn_activity = self.drop_layer(rnn_activity)
         out = self.fc(rnn_activity)
-        return out, rnn_activity
+        return out, rnn_activity, md_mean_activity

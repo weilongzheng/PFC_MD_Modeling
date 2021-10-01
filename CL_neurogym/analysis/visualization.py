@@ -120,7 +120,8 @@ def plot_fullperf(config, log):
         plt.yticks([0.1*i for i in range(11)])
         plt.tight_layout()
         if config.save_plots:
-            plt.savefig('./animation/'+'performance.png')
+            plt.savefig(config.FILEPATH +config.EXPSIGNATURE + '_'+ f'taskseq_{env_id}_task' + 'full_perf.png' )
+            plt.close()
         else:
             plt.show()
 
@@ -132,9 +133,11 @@ def plot_perf(config, log, task_seq_id=None):
     for env_id in range(config.num_task):
         plt.figure(figsize=[4,3])
         plt.plot(log.stamps, log.act_perfs[env_id], color='red', label='$ MD+ $')
-        plt.fill_between(x=[config.switch_points[0], config.switch_points[1]], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
-        plt.fill_between(x=[config.switch_points[1], config.switch_points[2]], y1=0.0, y2=1.01, facecolor='green', alpha=0.05)
-        plt.fill_between(x=[config.switch_points[2], config.total_trials    ], y1=0.0, y2=1.01, facecolor='red', alpha=0.05)
+        shade_points = config.switch_points +[config.total_trials]
+        for i in range(0, len(shade_points)-2,2):
+            # print(f'i: {i} len(shded_points {len(shade_points)} ')
+            plt.fill_between(x=[shade_points[i+0], shade_points[i+1]], y1=0.0, y2=1.01, facecolor='red', alpha=0.1)
+            plt.fill_between(x=[shade_points[i+1], shade_points[i+2]], y1=0.0, y2=1.01, facecolor='blue', alpha=0.1)
         plt.legend(bbox_to_anchor = (1.25, 0.7), prop=legend_font)
         plt.xlabel('Trials', fontdict=label_font)
         plt.ylabel('Performance', fontdict=label_font)
@@ -149,7 +152,51 @@ def plot_perf(config, log, task_seq_id=None):
             plt.close()
         else:
             plt.show()
+# performance curve
+def plot_both_perf(config, log, net, color1= 'tab:blue', color2=  'tab:red', label1='$ Task 1 $', label2='Task 2'):
+    label_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    title_font = {'family':'Times New Roman','weight':'normal', 'size':12}
+    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
 
+    plt.figure(figsize=[4,3])
+    
+    plt.plot(log.stamps, log.act_perfs[0], color=color1, label=label1)
+    plt.plot(log.stamps, log.act_perfs[1], color=color2, label=label2)
+    # overlay MD mean activities :
+    shade_points = config.switch_points +[config.total_trials]
+    for i in range(0, len(shade_points)-2,2):
+        # print(f'i: {i} len(shded_points {len(shade_points)} ')
+        plt.axvspan(shade_points[i+0], shade_points[i+1],  alpha=0.1, color=color1)
+        plt.axvspan(shade_points[i+1], shade_points[i+2],  alpha=0.1, color=color2)
+    # plt.legend(bbox_to_anchor = (1.25, 0.7), prop=legend_font)
+    plt.legend()
+    plt.xlabel('Trials', fontdict=label_font)
+    plt.ylabel('Performance', fontdict=label_font)
+    plt.title('Tasks: {} {}'.format(config.task_seq[0][7:-3], config.task_seq[1][7:-3]), fontdict=title_font)
+        # plt.xticks(ticks=[i*500 - 1 for i in range(7)], labels=[i*500 for i in range(7)])
+    plt.xlim([0.0, None])
+    plt.ylim([0.0, 1.01])
+    plt.yticks([0.1*i for i in range(11)])
+    plt.tight_layout()
+    if config.save_plots:
+        plt.savefig(config.FILEPATH +config.EXPSIGNATURE + '_'+ config.FILENAME['plot_perf'] )
+        plt.close()
+    else:
+        plt.show()
+        
+def plot_md_activity(net, log, config):
+    fig, axes = plt.subplots(2,1)    
+    ax = axes[0]
+    env_id = 0
+    ax.plot(log.stamps, log.md_activity[env_id])
+    ax = axes[1]
+    env_id = 1
+    ax.plot(log.stamps, log.md_activity[env_id])
+    if config.save_plots:
+        plt.savefig(config.FILEPATH +config.EXPSIGNATURE + '_MD_activtiies_'+ config.FILENAME['plot_perf'] )
+        plt.close()
+    else:
+        plt.show()
 
 
 def plot_accuracy_matrix(logs, config):

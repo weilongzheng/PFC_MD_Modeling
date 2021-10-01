@@ -6,18 +6,24 @@ from time import sleep
 import sys    
 
 #%% Create the parameters for experiments in a table (expVars list of lists)
-# Var1 = range(500,1501, 500)
-exp_name = 'new_code'
-Var1 = [0]
-Var2 = [0.5, 0.7] #range(0,3, 1)
-Var3 = [7]#[0.1, 0.5, 1.] #range(30,91, 20)
-Var4 = [0] #, 3.5, 4, 4.5, 5, 5.5, 6, 6.5]
+
+exp_name = 'gates_sparsity_ncs'
+Var1 = [40, 9, 7,15,]#[41, 8, 6,13,]  15, 20, 30, 48]#range() # task pair number
+Var2 = [0., 0.2 , 0.4,  0.5, 0.6, 0.8,] # gates_sparsity
+Var3 = [0, 1]# additive, mul
+Var4 = [ 0.1,.3, .5] # gates std
+
+# exp_name = 'batch_pairs'
+# Var1 = range( 2)
+# Var2 = [0.5, 1.0] #range(0,3, 1)
+# Var3 = [30]#[0.1, 0.5, 1.] #range(30,91, 20)
+# Var4 = [0, 1] #, 3.5, 4, 4.5, 5, 5.5, 6, 6.5]
 
 
 expVars =  [[x1, x2, x3, x4] for x1 in Var1 for x2 in Var2 for x3 in Var3 for x4 in Var4 ]
 # [expVars[i].insert(0, i) for i in range(len(expVars))] # INSERT exp ID # in the first col.
 print ('Total no of experiments generated : ', len(expVars))
-print(expVars)
+# print(expVars)
 
 
 #%% Load neuron
@@ -36,8 +42,8 @@ for par_set in expVars:
     , "#-------------------------------------------------------------------------------"
     , "#SBATCH --nodes=1"
     , "#SBATCH -t 01:50:00"
-    , "#SBATCH --gres=gpu:1"
-    , "#SBATCH --mem=4G"
+    , "#SBATCH --gres=gpu:0"
+    , "#SBATCH --mem=6G"
     # , '#SBATCH --output="showme.out"'
     , "#SBATCH --job-name=cl_{}".format(par_set[0])
     , "#-------------------------------------------------------------------------------"
@@ -46,7 +52,7 @@ for par_set in expVars:
     # args = ['-c "x%d=%g" ' % (i, par_set[i]) for i in range(len(par_set))]
     var1, var2, var3, var4 = par_set
 
-    command_line = 'python run_PFCMD.py  {} 1 1 0 --var1={} --var2={}'.format(exp_name, var1, var2)  + f' --num_of_tasks={var3}'
+    command_line = 'python run_PFCMD.py  {} 1 1 0 --var1={} --var2={} --var3={} --var4={}'.format(exp_name, var1, var2, var3, var4)  + f' --num_of_tasks=20'
     win_command_line = command_line + ' --os=windows'
     
     fsh = open('bash_generated.sh', 'w')

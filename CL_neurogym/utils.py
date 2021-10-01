@@ -123,7 +123,7 @@ def get_optimizer(net, config):
     for name, param in net.named_parameters():
         # if 'rnn.h2h' not in name: # reservoir
         # if True: # learnable RNN
-        if 'rnn.input2PFCctx' not in name:
+        if ('rnn.input2PFCctx' not in name):
             print(name)
             training_params.append(param)
             named_training_params[name] = param
@@ -135,7 +135,7 @@ def forward_backward(net, opt, crit, inputs, labels, task_id):
     forward + backward + optimize
     '''
     opt.zero_grad()
-    outputs, rnn_activity = net(inputs, task_id=task_id)
+    outputs, rnn_activity, _ = net(inputs, task_id=task_id)
     loss = crit(outputs, labels)
     loss.backward()
     opt.step()
@@ -161,15 +161,17 @@ def get_full_performance(net, dataset, task_id, config):
     num_trial = config.test_num_trials
     fix_perf = 0.
     act_perf = 0.
+    md_activity = []
     num_no_act_trial = 0
     for i in range(num_trial):
         ob, gt = dataset.new_trial(task_id)
         inputs = torch.from_numpy(ob).type(torch.float).to(config.device)
         inputs = inputs[:, np.newaxis, :]
-        action_pred, _ = net(inputs, task_id=task_id)
+        action_pred, _, _md_activity = net(inputs, task_id=task_id)
         action_pred = action_pred.detach().cpu().numpy()
         action_pred = np.argmax(action_pred, axis=-1)
 
+        md_activity.append(_md_activity)
         fix_len = sum(gt == 0)
         act_len = len(gt) - fix_len
         assert all(gt[:fix_len] == 0)
@@ -180,10 +182,10 @@ def get_full_performance(net, dataset, task_id, config):
             act_perf += (action_pred[-1, 0] == gt[-1])
         else: # no action in this trial
             num_no_act_trial += 1
-
+    md_activity_mean_for_env = np.stack(md_activity).mean(0)
     fix_perf /= num_trial
     act_perf /= num_trial - num_no_act_trial
-    return fix_perf, act_perf
+    return fix_perf, act_perf, md_activity_mean_for_env
 
 def test_in_training(net, dataset, config, log, trial_idx):
     '''
@@ -200,9 +202,10 @@ def test_in_training(net, dataset, config, log, trial_idx):
         #   fixation & action performance
         print('Performance')
         for env_id in range(config.num_task):
-            fix_perf, act_perf = get_full_performance(net=net, dataset=dataset, task_id=env_id, config=config)
+            fix_perf, act_perf, md_activity = get_full_performance(net=net, dataset=dataset, task_id=env_id, config=config)
             log.fix_perfs[env_id].append(fix_perf)
             log.act_perfs[env_id].append(act_perf)
+            log.md_activity[env_id].append(md_activity)
             print('  fix performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, trial_idx+1, fix_perf))
             print('  act performance, task {:d}, cycle {:d}: {:0.2f}'.format(env_id+1, trial_idx+1, act_perf))
     # back to train mode
@@ -214,11 +217,11 @@ def test_in_training(net, dataset, config, log, trial_idx):
 # Parse argunents passed to python file.:
 def get_args_from_parser(my_parser):
     my_parser.add_argument('exp_name',
-                       default='relaxing_separation',
+                       default='pairs',
                        type=str, nargs='?',
                        help='Experiment name, also used to create the path to save results')
     my_parser.add_argument('use_gates',
-                        default=0, nargs='?',
+                        default=1, nargs='?',
                         type=int,
                         help='Use multiplicative gating or not')
     my_parser.add_argument('same_rnn',
@@ -226,17 +229,25 @@ def get_args_from_parser(my_parser):
                         type=int,
                         help='Train the same RNN for all task or create a separate RNN for each task')
     my_parser.add_argument('train_to_criterion',
-                        default=1, nargs='?',
+                        default=0, nargs='?',
                         type=int,
                         help='TODO')
     my_parser.add_argument('--var1',
-                        default=0, nargs='?',
+                        default=2, nargs='?',
                         type=int,
                         help='Generic var to be used in various places, Currently, the variance of the fixed multiplicative MD to RNN weights')
     my_parser.add_argument('--var2',
                         default=0.5, nargs='?',
                         type=float,
-                        help='Generic var to be used in various places, Currently, tthe variance of the fixed multiplicative MD to RNN weights')
+                        help='Generic var to be used in various places, Currently, the sparsity of the gates, fraction set to zero')
+    my_parser.add_argument('--var3',
+                        default=1, nargs='?',
+                        type=int,
+                        help='0 for additive MD and 1 for multiplicative')
+    my_parser.add_argument('--var4',
+                        default=0.1, nargs='?',
+                        type=float,
+                        help='std of the gates. mean assumed 1.')
     my_parser.add_argument('--num_of_tasks',
                         default=30, nargs='?',
                         type=int,
@@ -245,6 +256,19 @@ def get_args_from_parser(my_parser):
 
     return (args)
 
+def stats(var, var_name=None):
+    if type(var) == type([]): # if a list
+        var = np.array(var)
+    elif type(var) == type(np.array([])):
+        pass #if already a numpy array, just keep going.
+    else: #assume torch tensor
+        # pass
+        var = var.detach().cpu().numpy()
+    if var_name:
+        print(var_name, ':')   
+    out = ('Mean, {:2.5f}, var {:2.5f}, min {:2.3f}, max {:2.3f}, norm {}'.format(var.mean(), var.var(), var.min(), var.max(),np.linalg.norm(var) ))
+    print(out)
+    return (out)
 
 # save variables
 def save_variables(config, log, task_seq_id):
