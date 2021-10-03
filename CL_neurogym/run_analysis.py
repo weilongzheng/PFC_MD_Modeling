@@ -7,6 +7,7 @@ from torch.nn import init
 from torch.nn import functional as F
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LinearRegression
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from utils import get_task_seqs, get_task_seq_id
 from tqdm import tqdm
 import matplotlib as mpl
@@ -24,11 +25,11 @@ import seaborn as sns
 # TODO: make this a helper function
 ## compute mean & std of performance
 if 0:
-    # FILE_PATH = './files/scaleup_threetasks/baselines/'
-    FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
+    FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
 
-    # settings = ['EWC', 'SI', 'PFC']
-    settings = ['PFCMD']
+    settings = ['EWC', 'SI', 'PFC']
+    # settings = ['PFCMD']
 
     ITER = list(range(420))
     LEN = len(ITER)
@@ -42,9 +43,9 @@ if 0:
         time_stamps = log.stamps
         act_perfs_mean = np.mean(act_perfs_all, axis=0)
         act_perfs_std = np.std(act_perfs_all, axis=0)
-        np.save('./files/'+'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
-        np.save('./files/'+'avg_perfs_std_'+setting+'.npy', act_perfs_std)
-        np.save('./files/'+'time_stamps_'+setting+'.npy', time_stamps)
+        np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
+        np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
+        np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
 
 # main performance curve: two tasks
 if 0:
@@ -127,8 +128,8 @@ if 0:
 
 # PFC+MD VS baselines: two tasks
 if 0:
-    FILE_PATH = './files/scaleup_twotasks_4/'
-    settings = ['PFCMDnoisestd0dot01', 'EWC', 'SI', 'PFC']
+    FILE_PATH = './files/scaleup_twotasks_5/'
+    settings = ['PFCMD', 'EWC', 'SI', 'PFC']
     line_colors = ['tab:red', 'darkviolet', 'darkgreen', 'black']
     labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
     linewidths = [3, 2, 2, 2]
@@ -155,9 +156,9 @@ if 0:
             axes[env_id].set_yticks([0.1*i for i in range(11)])
     axes[-1].legend(bbox_to_anchor = (1.0, 0.65), prop=legend_font)
     plt.tight_layout()
-    # plt.show()
-    plt.savefig(FILE_PATH + 'performance{:d}.pdf'.format(env_id+1))
-    plt.close()
+    plt.show()
+    # plt.savefig(FILE_PATH + 'performance.pdf')
+    # plt.close()
 
 # PFC+MD VS baselines: three tasks
 if 0:
@@ -588,16 +589,16 @@ if 0:
     print(sim_task_seqs)
     
     # 1. compute performance of the task seqs with low similarity (model: original PFCMD)
-    # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
-    # settings = ['PFCMD']
-    # ITER = list(range(420))
-    # ITER = list(set(ITER) - set(take_seq_ids))
-    # LEN = len(ITER)
-    # 2. compute performance of the task seqs with high similarity (model: PFCMD with reduced assumptions)
-    FILE_PATH = './files/similarity/scaleup_twotasks_2/'
+    FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
     settings = ['PFCMD']
-    ITER = range(76)
+    ITER = list(range(420))
+    ITER = list(set(ITER) - set(take_seq_ids))
     LEN = len(ITER)
+    # 2. compute performance of the task seqs with high similarity (model: PFCMD with reduced assumptions)
+    # FILE_PATH = './files/similarity/scaleup_twotasks_2/'
+    # settings = ['PFCMD']
+    # ITER = range(76)
+    # LEN = len(ITER)
     # 3. compute performance of the task seqs with high similarity (model: PFC)
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
     # settings = ['PFC']
@@ -751,15 +752,15 @@ if 0:
                      np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
                      alpha=0.2, color='tab:red')
     plt.legend(bbox_to_anchor=(1.3, 0.65), prop=legend_font)
-    plt.xlabel('Input Noise STD', fontdict=label_font) 
-    plt.ylabel('Decoding Context', fontdict=label_font)
+    plt.xlabel('Noise STD', fontdict=label_font) 
+    plt.ylabel('Coefficient of Determination', fontdict=label_font)
     plt.ylim([0.8, 1.01])
     plt.xticks(fontsize=10)
     plt.yticks([0.1*i for i in range(8, 11)], fontsize=10)
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('files/' + 'decoding_vs_noisestd.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('files/' + 'decoding_vs_noisestd.pdf')
+    plt.close()
 
 # plot scores VS activated probability
 if 0:
@@ -799,12 +800,12 @@ if 0:
                      alpha=0.2, color='tab:red')
     plt.legend(bbox_to_anchor=(1.3, 0.65), prop=legend_font)
     plt.xlabel('Activated Probability', fontdict=label_font) 
-    plt.ylabel('Decoding Context', fontdict=label_font)
+    plt.ylabel('Coefficient of Determination', fontdict=label_font)
     plt.xlim([-0.01, 1.08])
     plt.ylim([0.6, 1.01])
     plt.xticks([0.1*i for i in range(11)], fontsize=10)
     plt.yticks([0.1*i for i in range(6, 11)], fontsize=10)
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('files/' + 'decoding_vs_activatedprob.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('files/' + 'decoding_vs_activatedprob.pdf')
+    plt.close()
