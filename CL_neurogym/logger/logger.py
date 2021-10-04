@@ -30,8 +30,9 @@ class SerialLogger(object):
         self.accuracies = []
         self.fix_perfs = []
         self.act_perfs = []
-        self.switch_trialxxbatch = [0]
+        self.switch_trialxxbatch = []
         self.switch_task_id = []
+        self.gradients = []
         
         for _ in range(len(config.tasks)):
             self.fix_perfs.append([])
@@ -42,15 +43,14 @@ class SerialLogger(object):
             self.inputs = []
             self.outputs = []
             self.labels = []
-            self.gradients = []
 
     def write_basic(self, stamp, loss, acc):
         self.stamps.append(stamp)
         self.losses.append(loss)
         self.accuracies.append(acc)
-    def write_detailed(self, rnn_activities, inputs, outputs, labels,  gradients,):
+    def write_detailed(self, rnn_activities, inputs, outputs, labels,):#  gradients,):
         self.rnn_activities.append(rnn_activities)
         self.inputs.append(inputs)
         self.outputs.append(outputs)
         self.labels.append(labels)
-        self.gradients.append(gradients)
+        # self.gradients.append(gradients)

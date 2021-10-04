@@ -248,7 +248,6 @@ class CTRNN_MD(nn.Module):
         self.md_active_size = config.md_active_size
         self.md_dt = config.md_dt
         self.config = config
-        self.plot_pre_dist = False # delete this. Only temp        
 
         self.tau = 100
         if dt is None:
@@ -357,7 +356,7 @@ class CTRNN_MD(nn.Module):
         ext_input = self.input2h(input)
         rec_input = self.h2h(hidden)
 
-        pre_activation = ext_input + rec_input
+        
 
         # external inputs & activities of PFC neurons containing context info
         if self.MDeffect:
@@ -410,14 +409,11 @@ class CTRNN_MD(nn.Module):
             # stats(pre_activation)
             if self.md.sendinputs:
                 if self.config.MDeffect_mul:
-                    pre_activation *= md2pfc_mul
+                    rec_input *= md2pfc_mul
                 if self.config.MDeffect_add:
-                    pre_activation += md2pfc
-        if self.plot_pre_dist:
-            plt.close('all')
-            plt.hist(pre_activation.detach().numpy(), 100)
-            plt.savefig('pre_activation.jpg')
-            
+                    rec_input += md2pfc
+            pre_activation = ext_input + rec_input
+
         h_new = torch.relu(hidden * self.oneminusalpha + pre_activation * self.alpha)
         
         # shutdown analysis

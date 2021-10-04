@@ -107,12 +107,9 @@ for i in tbar:
             break
 
     inputs, labels = dataset(task_id=task_id)
-    
-    if i == 40000:
-        net.rnn.plot_pre_dist = True
 
     loss, rnn_activity = forward_backward(net=net, opt=optimizer, crit=criterion, inputs=inputs, labels=labels, task_id=task_id)
-    net.rnn.plot_pre_dist = False
+
     # plots
     if i % config.plot_every_trials == config.plot_every_trials-1:
         plot_rnn_activity(rnn_activity, config)

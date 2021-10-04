@@ -281,7 +281,7 @@ if config.same_rnn:
 #     print('training parameters:')
 training_params = list()
 for name, param in net.named_parameters():
-#         print(name)
+    print(name)
     training_params.append(param)
 optimizer = torch.optim.Adam(training_params, lr=config.lr)
 
@@ -303,6 +303,9 @@ for task_i, (task_id, task_name) in bar_tasks:
   
     env = envs[task_id]
     tqdm.write('learning task:\t ' + config.human_task_names[task_id])
+    testing_log.switch_trialxxbatch.append(step_i)
+    testing_log.switch_task_id.append(task_id)
+    print(f'saved step_i: {step_i}  doing task {task_id}  latest log.stamp: ')
     
     if not config.same_rnn:
         net= create_model()
@@ -338,18 +341,18 @@ for task_i, (task_id, task_name) in bar_tasks:
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
-        step_i+=1
         acc  = accuracy_metric(outputs.detach(), labels.detach())
 
         # save loss
+
         training_log.write_basic(step_i, loss.item(), acc)
-        
+        training_log.gradients.append(np.array([torch.norm(p.grad).item() for p in net.parameters()]) )
         if config.save_detailed:
             training_log.write_detailed( rnn_activity= rnn_activity.detach().cpu().numpy().mean(0),
             inputs=   inputs.detach().cpu().numpy(),
             outputs = outputs.detach().cpu().numpy()[-1, :, :],
             labels =   labels.detach().cpu().numpy()[-1, :, :],
-            gradients = np.stack([torch.norm(p.grad).item() for p in net.parameters()]) )
+            )
 
         training_bar.set_description('loss, acc: {:0.4F}, {:0.3F}'.format(loss.item(), acc))
 #         training_bar.set_description('loss, acc: {:0.3F}, {0.3F}'.format(loss.item(), acc))
@@ -374,6 +377,7 @@ for task_i, (task_id, task_name) in bar_tasks:
                     ) 
                 
                 testing_log.accuracies.append(act_perf)
+                testing_log.gradients.append(np.mean(np.stack(training_log.gradients[-config.print_every_batches:]),axis=0))
 #                 for env_id in range(num_tasks):
 #                     print('  act performance, task #, name {:d} {}, batch# {:d}: {:0.2f}'.format(
 #                         env_id+1, config.human_task_names[env_id], i+1,
@@ -381,19 +385,20 @@ for task_i, (task_id, task_name) in bar_tasks:
             net.train()
             if config.MDeffect:
                 net.rnn.md.learn = True
-            criterion_accuaracy = config.criterion if config.tasks[task_id] not in config.DMFamily else config.criterion_DMfam
-            if ((running_acc > criterion_accuaracy) and config.train_to_criterion) or (i== config.max_trials_per_task//config.batch_size):
-            # switch task if reached the max trials per task, and/or if train_to_criterion then when criterion reached
-                # import pdb; pdb.set_trace()
-                running_acc = 0.
-                testing_log.switch_trialxxbatch.append(i + testing_log.switch_trialxxbatch[-1])
-                if args.experiment_type == 'pairs':
-                    #move to next task
-                    task_id = (task_id+1)%2 #just flip to the other task
-                    print('switching to task: ', task_id, 'at trial: ', i)
-                testing_log.switch_task_id.append(task_id)
-                break # stop training current task if sufficient accuracy. Note placed here to allow at least one performance run before this is triggered.
+            #### End testing
 
+        criterion_accuaracy = config.criterion if config.tasks[task_id] not in config.DMFamily else config.criterion_DMfam
+        if ((running_acc > criterion_accuaracy) and config.train_to_criterion) or (i+1== config.max_trials_per_task//config.batch_size):
+        # switch task if reached the max trials per task, and/or if train_to_criterion then when criterion reached
+            # import pdb; pdb.set_trace()
+            running_acc = 0.
+            if args.experiment_type == 'pairs':
+                #move to next task
+                task_id = (task_id+1)%2 #just flip to the other task
+                print('switching to task: ', task_id, 'at trial: ', i)
+            break # stop training current task if sufficient accuracy. Note placed here to allow at least one performance run before this is triggered.
+
+        step_i+=1
         running_acc = 0.7 * running_acc + 0.3 * acc
     #no more than number of blocks specified
     if (args.experiment_type=='pairs') and(len(testing_log.switch_trialxxbatch) > config.num_blocks):
@@ -441,6 +446,7 @@ plt.savefig('./files/'+ config.exp_name+f'/testing_log_{config.exp_signature}.jp
 np.save('./files/'+ config.exp_name+f'/testing_log_{config.exp_signature}.npy', testing_log, allow_pickle=True)
 np.save('./files/'+ config.exp_name+f'/training_log_{config.exp_signature}.npy', training_log, allow_pickle=True)
 np.save('./files/'+ config.exp_name+f'/config_{config.exp_signature}.npy', config, allow_pickle=True)
+print('testing logs saved to : '+ './files/'+ config.exp_name+f'/testing_log_{config.exp_signature}.npy')
 
 def show_input_output(input, label, output=None, axes=None):
     if axes is None:
