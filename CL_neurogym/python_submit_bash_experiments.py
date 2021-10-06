@@ -9,9 +9,9 @@ import sys
 
 exp_name = 'gates_mul_add_fixed_bug'
 Var1 = [40, 9, 7,15,]#[41, 8, 6,13,]  15, 20, 30, 48]#range() # task pair number
-Var2 = [0., 0.2 , 0.4,  0.5, 0.6, 0.8,] # gates_sparsity
-Var3 = [0, 1]# additive, mul
-Var4 = [ 0.1,.3, .5] # gates std
+Var2 = [0., 0.2 ,  0.5,  0.8,] # gates_sparsity
+Var3 = [1]# additive, mul
+Var4 = [ 0.0, 0.1, .5] # gates std
 
 # exp_name = 'batch_pairs'
 # Var1 = range( 2)
