@@ -276,3 +276,35 @@ def save_variables(config, log, task_seq_id):
     np.save(config.FILEPATH + f'{task_seq_id}_' + config.FILENAME['log'], log)
     # log = np.load('./files/'+'log.npy', allow_pickle=True).item()
     # config = np.load('./files/'+'config.npy', allow_pickle=True).item()
+
+import math
+
+def sparse_with_mean(tensor, sparsity, mean= 1.,  std=0.01):
+    r"""Coppied from PyTorch source code. Fills the 2D input `Tensor` as a sparse matrix, where the
+    non-zero elements will be drawn from the normal distribution
+    :math:`\mathcal{N}(0, 0.01)`, as described in `Deep learning via
+    Hessian-free optimization` - Martens, J. (2010).
+
+    Args:
+        tensor: an n-dimensional `torch.Tensor`
+        sparsity: The fraction of elements in each column to be set to zero
+        std: the standard deviation of the normal distribution used to generate
+            the non-zero values
+
+    Examples:
+        >>> w = torch.empty(3, 5)
+        >>> nn.init.sparse_(w, sparsity=0.1)
+    """
+    if tensor.ndimension() != 2:
+        raise ValueError("Only tensors with 2 dimensions are supported")
+
+    rows, cols = tensor.shape
+    num_zeros = int(math.ceil(sparsity * rows))
+
+    with torch.no_grad():
+        tensor.normal_(mean, std)
+        for col_idx in range(cols):
+            row_indices = torch.randperm(rows)
+            zero_indices = row_indices[:num_zeros]
+            tensor[zero_indices, col_idx] = 0
+    return tensor

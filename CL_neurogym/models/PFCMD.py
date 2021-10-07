@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
-from utils import stats
+from utils import stats, sparse_with_mean
 
 # MD for neurogym tasks
 class MD_GYM():
@@ -77,14 +77,16 @@ class MD_GYM():
         # self.wMD2PFCMult = self.gates
         
             #Sparse uniform formulation
-        self.gates = torch.ones(size=(self.hidden_size, self.md_size))
-        torch.nn.init.sparse_(self.gates, self.config.gates_sparsity, std=self.config.gates_std)
-        self.wMD2PFCMult = self.gates + self.config.gates_mean
-        self.wMD2PFC = self.gates
+        self.mul_gates = torch.empty(size=(self.hidden_size, self.md_size))
+        self.add_gates = torch.empty(size=(self.hidden_size, self.md_size))
+        # torch.nn.init.sparse_(self.gates, self.config.gates_sparsity, std=self.config.gates_std)
+        
+        self.wMD2PFCMult = sparse_with_mean(self.mul_gates, self.config.gates_sparsity, mean=1., std=self.config.gates_std)
+        self.wMD2PFC = sparse_with_mean(self.add_gates, self.config.gates_sparsity, mean=0, std=self.config.gates_std)
         stats(self.wMD2PFCMult, 'wMD2PFC mul: ')
         stats(self.wMD2PFC, 'wMD2PFC add:')
 
-
+        
         
         # torch.nn.init.sparse_(tensor, sparsity, std=0.01)
         # N(0, std=0.01)
