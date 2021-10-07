@@ -48,7 +48,7 @@ from tqdm import tqdm, trange
 import argparse
 my_parser = argparse.ArgumentParser(description='Train neurogym tasks sequentially')
 my_parser.add_argument('exp_name',
-                       default='add_more_reheaerasal',
+                       default='correlated_gates',
                        type=str, nargs='?',
                        help='Experiment name, also used to create the path to save results')
 my_parser.add_argument('use_gates',
@@ -275,9 +275,20 @@ def create_model():
     net.to(config.device)
     return(net )
 
+
 if config.same_rnn:
     net = create_model()
 
+# Replace the gates with the ones calculated offline from performance traces to measure tasks compatibility. 
+gates_tasks = np.load('./data/perf_corr_mat.npy', allow_pickle=True).item()
+gates_corr = gates_tasks['corr_mat'] 
+assert(config.tasks== gates_tasks['tasks'])
+sampled_gates = np.random.multivariate_normal(np.zeros(net.rnn.gates.shape[0]), gates_corr, net.rnn.gates.shape[1]).T
+sampled_gates = torch.tensor(sampled_gates> 0., device=config.device).float()
+net.rnn.gates = sampled_gates.clone()
+
+# criterion & optimizer
+criterion = nn.MSELoss()
 #     print('training parameters:')
 training_params = list()
 for name, param in net.named_parameters():
@@ -305,14 +316,9 @@ for task_i, (task_id, task_name) in bar_tasks:
     tqdm.write('learning task:\t ' + config.human_task_names[task_id])
     testing_log.switch_trialxxbatch.append(step_i)
     testing_log.switch_task_id.append(task_id)
-    print(f'saved step_i: {step_i}  doing task {task_id}  latest log.stamp: ')
     
     if not config.same_rnn:
         net= create_model()
-
-    # criterion & optimizer
-    criterion = nn.MSELoss()
-
 
     # training
     
