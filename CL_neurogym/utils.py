@@ -17,6 +17,7 @@ def get_task_seqs():
     Generate task sequences
     '''
     ## 1. all pairs
+    ### 1.1 two tasks
     num_tasks = 2
     tasks = ['yang19.dms-v0',
              'yang19.dnms-v0',
@@ -34,7 +35,18 @@ def get_task_seqs():
              'yang19.rtgo-v0',
              'yang19.rtanti-v0']
     task_seqs = list(itertools.permutations(tasks, num_tasks))
-    task_seqs = [val for val in task_seqs for i in range(num_tasks)]
+    task_seqs = [val for val in task_seqs for i in range(num_tasks)] # duplicate
+    ### 1.2 three tasks
+    # num_tasks = 3
+    # tasks = ['yang19.dnms-v0',
+    #          'yang19.dmc-v0',
+    #          'yang19.dm1-v0',
+    #          'yang19.ctxdm2-v0',
+    #          'yang19.multidm-v0',
+    #          'yang19.dlyanti-v0',
+    #          'yang19.go-v0']
+    # task_seqs = list(itertools.permutations(tasks, num_tasks))
+    # task_seqs = [val for val in task_seqs]
     ## 2. pairs from different task families
     # GoFamily = ['yang19.dlygo-v0', 'yang19.go-v0']
     # AntiFamily = ['yang19.dlyanti-v0', 'yang19.anti-v0']

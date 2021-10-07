@@ -17,6 +17,7 @@ mpl.rcParams['axes.spines.top'] = False
 mpl.rcParams['axes.spines.bottom'] = True
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'arial'
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -60,9 +61,9 @@ if 0:
     line_colors = ['tab:red', 'tab:blue']
     labels = ['Task1', 'Task2']
     linewidth = 2
-    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
-    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    label_font = {'family':'arial','weight':'normal', 'size':15}
+    title_font = {'family':'arial','weight':'normal', 'size':20}
+    legend_font = {'family':'arial','weight':'normal', 'size':12}
     ax.axvspan(    0, 20000, alpha=0.08, color=line_colors[0])
     ax.axvspan(20000, 40000, alpha=0.08, color=line_colors[1])
     ax.axvspan(40000, 50000, alpha=0.08, color=line_colors[0])
@@ -76,15 +77,16 @@ if 0:
                          alpha=0.2, color=line_colors[env_id])
     plt.xlabel('Trials', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
-    plt.title('Task Performance', fontdict=title_font)
+    # plt.title('Task Performance', fontdict=title_font)
     plt.xlim([0.0, 51000])
     plt.ylim([0.0, 1.01])
-    plt.yticks([0.1*i for i in range(11)])
-    plt.legend(bbox_to_anchor=(1.0, 0.65), prop=legend_font)
+    plt.xticks(fontsize=10)
+    plt.yticks([0.1*i for i in range(11)], fontsize=10)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.0, 0.05), prop=legend_font, frameon=False)
     plt.tight_layout()
-    # plt.show()
-    plt.savefig(FILE_PATH + 'performance.pdf')
-    plt.close()
+    plt.show()
+    # plt.savefig(FILE_PATH + 'performance.pdf')
+    # plt.close()
 
 # main performance curve: three tasks
 if 0:
@@ -99,9 +101,9 @@ if 0:
     line_colors = ['tab:red', 'tab:blue', 'tab:green']
     labels = ['Task1', 'Task2', 'Task3']
     linewidth = 2
-    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
-    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    label_font = {'family':'arial','weight':'normal', 'size':15}
+    title_font = {'family':'arial','weight':'normal', 'size':20}
+    legend_font = {'family':'arial','weight':'normal', 'size':12}
     ax.axvspan(    0, 20000, alpha=0.08, color=line_colors[0])
     ax.axvspan(20000, 40000, alpha=0.08, color=line_colors[1])
     ax.axvspan(40000, 60000, alpha=0.08, color=line_colors[2])
@@ -116,33 +118,34 @@ if 0:
                          alpha=0.2, color=line_colors[env_id])
     plt.xlabel('Trials', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
-    plt.title('Task Performance', fontdict=title_font)
+    # plt.title('Task Performance', fontdict=title_font)
     plt.xlim([0.0, 71000])
     plt.ylim([0.0, 1.01])
-    plt.yticks([0.1*i for i in range(11)])
-    plt.legend(bbox_to_anchor=(1.0, 0.65), prop=legend_font)
+    plt.xticks(fontsize=10)
+    plt.yticks([0.1*i for i in range(11)], fontsize=10)
+    plt.legend(loc='lower right', bbox_to_anchor=(0.97, 0.05), prop=legend_font, frameon=False)
     plt.tight_layout()
-    # plt.show()
-    plt.savefig(FILE_PATH + 'performance.pdf')
-    plt.close()
+    plt.show()
+    # plt.savefig(FILE_PATH + 'performance.pdf')
+    # plt.close()
 
 # PFC+MD VS baselines: two tasks
 if 0:
     FILE_PATH = './files/scaleup_twotasks_5/'
     settings = ['PFCMD', 'EWC', 'SI', 'PFC']
-    line_colors = ['tab:red', 'darkviolet', 'darkgreen', 'black']
+    line_colors = ['tab:red', 'violet', 'tab:green', 'tab:blue']
     labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
     linewidths = [3, 2, 2, 2]
-    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
-    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    label_font = {'family':'arial','weight':'normal', 'size':15}
+    title_font = {'family':'arial','weight':'normal', 'size':20}
+    legend_font = {'family':'arial','weight':'normal', 'size':12}
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
     for env_id in range(2): # 2 tasks
         color1, color2= 'tab:red', 'tab:blue'
-        axes[env_id].axvspan(    0, 20000, alpha=0.1, color=color1)
-        axes[env_id].axvspan(20000, 40000, alpha=0.1, color=color2)
-        axes[env_id].axvspan(40000, 50000, alpha=0.1, color=color1)
+        axes[env_id].axvspan(    0, 20000, alpha=0.08, color=color1)
+        axes[env_id].axvspan(20000, 40000, alpha=0.08, color=color2)
+        axes[env_id].axvspan(40000, 50000, alpha=0.08, color=color1)
         for i in range(len(settings)):
             act_perfs_mean = np.load(FILE_PATH + 'avg_perfs_mean_' + settings[i] + '.npy')
             act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + settings[i] + '.npy')
@@ -150,11 +153,14 @@ if 0:
             axes[env_id].plot(time_stamps, act_perfs_mean[env_id, :], linewidth=linewidths[i], color=line_colors[i], label=labels[i])
             axes[env_id].set_xlabel('Trials', fontdict=label_font)
             axes[env_id].set_ylabel('Performance', fontdict=label_font)
-            axes[env_id].set_title('Task{:d} Performance'.format(env_id+1), fontdict=title_font)
+            # axes[env_id].set_title('Task{:d} Performance'.format(env_id+1), fontdict=title_font)
             axes[env_id].set_xlim([0.0, 51000])
             axes[env_id].set_ylim([0.0, 1.01])
+            axes[env_id].set_xticks([i*10000 for i in range(6)])
             axes[env_id].set_yticks([0.1*i for i in range(11)])
-    axes[-1].legend(bbox_to_anchor = (1.0, 0.65), prop=legend_font)
+            axes[env_id].set_xticklabels([i*10000 for i in range(6)], fontsize=10)
+            axes[env_id].set_yticklabels([round(0.1*i, 1) for i in range(11)], fontsize=10)
+            axes[env_id].legend(loc='lower right', bbox_to_anchor=(1.025, 0.05), prop=legend_font, frameon=False)
     plt.tight_layout()
     plt.show()
     # plt.savefig(FILE_PATH + 'performance.pdf')
@@ -164,20 +170,19 @@ if 0:
 if 0:
     FILE_PATH = './files/scaleup_threetasks_3/'
     settings = ['PFCMDnoisestd0dot01', 'EWC', 'SI', 'PFC']
-    line_colors = ['tab:red', 'darkviolet', 'darkgreen', 'black']
-    labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
+    line_colors = ['tab:red', 'violet', 'tab:green', 'tab:blue']
     linewidths = [3, 2, 2, 2]
-    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
-    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    label_font = {'family':'arial','weight':'normal', 'size':15}
+    title_font = {'family':'arial','weight':'normal', 'size':20}
+    legend_font = {'family':'arial','weight':'normal', 'size':12}
 
     fig, axes = plt.subplots(1, 3, figsize=(13, 4))
     for env_id in range(3): # 2 tasks
         color1, color2, color3= 'tab:red', 'tab:blue', 'tab:green'
-        axes[env_id].axvspan(    0, 20000, alpha=0.1, color=color1)
-        axes[env_id].axvspan(20000, 40000, alpha=0.1, color=color2)
-        axes[env_id].axvspan(40000, 60000, alpha=0.1, color=color3)
-        axes[env_id].axvspan(60000, 70000, alpha=0.1, color=color1)
+        axes[env_id].axvspan(    0, 20000, alpha=0.08, color=color1)
+        axes[env_id].axvspan(20000, 40000, alpha=0.08, color=color2)
+        axes[env_id].axvspan(40000, 60000, alpha=0.08, color=color3)
+        axes[env_id].axvspan(60000, 70000, alpha=0.08, color=color1)
         for i in range(len(settings)):
             act_perfs_mean = np.load(FILE_PATH + 'avg_perfs_mean_' + settings[i] + '.npy')
             act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + settings[i] + '.npy')
@@ -185,11 +190,14 @@ if 0:
             axes[env_id].plot(time_stamps, act_perfs_mean[env_id, :], linewidth=linewidths[i], color=line_colors[i], label=labels[i])
             axes[env_id].set_xlabel('Trials', fontdict=label_font)
             axes[env_id].set_ylabel('Performance', fontdict=label_font)
-            axes[env_id].set_title('Task{:d} Performance'.format(env_id+1), fontdict=title_font)
+            # axes[env_id].set_title('Task{:d} Performance'.format(env_id+1), fontdict=title_font)
             axes[env_id].set_xlim([0.0, 71000])
             axes[env_id].set_ylim([0.0, 1.01])
+            axes[env_id].set_xticks([i*10000 for i in range(8)])
             axes[env_id].set_yticks([0.1*i for i in range(11)])
-    axes[-1].legend(bbox_to_anchor = (1.0, 0.65), prop=legend_font)
+            axes[env_id].set_xticklabels([i*10000 for i in range(8)], fontsize=10)
+            axes[env_id].set_yticklabels([round(0.1*i, 1) for i in range(11)], fontsize=10)
+    axes[-1].legend(bbox_to_anchor = (1.0, 0.65), prop=legend_font, frameon=False)
     plt.tight_layout()
     plt.show()
     # plt.savefig(FILE_PATH + 'performance{:d}.pdf'.format(env_id+1))
@@ -284,10 +292,10 @@ if 0:
         PFC_activity_reduced.append(pca.transform(activity))
 
     # make plots
-    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
-    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
-    plt.figure(figsize=(5, 4))
+    label_font = {'family':'arial','weight':'normal', 'size':15}
+    title_font = {'family':'arial','weight':'normal', 'size':20}
+    legend_font = {'family':'arial','weight':'normal', 'size':12}
+    plt.figure(figsize=(4, 4))
     plt.quiver(PFC_activity_reduced[0][:-1, 0],
                PFC_activity_reduced[0][:-1, 1],
                PFC_activity_reduced[0][1:, 0]-PFC_activity_reduced[0][:-1, 0],
@@ -306,8 +314,8 @@ if 0:
     plt.yticks([])
     plt.xlabel('PC1', fontdict=label_font)
     plt.ylabel('PC2', fontdict=label_font)
-    plt.legend(bbox_to_anchor = (1.3, 0.6), prop=legend_font)
-    plt.title('PFC activity of a trial', fontdict=title_font)
+    plt.legend(loc='upper right', bbox_to_anchor=(1.05, 1.0), prop=legend_font, frameon=False)
+    # plt.title('PFC activity of a trial', fontdict=title_font)
     plt.tight_layout()
     plt.show()
     # plt.savefig(FILE_PATH + 'trajectory.pdf')
@@ -346,7 +354,7 @@ if 0:
     plt.title('MD activity in two tasks', fontdict=title_font)
     plt.show()
 
-# PFC trajectory
+# PFC-ctx trajectory
 if 0:
     # fit PCA
     PFC_ctx_activity = []
@@ -465,16 +473,16 @@ if 0:
     norm_similarity_matrix = similarity_matrix / np.outer(Euclid_norm, Euclid_norm)
 
     # heatmap norm_task_variance
-    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
-    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
+    label_font = {'family':'arial','weight':'normal', 'size':15}
+    title_font = {'family':'arial','weight':'normal', 'size':20}
+    legend_font = {'family':'arial','weight':'normal', 'size':12}
     fig, axes = plt.subplots(figsize=(7, 4))
     ax = axes
     ax = sns.heatmap(norm_task_variance,
                      vmin=0, vmax=1, cmap='hot', ax=ax,
                      cbar_kws={'fraction':0.046, 'pad':0.04})
     plt.yticks([i+0.5 for i in range(len(tick_names))], tick_names, 
-               rotation=0, va='center', font='Times New Roman', fontsize=12)
+               rotation=0, va='center', font='arial', fontsize=12)
     plt.xticks([])
     plt.title('Units', fontdict=title_font)
     plt.xlabel('Clusters', fontdict=label_font)
@@ -497,9 +505,9 @@ if 0:
                      cbar_kws={'fraction':0.046, 'pad':0.04})
     ax.xaxis.tick_bottom()
     plt.xticks([i+0.5 for i in range(len(tick_names))], tick_names, 
-               rotation='vertical', ha='center', font='Times New Roman', fontsize=12)
+               rotation='vertical', ha='center', font='arial', fontsize=12)
     plt.yticks([i+0.5 for i in range(len(tick_names))], tick_names, 
-               rotation=0, va='center', font='Times New Roman', fontsize=12)
+               rotation=0, va='center', font='arial', fontsize=12)
     ax.tick_params('both', length=0)
     cbar = ax.collections[0].colorbar
     cbar.set_label('Normalized task similarity', fontdict=label_font, labelpad=15)
@@ -621,9 +629,9 @@ if 0:
     line_colors = ['tab:red', 'tab:blue']
     labels = ['Task1', 'Task2']
     linewidth = 2
-    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
-    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
+    label_font = {'family':'arial','weight':'normal', 'size':15}
+    title_font = {'family':'arial','weight':'normal', 'size':20}
+    legend_font = {'family':'arial','weight':'normal', 'size':12}
     ax.axvspan(    0, 20000, alpha=0.08, color=line_colors[0])
     ax.axvspan(20000, 40000, alpha=0.08, color=line_colors[1])
     ax.axvspan(40000, 50000, alpha=0.08, color=line_colors[0])
@@ -636,11 +644,11 @@ if 0:
                          alpha=0.2, color=line_colors[env_id])
     plt.xlabel('Trials', fontdict=label_font)
     plt.ylabel('Performance', fontdict=label_font)
-    plt.title('Task Performance', fontdict=title_font)
+    # plt.title('Task Performance', fontdict=title_font)
     plt.xlim([0.0, 51000])
     plt.ylim([0.0, 1.01])
     plt.yticks([0.1*i for i in range(11)])
-    plt.legend(bbox_to_anchor=(1.0, 0.65), prop=legend_font)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.0, 0.05), prop=legend_font, frameon=False)
     plt.tight_layout()
     plt.show()
     # plt.savefig(FILE_PATH + 'performance.pdf')
@@ -737,10 +745,10 @@ if 0:
     MD_scores_mean = np.array(MD_scores_mean)
     MD_scores_std = np.array(MD_scores_std)
 
-    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
-    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
-    plt.figure(figsize=(5, 4))
+    label_font = {'family':'arial','weight':'normal', 'size':15}
+    title_font = {'family':'arial','weight':'normal', 'size':20}
+    legend_font = {'family':'arial','weight':'normal', 'size':12}
+    plt.figure(figsize=(4, 4))
     plt.semilogx(noise_std_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=9, label='MD')
     plt.semilogx(noise_std_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=9, label='PFC-ctx')
     plt.fill_between(noise_std_data,
@@ -751,16 +759,16 @@ if 0:
                      PFCctx_scores_mean - PFCctx_scores_std,
                      np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
                      alpha=0.2, color='tab:red')
-    plt.legend(bbox_to_anchor=(1.3, 0.65), prop=legend_font)
+    plt.legend(loc='lower left', bbox_to_anchor=(0, 0.05), prop=legend_font, frameon=False)
     plt.xlabel('Noise STD', fontdict=label_font) 
     plt.ylabel('Coefficient of Determination', fontdict=label_font)
     plt.ylim([0.8, 1.01])
     plt.xticks(fontsize=10)
     plt.yticks([0.1*i for i in range(8, 11)], fontsize=10)
     plt.tight_layout()
-    # plt.show()
-    plt.savefig('files/' + 'decoding_vs_noisestd.pdf')
-    plt.close()
+    plt.show()
+    # plt.savefig('files/' + 'decoding_vs_noisestd.pdf')
+    # plt.close()
 
 # plot scores VS activated probability
 if 0:
@@ -784,10 +792,10 @@ if 0:
     MD_scores_mean = np.array(MD_scores_mean)
     MD_scores_std = np.array(MD_scores_std)
 
-    label_font = {'family':'Times New Roman','weight':'normal', 'size':15}
-    title_font = {'family':'Times New Roman','weight':'normal', 'size':20}
-    legend_font = {'family':'Times New Roman','weight':'normal', 'size':10}
-    plt.figure(figsize=(5, 4))
+    label_font = {'family':'arial','weight':'normal', 'size':15}
+    title_font = {'family':'arial','weight':'normal', 'size':20}
+    legend_font = {'family':'arial','weight':'normal', 'size':12}
+    plt.figure(figsize=(4, 4))
     plt.plot(sub_active_prob_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=9, label='MD')
     plt.plot(sub_active_prob_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=9, label='PFC-ctx')
     plt.fill_between(sub_active_prob_data,
@@ -798,7 +806,7 @@ if 0:
                      PFCctx_scores_mean - PFCctx_scores_std,
                      np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
                      alpha=0.2, color='tab:red')
-    plt.legend(bbox_to_anchor=(1.3, 0.65), prop=legend_font)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.0, 0.05), prop=legend_font, frameon=False)
     plt.xlabel('Activated Probability', fontdict=label_font) 
     plt.ylabel('Coefficient of Determination', fontdict=label_font)
     plt.xlim([-0.01, 1.08])
@@ -806,6 +814,6 @@ if 0:
     plt.xticks([0.1*i for i in range(11)], fontsize=10)
     plt.yticks([0.1*i for i in range(6, 11)], fontsize=10)
     plt.tight_layout()
-    # plt.show()
-    plt.savefig('files/' + 'decoding_vs_activatedprob.pdf')
-    plt.close()
+    plt.show()
+    # plt.savefig('files/' + 'decoding_vs_activatedprob.pdf')
+    # plt.close()
