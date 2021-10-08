@@ -18,35 +18,35 @@ def get_task_seqs():
     '''
     ## 1. all pairs
     ### 1.1 two tasks
-    num_tasks = 2
-    tasks = ['yang19.dms-v0',
-             'yang19.dnms-v0',
-             'yang19.dmc-v0',
-             'yang19.dnmc-v0',
-             'yang19.dm1-v0',
-             'yang19.dm2-v0',
-             'yang19.ctxdm1-v0',
-             'yang19.ctxdm2-v0',
-             'yang19.multidm-v0',
-             'yang19.dlygo-v0',
-             'yang19.dlyanti-v0',
-             'yang19.go-v0',
-             'yang19.anti-v0',
-             'yang19.rtgo-v0',
-             'yang19.rtanti-v0']
-    task_seqs = list(itertools.permutations(tasks, num_tasks))
-    task_seqs = [val for val in task_seqs for i in range(num_tasks)] # duplicate
-    ### 1.2 three tasks
-    # num_tasks = 3
-    # tasks = ['yang19.dnms-v0',
+    # num_tasks = 2
+    # tasks = ['yang19.dms-v0',
+    #          'yang19.dnms-v0',
     #          'yang19.dmc-v0',
+    #          'yang19.dnmc-v0',
     #          'yang19.dm1-v0',
+    #          'yang19.dm2-v0',
+    #          'yang19.ctxdm1-v0',
     #          'yang19.ctxdm2-v0',
     #          'yang19.multidm-v0',
+    #          'yang19.dlygo-v0',
     #          'yang19.dlyanti-v0',
-    #          'yang19.go-v0']
+    #          'yang19.go-v0',
+    #          'yang19.anti-v0',
+    #          'yang19.rtgo-v0',
+    #          'yang19.rtanti-v0']
     # task_seqs = list(itertools.permutations(tasks, num_tasks))
-    # task_seqs = [val for val in task_seqs]
+    # task_seqs = [val for val in task_seqs for i in range(num_tasks)] # duplicate
+    ### 1.2 three tasks
+    num_tasks = 3
+    tasks = ['yang19.dnms-v0',
+             'yang19.dmc-v0',
+             'yang19.dm1-v0',
+             'yang19.ctxdm2-v0',
+             'yang19.multidm-v0',
+             'yang19.dlyanti-v0',
+             'yang19.go-v0']
+    task_seqs = list(itertools.permutations(tasks, num_tasks))
+    task_seqs = [val for val in task_seqs]
     ## 2. pairs from different task families
     # GoFamily = ['yang19.dlygo-v0', 'yang19.go-v0']
     # AntiFamily = ['yang19.dlyanti-v0', 'yang19.anti-v0']
@@ -91,22 +91,22 @@ def get_task_seq_id(task_seqs, task_seq):
 def get_task_id(config, trial_idx, prev_task_id):
     # 1. Two tasks
     # Sequential training between blocks
-    if trial_idx >= config.switch_points[0] and trial_idx < config.switch_points[1]:
-        task_id = 0
-    elif trial_idx >= config.switch_points[1] and trial_idx < config.switch_points[2]:
-        task_id = 1
-    elif trial_idx >= config.switch_points[2]:
-        task_id = 0
-    # 2. Three tasks
-    # Sequential training between blocks
     # if trial_idx >= config.switch_points[0] and trial_idx < config.switch_points[1]:
     #     task_id = 0
     # elif trial_idx >= config.switch_points[1] and trial_idx < config.switch_points[2]:
     #     task_id = 1
-    # elif trial_idx >= config.switch_points[2] and trial_idx < config.switch_points[3]:
-    #     task_id = 2
-    # elif trial_idx >= config.switch_points[3]:
+    # elif trial_idx >= config.switch_points[2]:
     #     task_id = 0
+    # 2. Three tasks
+    # Sequential training between blocks
+    if trial_idx >= config.switch_points[0] and trial_idx < config.switch_points[1]:
+        task_id = 0
+    elif trial_idx >= config.switch_points[1] and trial_idx < config.switch_points[2]:
+        task_id = 1
+    elif trial_idx >= config.switch_points[2] and trial_idx < config.switch_points[3]:
+        task_id = 2
+    elif trial_idx >= config.switch_points[3]:
+        task_id = 0
     # 3. Four tasks
     # # Sequential training between blocks
     # if trial_idx == config.switch_points[0]:
