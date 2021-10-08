@@ -596,18 +596,30 @@ if 0:
     print(take_seq_ids)
     print(sim_task_seqs)
     
-    # 1. compute performance of the task seqs with low similarity (model: original PFCMD)
-    FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
-    settings = ['PFCMD']
-    ITER = list(range(420))
-    ITER = list(set(ITER) - set(take_seq_ids))
-    LEN = len(ITER)
-    # 2. compute performance of the task seqs with high similarity (model: PFCMD with reduced assumptions)
-    # FILE_PATH = './files/similarity/scaleup_twotasks_2/'
+    # compute performance
+    # 1. non-similar task seqs + original PFCMD
+    # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
     # settings = ['PFCMD']
-    # ITER = range(76)
+    # ITER = list(range(420))
+    # ITER = list(set(ITER) - set(take_seq_ids))
     # LEN = len(ITER)
-    # 3. compute performance of the task seqs with high similarity (model: PFC)
+    # 2. non-similar task seqs + reduced PFCMD
+    # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
+    # settings = ['PFCMD']
+    # ITER = list(range(420))
+    # ITER = list(set(ITER) - set(take_seq_ids))
+    # LEN = len(ITER)
+    # 3. similar task seqs + original PFCMD
+    # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
+    # settings = ['PFCMD']
+    # ITER = list(take_seq_ids)
+    # LEN = len(ITER)
+    # 4. similar task seqs + reduced PFCMD
+    FILE_PATH = './files/similarity/scaleup_twotasks_3/'
+    settings = ['PFCMD']
+    ITER = list(take_seq_ids)
+    LEN = len(ITER)
+    # 5. similar task seqs + PFC
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
     # settings = ['PFC']
     # ITER = take_seq_ids
@@ -647,7 +659,8 @@ if 0:
     # plt.title('Task Performance', fontdict=title_font)
     plt.xlim([0.0, 51000])
     plt.ylim([0.0, 1.01])
-    plt.yticks([0.1*i for i in range(11)])
+    plt.xticks(fontsize=10)
+    plt.yticks([0.1*i for i in range(11)], fontsize=10)
     plt.legend(loc='lower right', bbox_to_anchor=(1.0, 0.05), prop=legend_font, frameon=False)
     plt.tight_layout()
     plt.show()
