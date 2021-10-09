@@ -56,7 +56,7 @@ if 0:
     act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + setting + '.npy')
     time_stamps = np.load(FILE_PATH + 'time_stamps_' + setting + '.npy')
 
-    fig, axes = plt.subplots(figsize=(6, 4))
+    fig, axes = plt.subplots(figsize=(4, 4))
     ax = axes
     line_colors = ['tab:red', 'tab:blue']
     labels = ['Task1', 'Task2']
@@ -82,7 +82,7 @@ if 0:
     plt.ylim([0.0, 1.01])
     plt.xticks(fontsize=10)
     plt.yticks([0.1*i for i in range(11)], fontsize=10)
-    plt.legend(loc='lower right', bbox_to_anchor=(1.0, 0.05), prop=legend_font, frameon=False)
+    plt.legend(loc='lower right', bbox_to_anchor=(0.99, 0.05), prop=legend_font, frameon=False)
     plt.tight_layout()
     plt.show()
     # plt.savefig(FILE_PATH + 'performance.pdf')
@@ -96,7 +96,7 @@ if 0:
     act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + setting + '.npy')
     time_stamps = np.load(FILE_PATH + 'time_stamps_' + setting + '.npy')
 
-    fig, axes = plt.subplots(figsize=(6, 4))
+    fig, axes = plt.subplots(figsize=(5, 4))
     ax = axes
     line_colors = ['tab:red', 'tab:blue', 'tab:green']
     labels = ['Task1', 'Task2', 'Task3']
@@ -121,9 +121,9 @@ if 0:
     # plt.title('Task Performance', fontdict=title_font)
     plt.xlim([0.0, 71000])
     plt.ylim([0.0, 1.01])
-    plt.xticks(fontsize=10)
+    plt.xticks([0, 20000, 40000, 60000, 70000], fontsize=10)
     plt.yticks([0.1*i for i in range(11)], fontsize=10)
-    plt.legend(loc='lower right', bbox_to_anchor=(0.97, 0.05), prop=legend_font, frameon=False)
+    plt.legend(loc='lower right', bbox_to_anchor=(1.00, 0.05), prop=legend_font, frameon=False)
     plt.tight_layout()
     plt.show()
     # plt.savefig(FILE_PATH + 'performance.pdf')
@@ -135,12 +135,12 @@ if 0:
     settings = ['PFCMD', 'EWC', 'SI', 'PFC']
     line_colors = ['tab:red', 'violet', 'tab:green', 'tab:blue']
     labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
-    linewidths = [3, 2, 2, 2]
+    linewidths = [2, 2, 2, 2]
     label_font = {'family':'arial','weight':'normal', 'size':15}
     title_font = {'family':'arial','weight':'normal', 'size':20}
     legend_font = {'family':'arial','weight':'normal', 'size':12}
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4))
     for env_id in range(2): # 2 tasks
         color1, color2= 'tab:red', 'tab:blue'
         axes[env_id].axvspan(    0, 20000, alpha=0.08, color=color1)
@@ -160,7 +160,7 @@ if 0:
             axes[env_id].set_yticks([0.1*i for i in range(11)])
             axes[env_id].set_xticklabels([i*10000 for i in range(6)], fontsize=10)
             axes[env_id].set_yticklabels([round(0.1*i, 1) for i in range(11)], fontsize=10)
-            axes[env_id].legend(loc='lower right', bbox_to_anchor=(1.025, 0.05), prop=legend_font, frameon=False)
+            axes[env_id].legend(loc='lower right', bbox_to_anchor=(0.82, 0.05), prop=legend_font, frameon=False)
     plt.tight_layout()
     plt.show()
     # plt.savefig(FILE_PATH + 'performance.pdf')
@@ -171,7 +171,8 @@ if 0:
     FILE_PATH = './files/scaleup_threetasks_3/'
     settings = ['PFCMDnoisestd0dot01', 'EWC', 'SI', 'PFC']
     line_colors = ['tab:red', 'violet', 'tab:green', 'tab:blue']
-    linewidths = [3, 2, 2, 2]
+    labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
+    linewidths = [2, 2, 2, 2]
     label_font = {'family':'arial','weight':'normal', 'size':15}
     title_font = {'family':'arial','weight':'normal', 'size':20}
     legend_font = {'family':'arial','weight':'normal', 'size':12}
@@ -193,14 +194,14 @@ if 0:
             # axes[env_id].set_title('Task{:d} Performance'.format(env_id+1), fontdict=title_font)
             axes[env_id].set_xlim([0.0, 71000])
             axes[env_id].set_ylim([0.0, 1.01])
-            axes[env_id].set_xticks([i*10000 for i in range(8)])
+            axes[env_id].set_xticks([0, 20000, 40000, 60000, 70000])
             axes[env_id].set_yticks([0.1*i for i in range(11)])
-            axes[env_id].set_xticklabels([i*10000 for i in range(8)], fontsize=10)
+            axes[env_id].set_xticklabels([0, 20000, 40000, 60000, 70000], fontsize=10)
             axes[env_id].set_yticklabels([round(0.1*i, 1) for i in range(11)], fontsize=10)
     axes[-1].legend(bbox_to_anchor = (1.0, 0.65), prop=legend_font, frameon=False)
     plt.tight_layout()
     plt.show()
-    # plt.savefig(FILE_PATH + 'performance{:d}.pdf'.format(env_id+1))
+    # plt.savefig(FILE_PATH + 'performance.pdf')
     # plt.close()
 
 # Parametric noise
@@ -296,20 +297,30 @@ if 0:
     title_font = {'family':'arial','weight':'normal', 'size':20}
     legend_font = {'family':'arial','weight':'normal', 'size':12}
     plt.figure(figsize=(4, 4))
-    plt.quiver(PFC_activity_reduced[0][:-1, 0],
-               PFC_activity_reduced[0][:-1, 1],
-               PFC_activity_reduced[0][1:, 0]-PFC_activity_reduced[0][:-1, 0],
-               PFC_activity_reduced[0][1:, 1]-PFC_activity_reduced[0][:-1, 1],
-               scale_units='xy', angles='xy', scale=1.2, width=0.01, color='tab:red')
+    points = np.array([6, 13, 15]) if mode == 'PFCMD' else np.array([5, 10, 14]) # plot a few arrow of these points
+    X = PFC_activity_reduced[0][points, 0]
+    Y = PFC_activity_reduced[0][points, 1]
+    U = PFC_activity_reduced[0][points+1, 0]-PFC_activity_reduced[0][points, 0]
+    V = PFC_activity_reduced[0][points+1, 1]-PFC_activity_reduced[0][points, 1]
+    norm = np.sqrt(np.square(U) + np.square(V)) # make arrow size constant
+    plt.quiver(X, Y, U/norm, V/norm,
+               scale_units='xy', angles='xy', scale=1.5, width=0.01, color='tab:red')
     plt.plot(PFC_activity_reduced[0][:, 0], PFC_activity_reduced[0][:, 1],
              c='tab:red', marker='', linewidth=2.5, alpha=1.0, label='Task1')
-    plt.quiver(PFC_activity_reduced[1][:-1, 0],
-               PFC_activity_reduced[1][:-1, 1],
-               PFC_activity_reduced[1][1:, 0]-PFC_activity_reduced[1][:-1, 0],
-               PFC_activity_reduced[1][1:, 1]-PFC_activity_reduced[1][:-1, 1],
-               scale_units='xy', angles='xy', scale=1.2, width=0.01, color='tab:blue')
+    plt.plot(PFC_activity_reduced[0][-1, 0], PFC_activity_reduced[0][-1, 1],
+             c='tab:red', marker='*', markersize=10, alpha=1.0)
+    points = np.array([0, 20, 30]) if mode == 'PFCMD' else np.array([2, 7, 24])
+    X = PFC_activity_reduced[1][points, 0]
+    Y = PFC_activity_reduced[1][points, 1]
+    U = PFC_activity_reduced[1][points+1, 0]-PFC_activity_reduced[1][points, 0]
+    V = PFC_activity_reduced[1][points+1, 1]-PFC_activity_reduced[1][points, 1]
+    norm = np.sqrt(np.square(U) + np.square(V))
+    plt.quiver(X, Y, U/norm, V/norm,
+               scale_units='xy', angles='xy', scale=1.5, width=0.01, color='tab:blue')
     plt.plot(PFC_activity_reduced[1][:, 0], PFC_activity_reduced[1][:, 1],
              c='tab:blue', marker='', linewidth=2.5, alpha=1.0, label='Task2')
+    plt.plot(PFC_activity_reduced[1][-1, 0], PFC_activity_reduced[1][-1, 1],
+             c='tab:blue', marker='*', markersize=10, alpha=1.0)
     plt.xticks([])
     plt.yticks([])
     plt.xlabel('PC1', fontdict=label_font)
@@ -481,14 +492,15 @@ if 0:
     ax = sns.heatmap(norm_task_variance,
                      vmin=0, vmax=1, cmap='hot', ax=ax,
                      cbar_kws={'fraction':0.046, 'pad':0.04})
+    plt.xticks([])
     plt.yticks([i+0.5 for i in range(len(tick_names))], tick_names, 
                rotation=0, va='center', font='arial', fontsize=12)
-    plt.xticks([])
     plt.title('Units', fontdict=title_font)
     plt.xlabel('Clusters', fontdict=label_font)
     ax.tick_params('both', length=0)
     cbar = ax.collections[0].colorbar
     cbar.set_label('Normalized task variance', fontdict=label_font, labelpad=15)
+    cbar.ax.tick_params(labelsize=10)
     plt.show()
     # plt.savefig(FILE_PATH + 'norm_task_variance.pdf')
     # plt.close()
@@ -512,6 +524,7 @@ if 0:
     cbar = ax.collections[0].colorbar
     cbar.set_label('Normalized task similarity', fontdict=label_font, labelpad=15)
     cbar.outline.set_linewidth(0.5)
+    cbar.ax.tick_params(labelsize=10)
     plt.show()
     # plt.savefig(FILE_PATH + 'norm_similarity_matrix.pdf')
     # plt.close()
@@ -636,7 +649,7 @@ if 0:
         act_perfs_std = np.std(act_perfs_all, axis=0)
 
     # plot performance
-    fig, axes = plt.subplots(figsize=(6, 4))
+    fig, axes = plt.subplots(figsize=(4, 4))
     ax = axes
     line_colors = ['tab:red', 'tab:blue']
     labels = ['Task1', 'Task2']
@@ -661,7 +674,7 @@ if 0:
     plt.ylim([0.0, 1.01])
     plt.xticks(fontsize=10)
     plt.yticks([0.1*i for i in range(11)], fontsize=10)
-    plt.legend(loc='lower right', bbox_to_anchor=(1.0, 0.05), prop=legend_font, frameon=False)
+    plt.legend(loc='lower right', bbox_to_anchor=(0.99, 0.05), prop=legend_font, frameon=False)
     plt.tight_layout()
     plt.show()
     # plt.savefig(FILE_PATH + 'performance.pdf')
@@ -773,8 +786,8 @@ if 0:
                      np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
                      alpha=0.2, color='tab:red')
     plt.legend(loc='lower left', bbox_to_anchor=(0, 0.05), prop=legend_font, frameon=False)
-    plt.xlabel('Noise STD', fontdict=label_font) 
-    plt.ylabel('Coefficient of Determination', fontdict=label_font)
+    plt.xlabel('Noise STD', fontdict=label_font)
+    plt.ylabel('$R^2$', fontdict=label_font) # R-squared is the Coefficient of Determination
     plt.ylim([0.8, 1.01])
     plt.xticks(fontsize=10)
     plt.yticks([0.1*i for i in range(8, 11)], fontsize=10)
@@ -821,8 +834,8 @@ if 0:
                      alpha=0.2, color='tab:red')
     plt.legend(loc='lower right', bbox_to_anchor=(1.0, 0.05), prop=legend_font, frameon=False)
     plt.xlabel('Activated Probability', fontdict=label_font) 
-    plt.ylabel('Coefficient of Determination', fontdict=label_font)
-    plt.xlim([-0.01, 1.08])
+    plt.ylabel('$R^2$', fontdict=label_font) # R-squared is the Coefficient of Determination
+    plt.xlim([0, 1.08])
     plt.ylim([0.6, 1.01])
     plt.xticks([0.1*i for i in range(11)], fontsize=10)
     plt.yticks([0.1*i for i in range(6, 11)], fontsize=10)
