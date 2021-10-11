@@ -508,7 +508,7 @@ if 0:
     plt.close()
 
     # heatmap norm_similarity_matrix
-    fig, axes = plt.subplots(figsize=(8, 6))
+    fig, axes = plt.subplots(figsize=(5, 4))
     ax = axes
     mask = np.zeros_like(norm_similarity_matrix, dtype=bool)
     mask[np.triu_indices_from(mask)] = True
@@ -528,6 +528,7 @@ if 0:
     cbar.outline.set_linewidth(1.2)
     cbar.ax.tick_params(labelsize=12, width=1.2)
     # plt.show()
+    plt.tight_layout()
     plt.savefig('./files/' + 'norm_similarity_matrix.pdf')
     plt.close()
 
