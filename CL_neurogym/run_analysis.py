@@ -486,7 +486,7 @@ if 0:
     norm_similarity_matrix = similarity_matrix / np.outer(Euclid_norm, Euclid_norm)
 
     # heatmap norm_task_variance
-    fig, axes = plt.subplots(figsize=(5, 4))
+    fig, axes = plt.subplots(figsize=(6, 4))
     ax = axes
     ax = sns.heatmap(norm_task_variance,
                      vmin=0, vmax=1, cmap='hot', ax=ax,
@@ -494,8 +494,8 @@ if 0:
     plt.xticks([])
     plt.yticks([i+0.5 for i in range(len(tick_names))], tick_names, 
                rotation=0, va='center', font='arial', fontsize=12)
-    plt.title('Units')
-    plt.xlabel('Clusters')
+    # plt.title('Units')
+    plt.xlabel('Units')
     ax.tick_params('both', length=0)
     cbar = ax.collections[0].colorbar
     cbar.outline.set_linewidth(1.2)
@@ -503,6 +503,7 @@ if 0:
     cbar.ax.tick_params(labelsize=12, width=1.2)
     # cbar.set_ticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
     # cbar.ax.set_yticklabels([0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    plt.tight_layout()
     # plt.show()
     plt.savefig('./files/' + 'norm_task_variance.pdf')
     plt.close()
