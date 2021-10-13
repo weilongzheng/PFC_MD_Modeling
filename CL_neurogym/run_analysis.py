@@ -1,6 +1,8 @@
 import os
 import random
 import numpy as np
+import gym
+import neurogym as ngym
 import torch
 import torch.nn as nn
 from torch.nn import init
@@ -18,6 +20,7 @@ import seaborn as sns
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'arial'
+mpl.rcParams["figure.titlesize"] = 20 # 'large'
 mpl.rcParams['axes.spines.left'] = True
 mpl.rcParams['axes.spines.right'] = False
 mpl.rcParams['axes.spines.top'] = False
@@ -401,7 +404,7 @@ if 0:
     plt.title('PFC_ctx activity in two tasks', fontdict=title_font)
     plt.show()
 
-# MD related weights
+# Connections weights
 if 0:
     FILE_PATH = './files/trajectory/PFCMD/'
     log = np.load(FILE_PATH + 'log.npy', allow_pickle=True).item()
@@ -410,51 +413,158 @@ if 0:
     net = torch.load(FILE_PATH + 'net.pt')
 
     # winput2PFC-ctx
-    fig, axes = plt.subplots(figsize=(6, 4))
+    fig, axes = plt.subplots(figsize=(5, 4))
     ax = axes
     sns.heatmap(net.rnn.input2PFCctx.weight.data, cmap='Reds', ax=ax, vmin=0, vmax=0.05)
     ax.set_xticks([0, config.input_size])
     ax.set_xticklabels([1, config.input_size], rotation=0)
     ax.set_yticks([0, config.hidden_ctx_size])
     ax.set_yticklabels([1, config.hidden_ctx_size], rotation=0)
-    ax.set_xlabel('Input index')
-    ax.set_ylabel('PFC-ctx index')
+    ax.set_xlabel('Input Units')
+    ax.set_ylabel('PFC-ctx Neurons')
     # ax.set_title('Input to PFC-ctx weights')
     cbar = ax.collections[0].colorbar
-    cbar.set_label('connection weight')
+    cbar.set_label('Connection Weight', labelpad=15)
+    cbar.outline.set_linewidth(1.2)
+    cbar.ax.tick_params(labelsize=12, width=1.2)
+    plt.tight_layout()
     plt.show()
-    # plt.savefig(FILE_PATH + 'weights_winput2PFC-ctx.pdf')
+    # plt.savefig('./files/' + 'weights_winput2PFC-ctx.pdf')
     # plt.close()
+
     # wPFC-ctx2MD
-    fig, axes = plt.subplots(figsize=(6, 4))
+    fig, axes = plt.subplots(figsize=(5, 4))
     ax = axes
     ax = sns.heatmap(net.rnn.md.wPFC2MD, cmap='Reds', ax=ax, vmin=0, vmax=2)
     ax.set_xticks([0, config.hidden_ctx_size-1])
     ax.set_xticklabels([1, config.hidden_ctx_size], rotation=0)
     ax.set_yticklabels([i+1 for i in range(config.md_size)], rotation=0)
-    ax.set_xlabel('PFC index')
-    ax.set_ylabel('MD index')
+    ax.set_xlabel('PFC Neurons')
+    ax.set_ylabel('MD Neurons')
     # ax.set_title('wPFC2MD')
     cbar = ax.collections[0].colorbar
-    cbar.set_label('connection weight')
+    cbar.set_ticks([0, 0.5, 1.0, 1.5, 2.0])
+    cbar.set_ticklabels([0, 0.5, 1.0, 1.5, 2.0])
+    cbar.set_label('Connection Weight', labelpad=15)
+    cbar.outline.set_linewidth(1.2)
+    cbar.ax.tick_params(labelsize=12, width=1.2)
+    plt.tight_layout()
     plt.show()
-    # plt.savefig(FILE_PATH + 'weights_wPFC-ctx2MD.pdf')
+    # plt.savefig('./files/' + 'weights_wPFC-ctx2MD.pdf')
     # plt.close()
+
     # wMD2PFC
-    fig, axes = plt.subplots(figsize=(6, 4))
+    fig, axes = plt.subplots(figsize=(5, 4))
     ax = axes
     sns.heatmap(net.rnn.md.wMD2PFC, cmap='Blues_r', ax=ax, vmin=-5, vmax=0)
     ax.set_xticklabels([i+1 for i in range(config.md_size)], rotation=0)
     ax.set_yticks([0, config.hidden_size-1])
     ax.set_yticklabels([1, config.hidden_size], rotation=0)
-    ax.set_xlabel('MD index')
-    ax.set_ylabel('PFC index')
+    ax.set_xlabel('MD Neurons')
+    ax.set_ylabel('PFC Neurons')
     # ax.set_title('MD to PFC weights')
     cbar = ax.collections[0].colorbar
-    cbar.set_label('connection weight')
+    cbar.set_ticks([0, -1, -2, -3, -4, -5])
+    cbar.set_ticklabels([0, -1, -2, -3, -4, -5])
+    cbar.set_label('Connection Weight', labelpad=15)
+    cbar.outline.set_linewidth(1.2)
+    cbar.ax.tick_params(labelsize=12, width=1.2)
+    plt.tight_layout()
     plt.show()
-    # plt.savefig(FILE_PATH + 'weights_wMD2PFC.pdf')
+    # plt.savefig('./files/' + 'weights_wMD2PFC.pdf')
     # plt.close()
+
+    # wPFCtoPFC
+    fig, axes = plt.subplots(figsize=(6, 6))
+    ax = axes
+    cax = ax.matshow(net.rnn.h2h.weight.data, cmap='magma')
+    ax.set_xticks([0, config.hidden_size-1])
+    ax.set_xticklabels([1, config.hidden_size], rotation=0)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.set_yticks([0, config.hidden_size-1])
+    ax.set_yticklabels([1, config.hidden_size], rotation=0)
+    ax.set_xlabel('PFC Neurons')
+    ax.set_ylabel('PFC Neurons')
+    ax.spines['left'].set_linewidth(0)
+    ax.spines['bottom'].set_linewidth(0)
+    # ax.set_title('PFC to PFC weights')
+    cbar = fig.colorbar(cax, **{'fraction':0.046, 'pad':0.04})
+    cbar.set_label('Connection Weight', labelpad=15)
+    cbar.outline.set_linewidth(1.2)
+    cbar.ax.tick_params(labelsize=12, width=1.2)
+    plt.tight_layout()
+    plt.show()
+    # plt.savefig('./files/' + 'weights_wPFC2PFC.pdf')
+    # plt.close()
+
+    # wPFCtoPFC with masked diagonal elements
+    fig, axes = plt.subplots(figsize=(6, 6))
+    ax = axes
+    data = net.rnn.h2h.weight.data.numpy()
+    np.fill_diagonal(data, 0)
+    cax = ax.matshow(data, cmap='seismic', vmax=0.02, vmin=-0.02)
+    ax.set_xticks([0, config.hidden_size-1])
+    ax.set_xticklabels([1, config.hidden_size], rotation=0)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.set_yticks([0, config.hidden_size-1])
+    ax.set_yticklabels([1, config.hidden_size], rotation=0)
+    ax.set_xlabel('PFC Neurons')
+    ax.set_ylabel('PFC Neurons')
+    ax.spines['left'].set_linewidth(0)
+    ax.spines['bottom'].set_linewidth(0)
+    # ax.set_title('PFC to PFC weights')
+    cbar = fig.colorbar(cax, **{'fraction':0.046, 'pad':0.04})
+    cbar.set_ticks([-0.02, 0, 0.02])
+    cbar.set_label('Connection Weight', labelpad=15)
+    cbar.outline.set_linewidth(1.2)
+    cbar.ax.tick_params(labelsize=12, width=1.2)
+    plt.tight_layout()
+    plt.show()
+    # plt.savefig('./files/' + 'weights_wPFC2PFC_maskdiagonal.pdf')
+    # plt.close()
+
+    # winputtoPFC
+    fig, axes = plt.subplots(figsize=(5, 6))
+    ax = axes
+    sns.heatmap(net.rnn.input2h.weight.data, cmap='magma', ax=ax)
+    ax.set_xticks([0, config.input_size])
+    ax.set_xticklabels([1, config.input_size], rotation=0)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.set_yticks([0, config.hidden_size-1])
+    ax.set_yticklabels([1, config.hidden_size], rotation=0)
+    ax.set_xlabel('Input Units')
+    ax.set_ylabel('PFC Neurons')
+    # ax.set_title('Input to PFC weights')
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('Connection Weight', labelpad=15)
+    cbar.outline.set_linewidth(1.2)
+    cbar.ax.tick_params(labelsize=12, width=1.2)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig('./files/' + 'weights_winput2PFC.pdf')
+    plt.close()
+
+    # wPFCtooutput
+    fig, axes = plt.subplots(figsize=(7, 4))
+    ax = axes
+    sns.heatmap(net.fc.weight.data, cmap='magma', ax=ax)
+    ax.set_xticks([0, config.hidden_size-1])
+    ax.set_xticklabels([1, config.hidden_size], rotation=0)
+    ax.xaxis.set_ticks_position('bottom')
+    ax.set_yticks([0, config.output_size])
+    ax.set_yticklabels([1, config.output_size], rotation=0)
+    ax.set_xlabel('PFC Neurons')
+    ax.set_ylabel('Output Units')
+    # ax.set_title('Input to PFC weights')
+    cbar = ax.collections[0].colorbar
+    cbar.set_label('Connection Weight', labelpad=15)
+    cbar.outline.set_linewidth(1.2)
+    cbar.ax.tick_params(labelsize=12, width=1.2)
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig('./files/' + 'weights_wPFC2output.pdf')
+    plt.close()
+
 
 # Task similarity analysis
 if 0:
@@ -499,7 +609,7 @@ if 0:
     ax.tick_params('both', length=0)
     cbar = ax.collections[0].colorbar
     cbar.outline.set_linewidth(1.2)
-    cbar.set_label('Normalized task variance', labelpad=15)
+    cbar.set_label('Normalized Task Variance', labelpad=15)
     cbar.ax.tick_params(labelsize=12, width=1.2)
     # cbar.set_ticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
     # cbar.ax.set_yticklabels([0, 0.2, 0.4, 0.6, 0.8, 1.0])
@@ -525,7 +635,7 @@ if 0:
                rotation=0, va='center', font='arial', fontsize=12)
     ax.tick_params('both', length=0)
     cbar = ax.collections[0].colorbar
-    cbar.set_label('Normalized task similarity', labelpad=15)
+    cbar.set_label('Normalized Task Similarity', labelpad=15)
     cbar.outline.set_linewidth(1.2)
     cbar.ax.tick_params(labelsize=12, width=1.2)
     # plt.show()
@@ -837,3 +947,39 @@ if 0:
     # plt.show()
     plt.savefig('./files/' + 'decoding_vs_activatedprob.pdf')
     plt.close()
+
+# plot inputs and outputs of neurogym tasks
+if 0:
+    tasks = ngym.get_collection('yang19')
+    env_kwargs = {'dt': 100}
+    RNGSEED = 5
+    random.seed(RNGSEED)
+    np.random.seed(RNGSEED)
+    torch.manual_seed(RNGSEED)
+    for task in tasks:
+        task_name = task[len('yang19.'):-len('-v0')]
+        env = gym.make(task, **env_kwargs)
+        env.new_trial()
+        ob, gt = env.ob, env.gt # ob:(trial_len, input_size); gt:(trial_len)
+        trial_len = gt.shape[0]
+
+        fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+        fig.suptitle('Task: ' + task_name)
+        sns.heatmap(ob.T, cmap='Reds', ax=axes[0])
+        axes[0].set_xticks([0.5, trial_len-0.5])
+        axes[0].set_xticklabels([0, trial_len], rotation=0)
+        axes[0].set_yticks([0.5, 32.5])
+        axes[0].set_yticklabels([0, 33], rotation=0)
+        axes[0].set_xlabel('Timestep')
+        axes[0].set_ylabel('Input Units')
+
+        axes[1].plot(gt.T)
+        axes[1].set_xticks([0, trial_len-1])
+        axes[1].set_xticklabels([1, trial_len], rotation=0)
+        axes[1].set_xlim([0, trial_len-1])
+        axes[1].set_xlabel('Timestep')
+        axes[1].set_ylabel('Ground Truth')
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig('./files/' + 'obgt_' + task_name + '.pdf')
+        plt.close()
