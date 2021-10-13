@@ -49,13 +49,16 @@ mpl.rcParams['legend.fontsize'] = 12 # 'medium'
 # TODO: make this a helper function
 ## compute mean & std of performance
 if 0:
-    FILE_PATH = './files/scaleup_twotasks_5/baselines/'
-    # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
+    FILE_PATH = './files/scaleup_threetasks_4/baselines/'
+    # FILE_PATH = './files/scaleup_threetasks_4/PFCMD/'
 
-    settings = ['EWC', 'SI', 'PFC']
+    # settings = ['EWC', 'SI', 'PFC']
+    # settings = ['EWC']
+    # settings = ['SI']
+    settings = ['PFC']
     # settings = ['PFCMD']
 
-    ITER = list(range(420))
+    ITER = list(range(202))
     LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
@@ -67,9 +70,16 @@ if 0:
         time_stamps = log.stamps
         act_perfs_mean = np.mean(act_perfs_all, axis=0)
         act_perfs_std = np.std(act_perfs_all, axis=0)
-        np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
-        np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
-        np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
+        # np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
+        # np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
+        # np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
+    
+    # temp code
+    fig, axes = plt.subplots(figsize=(4, 4))
+    for i in range(3):
+        plt.plot(time_stamps, act_perfs_mean[i])
+    plt.show()
+    
 
 # main performance curve: two tasks
 if 0:
@@ -110,8 +120,8 @@ if 0:
 
 # main performance curve: three tasks
 if 0:
-    FILE_PATH = './files/scaleup_threetasks_3/'
-    setting = 'PFCMDnoisestd0dot01'
+    FILE_PATH = './files/scaleup_threetasks_4/'
+    setting = 'PFCMD'
     act_perfs_mean = np.load(FILE_PATH + 'avg_perfs_mean_' + setting + '.npy')
     act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + setting + '.npy')
     time_stamps = np.load(FILE_PATH + 'time_stamps_' + setting + '.npy')
@@ -439,7 +449,7 @@ if 0:
     ax.set_xticks([0, config.hidden_ctx_size-1])
     ax.set_xticklabels([1, config.hidden_ctx_size], rotation=0)
     ax.set_yticklabels([i+1 for i in range(config.md_size)], rotation=0)
-    ax.set_xlabel('PFC Neurons')
+    ax.set_xlabel('PFC-ctx Neurons')
     ax.set_ylabel('MD Neurons')
     # ax.set_title('wPFC2MD')
     cbar = ax.collections[0].colorbar
@@ -540,9 +550,9 @@ if 0:
     cbar.outline.set_linewidth(1.2)
     cbar.ax.tick_params(labelsize=12, width=1.2)
     plt.tight_layout()
-    # plt.show()
-    plt.savefig('./files/' + 'weights_winput2PFC.pdf')
-    plt.close()
+    plt.show()
+    # plt.savefig('./files/' + 'weights_winput2PFC.pdf')
+    # plt.close()
 
     # wPFCtooutput
     fig, axes = plt.subplots(figsize=(7, 4))
@@ -561,10 +571,36 @@ if 0:
     cbar.outline.set_linewidth(1.2)
     cbar.ax.tick_params(labelsize=12, width=1.2)
     plt.tight_layout()
-    # plt.show()
-    plt.savefig('./files/' + 'weights_wPFC2output.pdf')
-    plt.close()
+    plt.show()
+    # plt.savefig('./files/' + 'weights_wPFC2output.pdf')
+    # plt.close()
 
+# the evolution of PFC-ctx to MD weight
+if 0:
+    FILE_PATH = './files/weight_evolution/two_tasks/'
+    config = np.load(FILE_PATH + 'config.npy', allow_pickle=True).item()
+    for trial_num in [0, 19999, 39999, 49999]: # two tasks
+    # for trial_num in [0, 19999, 39999, 59999, 69999]: # three tasks
+        data = np.load(FILE_PATH + f'wPFC-ctx2MD_trial{trial_num}.npy')
+        fig, axes = plt.subplots(figsize=(5, 4))
+        ax = axes
+        ax = sns.heatmap(data, cmap='Reds', ax=ax, vmin=0, vmax=2)
+        ax.set_xticks([0, config.hidden_ctx_size-1])
+        ax.set_xticklabels([1, config.hidden_ctx_size], rotation=0)
+        ax.set_yticklabels([i+1 for i in range(config.md_size)], rotation=0)
+        ax.set_xlabel('PFC-ctx Neurons')
+        ax.set_ylabel('MD Neurons')
+        # ax.set_title('wPFC2MD')
+        cbar = ax.collections[0].colorbar
+        cbar.set_ticks([0, 0.5, 1.0, 1.5, 2.0])
+        cbar.set_ticklabels([0, 0.5, 1.0, 1.5, 2.0])
+        cbar.set_label('Connection Weight', labelpad=15)
+        cbar.outline.set_linewidth(1.2)
+        cbar.ax.tick_params(labelsize=12, width=1.2)
+        plt.tight_layout()
+        plt.show()
+        # plt.savefig('./files/' + f'wPFC-ctx2MD_trial{trial_num}.pdf')
+        # plt.close()
 
 # Task similarity analysis
 if 0:
@@ -751,6 +787,35 @@ if 0:
     # settings = ['PFC']
     # ITER = take_seq_ids
     # LEN = len(ITER)
+    # 6. non-similar task seqs + PFC
+    # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # settings = ['PFC']
+    # ITER = list(range(420))
+    # ITER = list(set(ITER) - set(take_seq_ids))
+    # LEN = len(ITER)
+    # 7. similar task seqs + PFCEWC
+    # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # settings = ['EWC']
+    # ITER = take_seq_ids
+    # LEN = len(ITER)
+    # 8. non-similar task seqs + PFCEWC
+    # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # settings = ['EWC']
+    # ITER = list(range(420))
+    # ITER = list(set(ITER) - set(take_seq_ids))
+    # LEN = len(ITER)
+    # 9. similar task seqs + PFCSI
+    # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # settings = ['SI']
+    # ITER = take_seq_ids
+    # LEN = len(ITER)
+    # 10. non-similar task seqs + PFCSI
+    FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    settings = ['SI']
+    ITER = list(range(420))
+    ITER = list(set(ITER) - set(take_seq_ids))
+    LEN = len(ITER)
+
     for setting in settings:
         act_perfs_all = []
         for i in ITER:
