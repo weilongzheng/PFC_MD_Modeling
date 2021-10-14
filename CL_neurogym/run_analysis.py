@@ -53,12 +53,12 @@ if 0:
     # FILE_PATH = './files/scaleup_threetasks_4/PFCMD/'
 
     # settings = ['EWC', 'SI', 'PFC']
-    # settings = ['EWC']
+    settings = ['EWC']
     # settings = ['SI']
-    settings = ['PFC']
+    # settings = ['PFC']
     # settings = ['PFCMD']
 
-    ITER = list(range(202))
+    ITER = list(range(90))
     LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
@@ -616,6 +616,7 @@ if 0:
     tick_names_dict = dict()
     for id, tick_name in enumerate(tick_names):
         tick_names_dict[str(id)] = tick_name
+    tick_names_dict_reversed = {v:k for k, v in tick_names_dict.items()}
     
     norm_task_variance = norm_task_variance[task_ids, :]
     similarity_matrix = norm_task_variance @ norm_task_variance.T
@@ -855,6 +856,97 @@ if 0:
     # plt.show()
     plt.savefig('./files/' + 'performance.pdf')
     plt.close()
+
+# forward transfer, continual learning VS task similarity
+if 0:
+    FILE_PATH = './files/similarity/'
+    tick_names = np.load(FILE_PATH + 'tick_names.npy')
+    tick_names_dict = np.load(FILE_PATH + 'tick_names_dict.npy', allow_pickle=True).item()
+    tick_names_dict_reversed = np.load(FILE_PATH + 'tick_names_dict_reversed.npy', allow_pickle=True).item()
+    norm_similarity_matrix = np.load(FILE_PATH + 'norm_similarity_matrix.npy')
+
+    # forward transfer, continual learning and task similarity of each task pair
+    # 1. original PFCMD
+    FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
+    setting = 'PFCMD'
+    # 2. reduced PFCMD
+    # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
+    # setting = 'PFCMD'
+    # 3. PFC
+    # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # setting = 'PFC'
+    # 4. PFCEWC
+    # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # setting = 'EWC'
+    # 5. PFCSI
+    # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # setting = 'SI'
+
+    forward_transfer_perf = np.zeros(shape=(420))
+    continual_learning_perf = np.zeros(shape=(420))
+    task_similarity = np.zeros(shape=(420))
+    for i in range(420):
+        config = np.load(FILE_PATH + str(i) + '_config_' + setting + '.npy', allow_pickle=True).item()
+        log = np.load(FILE_PATH + str(i) + '_log_' + setting + '.npy', allow_pickle=True).item()
+        forward_transfer_perf[i] = np.array(log.act_perfs)[1, 39]
+        continual_learning_perf[i] = np.array(log.act_perfs)[0, 79]
+        x = int(tick_names_dict_reversed[config.task_seq[0][len('yang19.'):-len('-v0')]])
+        y = int(tick_names_dict_reversed[config.task_seq[1][len('yang19.'):-len('-v0')]])
+        task_similarity[i] = norm_similarity_matrix[x, y]
+    
+    # split data into a few intervals
+    task_similarity_data = np.array([0.1*i for i in range(3, 11)])
+    L = len(task_similarity_data)
+    forward_transfer_perf_data = np.zeros(shape=(L))
+    forward_transfer_perf_std_data = np.zeros(shape=(L))
+    continual_learning_perf_data = np.zeros(shape=(L))
+    continual_learning_perf_std_data = np.zeros(shape=(L))
+    for x in range(L):
+        similarity = task_similarity_data[x]
+        ids = []
+        for y in range(420):
+            if task_similarity[y] >= similarity-0.05 and task_similarity[y] < similarity+0.05:
+                ids.append(y)
+        forward_transfer_perf_data[x] = np.mean(forward_transfer_perf[ids])
+        forward_transfer_perf_std_data[x] = np.std(forward_transfer_perf[ids])
+        continual_learning_perf_data[x] = np.mean(continual_learning_perf[ids])
+        continual_learning_perf_std_data[x] = np.std(continual_learning_perf[ids])
+    
+    # plot
+    fig, axes = plt.subplots(figsize=(4, 4))
+    ax = axes
+    line_colors = ['tab:orange', 'tab:blue']
+    labels = ['CL', 'FT']
+    linewidth = 2
+    # fill is better than errorbar
+    # plt.errorbar(task_similarity_data, forward_transfer_perf_data, yerr=forward_transfer_perf_std_data,
+    #              linewidth=linewidth, color=line_colors[0], label=labels[0])
+    # plt.errorbar(task_similarity_data, continual_learning_perf_data, yerr=continual_learning_perf_std_data,
+    #              linewidth=linewidth, color=line_colors[1], label=labels[1])
+    plt.plot(task_similarity_data, continual_learning_perf_data,
+             linewidth=linewidth, color=line_colors[0], label=labels[0])
+    plt.fill_between(task_similarity_data, 
+                     continual_learning_perf_data - continual_learning_perf_std_data,
+                     continual_learning_perf_data + continual_learning_perf_std_data,
+                     alpha=0.1, color=line_colors[0])
+    plt.plot(task_similarity_data, forward_transfer_perf_data,
+             linewidth=linewidth, color=line_colors[1], label=labels[1])
+    plt.fill_between(task_similarity_data, 
+                     forward_transfer_perf_data - forward_transfer_perf_std_data,
+                     forward_transfer_perf_data + forward_transfer_perf_std_data,
+                     alpha=0.1, color=line_colors[1])
+
+    plt.xlabel('Task Similarity')
+    plt.ylabel('Performance')
+    plt.xlim([0.3, 1.0])
+    plt.ylim([0.0, 1.0])
+    plt.xticks(ticks=[round(0.1*i, 1) for i in range(3, 11)], labels=[round(0.1*i, 1) for i in range(3, 11)])
+    plt.yticks(ticks=[0, 0.2, 0.4, 0.6, 0.8, 1.0], labels=[0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    plt.legend(loc='lower right', bbox_to_anchor=(1.05, 0.1))
+    plt.tight_layout()
+    plt.show()
+    # plt.savefig('./files/' + 'FTCL_VS_similarity.pdf')
+    # plt.close()
 
 # decoding analysis
 # train and score linear decoder
