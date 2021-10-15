@@ -58,7 +58,7 @@ if 0:
     # settings = ['PFC']
     # settings = ['PFCMD']
 
-    ITER = list(range(90))
+    ITER = list(range(185))
     LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
@@ -224,6 +224,42 @@ if 0:
     # plt.show()
     plt.savefig('./files/' + 'threetasksperformance-baselines.pdf')
     plt.close()
+
+# PFC+MD VS baselines: cases
+if 0:
+    FILE_PATH = './files/example_cases/two_tasks/'
+    settings = ['PFCMD', 'EWC', 'SI', 'PFC']
+    line_colors = ['tab:red', 'violet', 'tab:green', 'tab:blue']
+    labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
+    linewidths = [2, 1.5, 1.5, 1.5]
+
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+    for env_id in range(2): # 2 tasks
+        color1, color2= 'tab:red', 'tab:blue'
+        axes[env_id].axvspan(    0, 20000, alpha=0.08, color=color1)
+        axes[env_id].axvspan(20000, 40000, alpha=0.08, color=color2)
+        axes[env_id].axvspan(40000, 50000, alpha=0.08, color=color1)
+        for i in range(len(settings)):
+            setting = settings[i]
+            config = np.load(FILE_PATH + '346_config_' + setting + '.npy', allow_pickle=True).item()
+            log = np.load(FILE_PATH + '346_log_' + setting + '.npy', allow_pickle=True).item()
+            time_stamps = np.array(log.stamps)
+            act_perfs = np.array(log.act_perfs)
+            axes[env_id].plot(time_stamps, act_perfs[env_id, :], linewidth=linewidths[i], color=line_colors[i], label=labels[i])
+            axes[env_id].set_xlabel('Trials')
+            axes[env_id].set_ylabel('Performance')
+            axes[env_id].set_title('Task{:d}: '.format(env_id+1) + config.task_seq[env_id][len('yang19.'):-len('-v0')])
+            axes[env_id].set_xlim([0.0, 51000])
+            axes[env_id].set_ylim([0.0, 1.01])
+            axes[env_id].set_xticks([0, 20000, 40000, 50000])
+            axes[env_id].set_yticks([0.2*j for j in range(6)])
+            axes[env_id].set_xticklabels([0, 20, 40, 50])
+            axes[env_id].set_yticklabels([round(0.2*j, 1) for j in range(6)])
+    axes[-1].legend(bbox_to_anchor = (1.0, 0.65))
+    plt.tight_layout(w_pad=3.0)
+    plt.show()
+    # plt.savefig('./files/' + 'twotasksperformance-cases.pdf')
+    # plt.close()
 
 # Parametric noise
 if 0:
