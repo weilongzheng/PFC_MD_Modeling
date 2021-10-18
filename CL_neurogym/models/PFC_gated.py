@@ -19,7 +19,7 @@ class CTRNN_MD(nn.Module):
         hidden: (batch, hidden_size), initial hidden activity
     """
 
-    def __init__(self, config, dt=None, **kwargs):
+    def __init__(self, config, dt=100, **kwargs):
         super().__init__()
         self.input_size =  config.input_size
         self.hidden_size = config.hidden_size
@@ -31,11 +31,11 @@ class CTRNN_MD(nn.Module):
         self.device = config.device
         self.g = .5 # Conductance for recurrents. Consider higher values for realistic richer RNN dynamics, at least initially.
 
-        self.tau = 100
-        if dt is None:
-            alpha = 1
-        else:
-            alpha = dt / self.tau
+        self.tau = config.tau
+        # if dt is None:
+            # alpha = 1
+        # else:
+        alpha = dt / self.tau
         self.alpha = alpha
         self.oneminusalpha = 1 - alpha
 

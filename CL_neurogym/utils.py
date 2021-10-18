@@ -142,20 +142,6 @@ def forward_backward(net, opt, crit, inputs, labels, task_id):
     return loss, rnn_activity
 
 # testing
-# get_performance is not used
-def get_performance(net, dataset, task_id, config):
-    perf = 0
-    for i in range(num_trial):
-        ob, gt = dataset.new_trial(task_id)
-
-        inputs = torch.from_numpy(ob).type(torch.float).to(config.device)
-        action_pred, _ = net(inputs, task_id=task_id)
-        action_pred = action_pred.detach().cpu().numpy()
-        action_pred = np.argmax(action_pred, axis=-1)
-        perf += gt[-1] == action_pred[-1, 0]
-
-    perf /= num_trial
-    return perf
 
 def get_full_performance(net, dataset, task_id, config):
     num_trial = config.test_num_trials
@@ -308,3 +294,104 @@ def sparse_with_mean(tensor, sparsity, mean= 1.,  std=0.01):
             zero_indices = row_indices[:num_zeros]
             tensor[zero_indices, col_idx] = 0
     return tensor
+
+
+from collections import defaultdict
+def get_performance(net, envs, context_ids, config, batch_size=100):
+    if type(envs) is not type([]):
+        envs = [envs]
+
+    fixation_accuracies = defaultdict()
+    action_accuracies = defaultdict()
+    for (context_id, env) in (zip(context_ids, envs)):
+        # import pdb; pdb.set_trace()
+        inputs, labels = get_trials_batch(env, batch_size, config)
+        if config.use_lstm:
+            action_pred, _ = net(inputs) # shape [500, 10, 17]
+        else:
+            action_pred, _ = net(inputs, sub_id=context_id) # shape [500, 10, 17]
+        ap = torch.argmax(action_pred, -1) # shape ap [500, 10]
+
+        gt = torch.argmax(labels, -1)
+
+        fix_lens = torch.sum(gt==0, 0)
+        act_lens = gt.shape[0] - fix_lens 
+
+        fixation_accuracy = ((gt==0)==(ap==0)).sum() / np.prod(gt.shape)## get fixation performance. overlap between when gt is to fixate and when model is fixating
+           ## then divide by number of time steps.
+        fixation_accuracies[context_id] = fixation_accuracy.detach().cpu().numpy()
+        action_accuracy = (gt[-1,:] == ap[ -1,:]).sum() / gt.shape[1] # take action as the argmax of the last time step
+        action_accuracies[context_id] = action_accuracy.detach().cpu().numpy()
+#         import pdb; pdb.set_trace()
+    return((fixation_accuracies, action_accuracies))
+
+# In[5]:
+
+def accuracy_metric(outputs, labels):
+    ap = torch.argmax(outputs, -1) # shape ap [500, 10]
+    gt = torch.argmax(labels, -1)
+    action_accuracy = (gt[-1, :] == ap[-1,:]).sum() / gt.shape[1] # take action as the argmax of the last time step
+#     import pdb; pdb.set_trace()
+    return(action_accuracy.detach().cpu().numpy())
+
+# In[6]:
+
+def get_trials_batch(envs, batch_size, config):
+    # check if only one env or several and ensure it is a list either way.
+    if type(envs) is not type([]):
+        envs = [envs]
+        
+    # fetch and batch data
+    obs, gts = [], []
+    for bi in range(batch_size):
+        env = envs[np.random.randint(0, len(envs))] # randomly choose one env to sample from, if more than one env is given
+        env.new_trial()
+        ob, gt = env.ob, env.gt
+        assert not np.any(np.isnan(ob))
+        obs.append(ob), gts.append(gt)
+    # Make trials of equal time length:
+    obs_lens = [len(o) for o in obs]
+    max_len = np.max(obs_lens)
+    for o in range(len(obs)):
+        while len(obs[o]) < max_len:
+            obs[o]= np.insert(obs[o], 0, obs[o][0], axis=0)
+#             import pdb; pdb.set_trace()
+    gts_lens = [len(o) for o in gts]
+    max_len = np.max(gts_lens)
+    for o in range(len(gts)):
+        while len(gts[o]) < max_len:
+            gts[o]= np.insert(gts[o], 0, gts[o][0], axis=0)
+
+
+    obs = np.stack(obs) # shape (batch_size, 32, 33)
+    
+    gts = np.stack(gts) # shape (batch_size, 32)
+
+    # numpy -> torch
+    inputs = torch.from_numpy(obs).type(torch.float).to(config.device)
+    labels = torch.from_numpy(gts).type(torch.long).to(config.device)
+
+    # index -> one-hot vector
+    labels = (F.one_hot(labels, num_classes=config.output_size)).float() 
+    return (inputs.permute([1,0,2]), labels.permute([1,0,2])) # using time first [time, batch, input]
+
+# In[16]:
+import matplotlib.pyplot as plt
+def show_input_output(inputs, labels, outputs=None, axes=None, ex_id=0):
+    input = inputs.detach().cpu().numpy()[:,ex_id,:]
+    label = labels.detach().cpu().numpy()[:,ex_id,:]
+    output= outputs.detach().cpu().numpy()[:,ex_id,:]
+    
+    if axes is None:
+        fig, axes = plt.subplots(3)
+                
+    no_output = True if output is None else False
+    
+    axes[0].imshow(input)
+    axes[1].imshow(label)
+    if output is not None: axes[2].imshow(output)
+    
+    axes[0].set_xlabel('Time steps')
+#     ax.set_ylabel('fr')
+#     ax.set_yticks([1, 17, 33, 34, 49])
+

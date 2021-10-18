@@ -54,7 +54,6 @@ class BaseConfig(object):
                     'yang19.dlyanti-v0',
                     'yang19.rtanti-v0'
                     ]
-        self.tasks_id_name = [(i, self.tasks[i]) for i in range(len(self.tasks))]
         self.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in self.tasks] #removes yang19 and -v0
         
         self.GoFamily = ['yang19.dlygo-v0', 'yang19.go-v0']
@@ -111,6 +110,7 @@ class BaseConfig(object):
         self.hidden_size = 600
         self.output_size = 17
         self.lr = 1e-4
+        self.tau = 100
 
         # test
         self.test_every_trials = 200
@@ -131,16 +131,12 @@ class BaseConfig(object):
         # continual learning mode
         self.mode = None
     
-    def set_task_seq(self, task_seq):
-        self.task_seq = task_seq
-        self.num_task = len(self.task_seq)
     def set_strings(self, exp_name):
         self.exp_name = exp_name
         self.exp_signature = self.exp_name +f'_{self.args}_'+\
         f'{"same_rnn" if self.same_rnn else "separate"}_{"gates" if self.use_gates else "nogates"}'+\
         f'_{"tc" if self.train_to_criterion else "nc"}'
 
-    
     def update(self, new_config):
         self.__dict__.update(new_config.__dict__)
 
@@ -211,6 +207,9 @@ class SerialConfig(BaseConfig):
 
         self.print_every_batches =  10
         self.device = 'cuda'
+        
+        import neurogym as ngym
+        tasks = ngym.get_collection('yang19')
 
         self.tasks= [
                     'yang19.go-v0',
@@ -229,7 +228,7 @@ class SerialConfig(BaseConfig):
                     'yang19.dnms-v0',
                     'yang19.dnmc-v0',
                     ]
-        self.tasks_id_name = [(i, self.tasks[i]) for i in range(len(self.tasks))]
+        self._tasks_id_name = [(i, self.tasks[i]) for i in range(len(self.tasks))]
         self.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in self.tasks] #removes yang19 and -v0
         
         # MD
@@ -257,7 +256,7 @@ class SerialConfig(BaseConfig):
 
         # RNN model
         self.input_size = 33
-        self.hidden_size = 256
+        self.hidden_size = 356
         self.output_size = 17
         self.lr = 1e-3
 
@@ -272,4 +271,23 @@ class SerialConfig(BaseConfig):
         task_sub_seqs = [[(i, self.task_seq[i]) for i in range(s)] for s in range(2, len(self.task_seq))] # interleave tasks and add one task at a time
         self.task_seq_with_rehearsal = []
         for sub_seq in task_sub_seqs: self.task_seq_with_rehearsal+=sub_seq
-
+    
+    @property
+    def tasks_id_name(self):
+        return self._tasks_id_name
+    @tasks_id_name.setter
+    def tasks_id_name(self,tasks):
+        new_task_ids = []
+        for i in range(len(tasks)):
+            new_task_ids.append( *[t[0] for t in self._tasks_id_name if t[1] == tasks[i]] )
+            
+        self._tasks_id_name = [(s,t) for s,t in zip(new_task_ids, tasks)]
+    
+    def set_task_seq(self, task_seq):
+        self.task_seq = task_seq
+        self.num_task = len(self.task_seq)
+    def set_tasks(self,tasks):
+        self.tasks = tasks
+        # self.tasks_id_name = [(i, self.tasks[i]) for i in range(len(self.tasks))]
+        # self.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in self.tasks] #removes yang19 and -v0
+    

@@ -15,6 +15,7 @@ from collections import defaultdict
 # computation
 import math
 import numpy as np
+rng = np.random.default_rng()
 import random
 import pandas as pd
 import torch
@@ -30,7 +31,7 @@ from neurogym.utils.scheduler import RandomSchedule
 from models.PFC_gated import RNN_MD
 from configs.configs import PFCMDConfig, SerialConfig
 from logger.logger import SerialLogger
-from utils import stats
+from utils import stats, get_trials_batch, get_performance, accuracy_metric
 # visualization
 import matplotlib as mpl
 mpl.rcParams['axes.spines.left'] = True
@@ -72,13 +73,13 @@ my_parser.add_argument('--var1',
                        type=int,
                        help='Seed')
 my_parser.add_argument('--var2',
-                       default=0.5, nargs='?',
+                       default=-0.3, nargs='?',
                        type=float,
                        help='the ratio of active neurons in gates ')
 my_parser.add_argument('--var3',
-                        default=1, nargs='?',
-                        type=int,
-                        help='0 for additive MD and 1 for multiplicative')
+                        default=100, nargs='?',
+                        type=float,
+                        help='tau')
 my_parser.add_argument('--num_of_tasks',
                     default=30, nargs='?',
                     type=int,
@@ -98,171 +99,58 @@ elif args.experiment_type == 'serial':
 
 config.set_strings( exp_name)
 
-config.task_seq = config.sequences[args.var1]
-config.human_task_names = ['{}'.format(tn[7:-3]) for tn in config.task_seq] #removes yang19 and -v0    {:<6}
-config.exp_signature = f'{config.human_task_names[0]}_{config.human_task_names[1]}_'
+if args.experiment_type == 'pairs':
+    config.task_seq = config.sequences[args.var1]
+    config.human_task_names = ['{}'.format(tn[7:-3]) for tn in config.task_seq] #removes yang19 and -v0    {:<6}
+    config.exp_signature = f'{config.human_task_names[0]}_{config.human_task_names[1]}_'
+elif args.experiment_type == 'serial':
+    config.exp_signature = f'{args.var1:d}_{args.var2:1.1f}_{args.var3:1.1f}_'
 
-config.MDeffect_mul = True if bool(args.var3) else False
-config.MDeffect_add = not config.MDeffect_mul
+
+# config.MDeffect_mul = True if bool(args.var3) else False
+# config.MDeffect_add = not config.MDeffect_mul
+config.tau= args.var3
 config.MD2PFC_prob = args.var2
+config.use_gates = bool(args.use_gates)
+config.gates_gaussian_cut_off = config.MD2PFC_prob
+config.same_rnn = bool(args.same_rnn)
 config.train_to_criterion = bool(args.train_to_criterion)
-config.exp_signature = config.exp_signature + f'LR-3_rehearse_{config.MD2PFC_prob}_{"tc" if config.train_to_criterion else "nc"}_{"mul" if config.MDeffect_mul else "add"}'
+
+config.exp_signature = config.exp_signature + f'gaus_cut_{"tc" if config.train_to_criterion else "nc"}_{"mul" if config.MDeffect_mul else "add"}_{"gates" if config.use_gates else "nog"}'
 config.FILEPATH += exp_name +'/'
 
-config.save_detailed = False
-config.same_rnn = bool(args.same_rnn)
+config.save_detailed = True
 config.use_external_inputs_mask = False
-config.use_gates = bool(args.use_gates)
 config.MDeffect = False
-
 
 print(config.task_seq)
 
 ###--------------------------Training configs--------------------------###
-
-# config = {
-#     # exp:
-#     'exp_name': exp_name,
-#     'save_all': False, 
-#     # envs
-#     ,
-#     'env_kwargs': {'dt': 100},
-#     'seq_len': 50,
-# # Training
-#     'trials_per_task' : 200000,
-#     'batch_size' : 50,
-#     'train_to_criterion': bool(args.train_to_criterion),
-#     'device': device,
-# # model
-#     'use_lstm': False,
-#     'same_rnn' : bool(args.same_rnn), 
-#     'use_gates': bool(args.use_gates), 
-#     'md_mean' : False, #not used
-#     'md_range': args.var2, #0.1
-#     'use_external_inputs_mask': False,
-#     'input_size': 33,
-#     'hidden_size': 256,
-#     'sub_size': 128,
-#     'output_size': 17,
-#     'num_task': 2,
-#     'MDeffect': False,
-#     'md_size': 15,
-#     'md_active_size': 5,
-#     'md_dt': 0.001,
-# # optimizer
-#     'lr': args.var2,#1e-4, # 1e-4 for CTRNN, 1e-3 for LSTM
-# }
-
-# config.exp_signature = config.exp_name'] +f'_{args.var1}_{args.var2}_'+\
-#     f'{"same_rnn" if config["same_rnn"] else "separate"}_{"gates" if config["use_gates"] else "nogates"}'+\
-#         f'_{"tc" if config["train_to_criterion"] else "nc"}'
-# print(config.exp_signature)
-
 task_seq = []
 # Add tasks gradually with rehearsal 1 2 1 2 3 1 2 3 4 ...
 task_sub_seqs = [[(i, config.tasks[i]) for i in range(s)] for s in range(2, len(config.tasks)+1)] # interleave tasks and add one task at a time
 for sub_seq in task_sub_seqs: task_seq+=sub_seq
+task_seq+=list(reversed(sub_seq)) # One additional final rehearsal, but revearsed for best final score.
 
-# Just sequence the tasks serially
-if not args.var1 == 0: # if given see is not zero, shuffle the task_seq
+# Now adding many random rehearsals:
+Random_rehearsals = 0
+for _ in range(Random_rehearsals):
+    random.shuffle(sub_seq)
+    task_seq+=sub_seq
+
+if not args.var1 == 0: # if given seed is not zero, shuffle the task_seq
     #Shuffle tasks
     if True:
         rng = np.random.default_rng(int(args.var1))
         idx = rng.permutation(range(len(config.tasks)))
-        config.tasks = (np.array(config.tasks)[idx]).tolist()
+        config.set_tasks((np.array(config.tasks)[idx]).tolist())
     #Move delayGO and rt GO to args.var1 position:
     # go, rtgo = config.tasks[:2]
     # config.tasks.pop(0)
     # config.tasks.pop(0)
     # config.tasks.insert( args.var1, go)
     # config.tasks.insert( args.var1+1, rtgo)
-config.human_task_names = [t[7:-3] for t in config.tasks]
     
-# simplified_task_seq = [(i, config.tasks[i]) for i in range(len(config.tasks))]
-# task_seq = simplified_task_seq
-# print('Task seq to be learned: ', task_seq)
-
-# In[3]:
-
-def get_performance(net, envs, context_ids, batch_size=100):
-    if type(envs) is not type([]):
-        envs = [envs]
-
-    fixation_accuracies = defaultdict()
-    action_accuracies = defaultdict()
-    for task_i, (context_id, env) in enumerate(zip(context_ids, envs)):
-        # import pdb; pdb.set_trace()
-        inputs, labels = get_trials_batch(env, batch_size)
-        if config.use_lstm:
-            action_pred, _ = net(inputs) # shape [500, 10, 17]
-        else:
-            action_pred, _ = net(inputs, sub_id=context_id) # shape [500, 10, 17]
-        ap = torch.argmax(action_pred, -1) # shape ap [500, 10]
-
-        gt = torch.argmax(labels, -1)
-
-        fix_lens = torch.sum(gt==0, 0)
-        act_lens = gt.shape[0] - fix_lens 
-
-        fixation_accuracy = ((gt==0)==(ap==0)).sum() / np.prod(gt.shape)## get fixation performance. overlap between when gt is to fixate and when model is fixating
-           ## then divide by number of time steps.
-        fixation_accuracies[task_i] = fixation_accuracy.detach().cpu().numpy()
-        action_accuracy = (gt[-1,:] == ap[ -1,:]).sum() / gt.shape[1] # take action as the argmax of the last time step
-        action_accuracies[task_i] = action_accuracy.detach().cpu().numpy()
-#         import pdb; pdb.set_trace()
-    return((fixation_accuracies, action_accuracies))
-
-# In[5]:
-
-def accuracy_metric(outputs, labels):
-    ap = torch.argmax(outputs, -1) # shape ap [500, 10]
-    gt = torch.argmax(labels, -1)
-    action_accuracy = (gt[-1, :] == ap[-1,:]).sum() / gt.shape[1] # take action as the argmax of the last time step
-#     import pdb; pdb.set_trace()
-    return(action_accuracy.detach().cpu().numpy())
-
-# In[6]:
-
-def get_trials_batch(envs, batch_size):
-    # check if only one env or several and ensure it is a list either way.
-    if type(envs) is not type([]):
-        envs = [envs]
-        
-    # fetch and batch data
-    obs, gts = [], []
-    for bi in range(batch_size):
-        env = envs[np.random.randint(0, len(envs))] # randomly choose one env to sample from, if more than one env is given
-        env.new_trial()
-        ob, gt = env.ob, env.gt
-        assert not np.any(np.isnan(ob))
-        obs.append(ob), gts.append(gt)
-    # Make trials of equal time length:
-    obs_lens = [len(o) for o in obs]
-    max_len = np.max(obs_lens)
-    for o in range(len(obs)):
-        while len(obs[o]) < max_len:
-            obs[o]= np.insert(obs[o], 0, obs[o][0], axis=0)
-#             import pdb; pdb.set_trace()
-    gts_lens = [len(o) for o in gts]
-    max_len = np.max(gts_lens)
-    for o in range(len(gts)):
-        while len(gts[o]) < max_len:
-            gts[o]= np.insert(gts[o], 0, gts[o][0], axis=0)
-
-
-    obs = np.stack(obs) # shape (batch_size, 32, 33)
-    
-    gts = np.stack(gts) # shape (batch_size, 32)
-
-    # numpy -> torch
-    inputs = torch.from_numpy(obs).type(torch.float).to(config.device)
-    labels = torch.from_numpy(gts).type(torch.long).to(config.device)
-
-    # index -> one-hot vector
-    labels = (F.one_hot(labels, num_classes=config.output_size)).float() 
-    return (inputs.permute([1,0,2]), labels.permute([1,0,2])) # using time first [time, batch, input]
-
-# In[16]:
 
 # main loop
 
@@ -280,12 +168,13 @@ if config.same_rnn:
     net = create_model()
 
 # Replace the gates with the ones calculated offline from performance traces to measure tasks compatibility. 
-gates_tasks = np.load('./data/perf_corr_mat.npy', allow_pickle=True).item()
-gates_corr = gates_tasks['corr_mat'] 
-assert(config.tasks== gates_tasks['tasks'])
-sampled_gates = np.random.multivariate_normal(np.zeros(net.rnn.gates.shape[0]), gates_corr, net.rnn.gates.shape[1]).T
-sampled_gates = torch.tensor(sampled_gates> 0., device=config.device).float()
-net.rnn.gates = sampled_gates.clone()
+if config.use_gates:
+    gates_tasks = np.load(f'./data/perf_corr_mat_var1_{args.var1}.npy', allow_pickle=True).item()
+    gates_corr = gates_tasks['corr_mat'] 
+    # assert(config.tasks== gates_tasks['tasks'])  # NOTE using the gates corr off policy here. 
+    sampled_gates = np.random.multivariate_normal(np.zeros(net.rnn.gates.shape[0]), gates_corr, net.rnn.gates.shape[1]).T
+    sampled_gates = torch.tensor(sampled_gates> config.gates_gaussian_cut_off, device=config.device).float()
+    net.rnn.gates = sampled_gates.clone()
 
 # criterion & optimizer
 criterion = nn.MSELoss()
@@ -309,11 +198,11 @@ for task_id, task_name in config.tasks_id_name:
     envs.append(env)
 
 step_i = 0
-bar_tasks = enumerate(tqdm(task_seq))
-for task_i, (task_id, task_name) in bar_tasks:
+bar_tasks = tqdm(task_seq)
+for (task_id, task_name) in bar_tasks:
   
     env = envs[task_id]
-    tqdm.write('learning task:\t ' + config.human_task_names[task_id])
+    bar_tasks.set_description('task: ' + config.human_task_names[task_id])
     testing_log.switch_trialxxbatch.append(step_i)
     testing_log.switch_task_id.append(task_id)
     
@@ -332,7 +221,7 @@ for task_i, (task_id, task_name) in bar_tasks:
         context_id = task_id if config.use_gates else 0 
 
         # fetch data
-        inputs, labels = get_trials_batch(envs=env, batch_size = config.batch_size)
+        inputs, labels = get_trials_batch(envs=env, config = config, batch_size = config.batch_size)
 
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -358,10 +247,12 @@ for task_i, (task_id, task_name) in bar_tasks:
             inputs=   inputs.detach().cpu().numpy(),
             outputs = outputs.detach().cpu().numpy()[-1, :, :],
             labels =   labels.detach().cpu().numpy()[-1, :, :],
+            sampled_act = rnn_activity.detach().cpu().numpy()[:,:, 1:356:36], # Sample about 10 neurons 
+            task_id =task_id,
+            # rnn_activity.shape             torch.Size([15, 100, 356])
             )
 
-        training_bar.set_description('loss, acc: {:0.4F}, {:0.3F}'.format(loss.item(), acc))
-#         training_bar.set_description('loss, acc: {:0.3F}, {0.3F}'.format(loss.item(), acc))
+        training_bar.set_description('ls, acc: {:0.3F}, {:0.2F} '.format(loss.item(), acc)+ config.human_task_names[task_id])
 
         # print statistics
         if step_i % config.print_every_batches == (config.print_every_batches - 1):
@@ -379,6 +270,7 @@ for task_i, (task_id, task_name) in bar_tasks:
                     net,
                     envs,
                     context_ids=testing_context_ids,
+                    config = config,
                     batch_size = config.test_num_trials,
                     ) 
                 
@@ -413,46 +305,72 @@ for task_i, (task_id, task_name) in bar_tasks:
     training_log.sample_input = inputs[0].detach().cpu().numpy().T
     training_log.sample_label = labels[0].detach().cpu().numpy().T
     training_log.sample_output = outputs[0].detach().cpu().numpy().T
+testing_log.total_batches = step_i
 
 
 # In[9]:
 
+import matplotlib
+no_of_values = len(config.tasks)
+norm = mpl.colors.Normalize(vmin=min([0,no_of_values]), vmax=max([0,no_of_values]))
+cmap_obj = matplotlib.cm.get_cmap('Set1') # tab20b tab20
+cmap = mpl.cm.ScalarMappable(norm=norm, cmap=cmap_obj)
 
-num_tasks = len(config.tasks)
-title_label = 'Training tasks sequentially ---> \n    ' + config.exp_name
 log = testing_log
-max_x = log.stamps[-1] #* config.print_every_batches
-fig, axes = plt.subplots(num_tasks,1, figsize=[9,7])
+log.switch_trialxxbatch.append(log.stamps[-1])
+num_tasks = len(config.tasks)
+already_seen =[]
+title_label = 'Training tasks sequentially ---> \n    ' + config.exp_name
+max_x = log.stamps[-1]
+fig, axes = plt.subplots(num_tasks+3,1, figsize=[9,7])
 for logi in range(num_tasks):
         ax = axes[ logi ] # log i goes to the col direction -->
         ax.set_ylim([-0.1,1.1])
         ax.set_xlim([0, max_x])
 #         ax.axis('off')
-        log = testing_log
-        ax.plot(log.stamps, [test_acc[logi] for test_acc in log.accuracies], linewidth=2)
-        ax.plot(log.stamps, np.ones_like(log.stamps)*0.5, ':', color='grey', linewidth=0.5)
-#         if li == 0: ax.set_title(config.human_task_names[logi])
-#         if logi == 0: ax.set_ylabel(config.human_task_names[li])
-#         ax.set_yticklabels([]) 
-#         ax.set_xticklabels([])
-#         if logi== li:
-#             ax.axvspan(*ax.get_xlim(), facecolor='grey', alpha=0.2)
-#         if li == num_tasks-1 and logi in [num_tasks//2 - 4, num_tasks//2, num_tasks//2 + 4] :
-#             ax.set_xlabel('batch #')
-# axes[num_tasks-1, num_tasks//2-2].text(-8., -2.5, title_label, fontsize=12)     
-# exp_parameters = f'Exp parameters: {config.exp_name}\nRNN: {"same" if config.same_rnn else "separate"}'+'\n'+\
-#       f'mul_gate: {"True" if config.use_gates else "False"}\
-#           {config.exp_signature}'
-# axes[num_tasks-1, 0].text(-7., -2.2, exp_parameters, fontsize=7)     
-# # plt.show()
-plt.savefig('./files/'+ config.exp_name+f'/testing_log_{config.exp_signature}.jpg')
+        ax.plot(log.stamps, [test_acc[logi] for test_acc in log.accuracies], linewidth=1)
+        ax.plot(log.stamps, np.ones_like(log.stamps)*0.5, ':', color='grey', linewidth=1)
+        ax.set_ylabel(config.human_task_names[logi], fontdict={'color': cmap.to_rgba(config.tasks_id_name[logi][0])})
+        for ri in range(len(log.switch_trialxxbatch)-1):
+                ax.axvspan(log.switch_trialxxbatch[ri], log.switch_trialxxbatch[ri+1], color =cmap.to_rgba(log.switch_task_id[ri]) , alpha=0.2)
+for ti, id in enumerate(log.switch_task_id):
+    if id not in already_seen:
+        already_seen.append(id)
+        task_name = config.tasks_id_name[id][1][7:-3]
+        axes[0].text(log.switch_trialxxbatch[ti], 1.3, task_name, color= cmap.to_rgba(id) )
 
+gs = np.stack(log.gradients)
 
-# In[33]:
+print('gradients shape: ', gs.shape) 
+glabels = ['inp_w', 'inp_b', 'rnn_w', 'rnn_b', 'out_w', 'out_b']
+ax = axes[num_tasks+0]
+gi =0
+ax.plot(log.stamps, gs[:,gi+1], label= glabels[gi+1])
+ax.plot(log.stamps, gs[:,gi], label= glabels[gi])
+ax.legend()
+ax.set_xlim([0, max_x])
+ax = axes[num_tasks+1]
+gi =2
+ax.plot(log.stamps, gs[:,gi+1], label= glabels[gi+1])
+ax.plot(log.stamps, gs[:,gi], label= glabels[gi])
+ax.legend()
+ax.set_xlim([0, max_x])
+ax = axes[num_tasks+2]
+gi =4
+ax.plot(log.stamps, gs[:,gi+1], label= glabels[gi+1])
+ax.plot(log.stamps, gs[:,gi], label= glabels[gi])
+ax.legend()
+ax.set_xlim([0, max_x])
+# ax.set_ylim([0, 0.25])
+
+final_accuracy_average = np.mean(list(testing_log.accuracies[-1].values()))
+plt.savefig('./files/'+ config.exp_name+f'/acc_summary_{config.exp_signature}_{step_i}_{final_accuracy_average:1.2f}.jpg', dpi=300)
+
 np.save('./files/'+ config.exp_name+f'/testing_log_{config.exp_signature}.npy', testing_log, allow_pickle=True)
 np.save('./files/'+ config.exp_name+f'/training_log_{config.exp_signature}.npy', training_log, allow_pickle=True)
 np.save('./files/'+ config.exp_name+f'/config_{config.exp_signature}.npy', config, allow_pickle=True)
 print('testing logs saved to : '+ './files/'+ config.exp_name+f'/testing_log_{config.exp_signature}.npy')
+
 
 def show_input_output(input, label, output=None, axes=None):
     if axes is None:
@@ -468,36 +386,3 @@ def show_input_output(input, label, output=None, axes=None):
 #     ax.set_ylabel('fr')
 #     ax.set_yticks([1, 17, 33, 34, 49])
     
-
-
-# In[22]:
-
-
-# fig, axes = plt.subplots(num_tasks,4, figsize=[6,14])
-# for logi in range(num_tasks):
-#     ax = axes[logi , 0 ]
-#     ax.set_ylim([-0.1,1])
-#     ax.axis('off')
-#     log = training_logs[logi]
-#     ax.plot(log['stamps, log['accuracy'])
-#     show_input_output(log['sample_input'], log['sample_label'], log['sample_output'], axes = axes[logi,1:])
-# plt.show()
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-#### draw input output
-# plt.close('all')
-# fig, axes = plt.subplots(20,3, figsize=[6,14])
-# for i in range(20):
-#     show_input_output(inputs[i].detach().cpu().numpy().T, labels[i].detach().cpu().numpy().T, outputs[i].detach().cpu().numpy().T, axes=axes[i,:])
-
-# plt.show()
-

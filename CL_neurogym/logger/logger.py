@@ -39,18 +39,22 @@ class SerialLogger(object):
             self.act_perfs.append([])
         self.PFCouts_all = []
         if config.save_detailed:
-            self.rnn_activities = []
+            self.rnn_activity = []
             self.inputs = []
             self.outputs = []
             self.labels = []
+            self.sampled_act = []
+            self.task_ids = []
 
     def write_basic(self, stamp, loss, acc):
         self.stamps.append(stamp)
         self.losses.append(loss)
         self.accuracies.append(acc)
-    def write_detailed(self, rnn_activities, inputs, outputs, labels,):#  gradients,):
-        self.rnn_activities.append(rnn_activities)
+    def write_detailed(self, rnn_activity, inputs, outputs, labels, sampled_act, task_id):#  gradients,):
+        self.rnn_activity.append(rnn_activity)
         self.inputs.append(inputs)
         self.outputs.append(outputs)
         self.labels.append(labels)
+        self.task_ids.append(task_id)
+        self.sampled_act.append(sampled_act)
         # self.gradients.append(gradients)
