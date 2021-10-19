@@ -82,12 +82,12 @@ if 0:
 
     fig, axes = plt.subplots(figsize=(4, 4))
     ax = axes
-    line_colors = ['tab:red', 'tab:blue']
+    line_colors = ['tab:orange', 'tab:green']
     labels = ['Task1', 'Task2']
     linewidth = 2
-    ax.axvspan(    0, 20000, alpha=0.08, color=line_colors[0])
-    ax.axvspan(20000, 40000, alpha=0.08, color=line_colors[1])
-    ax.axvspan(40000, 50000, alpha=0.08, color=line_colors[0])
+    ax.axvspan(    0, 20000, alpha=0.1, color=line_colors[0])
+    ax.axvspan(20000, 40000, alpha=0.1, color=line_colors[1])
+    ax.axvspan(40000, 50000, alpha=0.1, color=line_colors[0])
 
     for env_id in range(2): # 2 tasks
         plt.plot(time_stamps, act_perfs_mean[env_id, :],
@@ -105,9 +105,9 @@ if 0:
     plt.yticks([0.2*i for i in range(6)])
     plt.legend(loc='lower right', bbox_to_anchor=(0.99, 0.05))
     plt.tight_layout()
-    # plt.show()
-    plt.savefig('./files/' + 'twotasksperformance-alltaskseqs.pdf')
-    plt.close()
+    plt.show()
+    # plt.savefig('./files/' + 'twotasksperformance-alltaskseqs.pdf')
+    # plt.close()
 
 # main performance curve: three tasks
 if 0:
@@ -119,13 +119,13 @@ if 0:
 
     fig, axes = plt.subplots(figsize=(5, 4))
     ax = axes
-    line_colors = ['tab:red', 'tab:blue', 'tab:green']
+    line_colors = ['tab:orange', 'tab:green', 'darkcyan']
     labels = ['Task1', 'Task2', 'Task3']
     linewidth = 2
-    ax.axvspan(    0, 20000, alpha=0.08, color=line_colors[0])
-    ax.axvspan(20000, 40000, alpha=0.08, color=line_colors[1])
-    ax.axvspan(40000, 60000, alpha=0.08, color=line_colors[2])
-    ax.axvspan(60000, 70000, alpha=0.08, color=line_colors[0])
+    ax.axvspan(    0, 20000, alpha=0.1, color=line_colors[0])
+    ax.axvspan(20000, 40000, alpha=0.1, color=line_colors[1])
+    ax.axvspan(40000, 60000, alpha=0.1, color=line_colors[2])
+    ax.axvspan(60000, 70000, alpha=0.1, color=line_colors[0])
 
     for env_id in range(3): # 3 tasks
         plt.plot(time_stamps, act_perfs_mean[env_id, :],
@@ -151,16 +151,16 @@ if 0:
 if 0:
     FILE_PATH = './files/scaleup_twotasks_5/'
     settings = ['PFCMD', 'EWC', 'SI', 'PFC']
-    line_colors = ['tab:red', 'violet', 'tab:green', 'tab:blue']
+    line_colors = ['darkviolet', 'brown', 'tab:olive', 'darkgrey']
     labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
     linewidths = [2, 2, 2, 2]
 
     fig, axes = plt.subplots(1, 2, figsize=(9, 4))
     for env_id in range(2): # 2 tasks
-        color1, color2= 'tab:red', 'tab:blue'
-        axes[env_id].axvspan(    0, 20000, alpha=0.08, color=color1)
-        axes[env_id].axvspan(20000, 40000, alpha=0.08, color=color2)
-        axes[env_id].axvspan(40000, 50000, alpha=0.08, color=color1)
+        color1, color2= 'tab:orange', 'tab:green'
+        axes[env_id].axvspan(    0, 20000, alpha=0.15, color=color1)
+        axes[env_id].axvspan(20000, 40000, alpha=0.15, color=color2)
+        axes[env_id].axvspan(40000, 50000, alpha=0.15, color=color1)
         for i in range(len(settings)):
             act_perfs_mean = np.load(FILE_PATH + 'avg_perfs_mean_' + settings[i] + '.npy')
             act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + settings[i] + '.npy')
@@ -185,17 +185,17 @@ if 0:
 if 0:
     FILE_PATH = './files/scaleup_threetasks_4/'
     settings = ['PFCMD', 'EWC', 'SI', 'PFC']
-    line_colors = ['tab:red', 'violet', 'tab:green', 'tab:blue']
+    line_colors = ['darkviolet', 'brown', 'tab:olive', 'darkgrey']
     labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
     linewidths = [2, 2, 2, 2]
 
     fig, axes = plt.subplots(1, 3, figsize=(13, 4))
     for env_id in range(3): # 2 tasks
-        color1, color2, color3= 'tab:red', 'tab:blue', 'tab:green'
-        axes[env_id].axvspan(    0, 20000, alpha=0.08, color=color1)
-        axes[env_id].axvspan(20000, 40000, alpha=0.08, color=color2)
-        axes[env_id].axvspan(40000, 60000, alpha=0.08, color=color3)
-        axes[env_id].axvspan(60000, 70000, alpha=0.08, color=color1)
+        color1, color2, color3= 'tab:orange', 'tab:green', 'darkcyan'
+        axes[env_id].axvspan(    0, 20000, alpha=0.1, color=color1)
+        axes[env_id].axvspan(20000, 40000, alpha=0.1, color=color2)
+        axes[env_id].axvspan(40000, 60000, alpha=0.15, color=color3)
+        axes[env_id].axvspan(60000, 70000, alpha=0.1, color=color1)
         for i in range(len(settings)):
             act_perfs_mean = np.load(FILE_PATH + 'avg_perfs_mean_' + settings[i] + '.npy')
             act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + settings[i] + '.npy')
@@ -349,11 +349,11 @@ if 0:
     V = PFC_activity_reduced[0][points+1, 1]-PFC_activity_reduced[0][points, 1]
     norm = np.sqrt(np.square(U) + np.square(V)) # make arrow size constant
     plt.quiver(X, Y, U/norm, V/norm,
-               scale_units='xy', angles='xy', scale=1.5, width=0.01, color='tab:red')
+               scale_units='xy', angles='xy', scale=1.5, width=0.01, color='tab:orange')
     plt.plot(PFC_activity_reduced[0][:, 0], PFC_activity_reduced[0][:, 1],
-             c='tab:red', marker='', linewidth=3.0, alpha=1.0, label='Task1')
+             c='tab:orange', marker='', linewidth=3.0, alpha=1.0, label='Task1')
     plt.plot(PFC_activity_reduced[0][-1, 0], PFC_activity_reduced[0][-1, 1],
-             c='tab:red', marker='*', markersize=15, alpha=1.0)
+             c='tab:orange', marker='*', markersize=15, alpha=1.0)
     points = np.array([0, 20, 30]) if mode == 'PFCMD' else np.array([2, 7, 24])
     X = PFC_activity_reduced[1][points, 0]
     Y = PFC_activity_reduced[1][points, 1]
@@ -361,11 +361,11 @@ if 0:
     V = PFC_activity_reduced[1][points+1, 1]-PFC_activity_reduced[1][points, 1]
     norm = np.sqrt(np.square(U) + np.square(V))
     plt.quiver(X, Y, U/norm, V/norm,
-               scale_units='xy', angles='xy', scale=1.5, width=0.01, color='tab:blue')
+               scale_units='xy', angles='xy', scale=1.5, width=0.01, color='tab:green')
     plt.plot(PFC_activity_reduced[1][:, 0], PFC_activity_reduced[1][:, 1],
-             c='tab:blue', marker='', linewidth=3.0, alpha=1.0, label='Task2')
+             c='tab:green', marker='', linewidth=3.0, alpha=1.0, label='Task2')
     plt.plot(PFC_activity_reduced[1][-1, 0], PFC_activity_reduced[1][-1, 1],
-             c='tab:blue', marker='*', markersize=15, alpha=1.0)
+             c='tab:green', marker='*', markersize=15, alpha=1.0)
     plt.xticks([])
     plt.yticks([])
     plt.xlabel('PC1', labelpad=15)
@@ -539,7 +539,7 @@ if 0:
     ax = axes
     data = net.rnn.h2h.weight.data.numpy()
     np.fill_diagonal(data, 0)
-    cax = ax.matshow(data, cmap='seismic', vmax=0.02, vmin=-0.02)
+    cax = ax.matshow(data, cmap='magma', vmax=0.02, vmin=-0.02)
     ax.set_xticks([0, config.hidden_size-1])
     ax.set_xticklabels([1, config.hidden_size], rotation=0)
     ax.xaxis.set_ticks_position('bottom')
@@ -656,148 +656,231 @@ if 0:
 
 # Task similarity analysis
 if 0:
-    # Retrieve Yang 2019 results
-    FILE_PATH = './files/similarity/'
-    tick_names = np.load(FILE_PATH + 'tick_names.npy')
-    norm_task_variance = np.load(FILE_PATH + 'norm_task_variance.npy')
-    task_ids = []
-    for i in range(len(tick_names)):
-        if tick_names[i] not in ['dlydm1', 'dlydm2', 'ctxdlydm1', 'ctxdlydm2', 'multidlydm']: # we don't use delayed DM family
-            task_ids.append(i)
-    tick_names = tick_names[task_ids]
-    tick_names_dict = dict()
-    for id, tick_name in enumerate(tick_names):
-        tick_names_dict[str(id)] = tick_name
-    tick_names_dict_reversed = {v:k for k, v in tick_names_dict.items()}
-    
-    norm_task_variance = norm_task_variance[task_ids, :]
-    similarity_matrix = norm_task_variance @ norm_task_variance.T
-    # normalized by max
-    # max_similarity_matrix = np.amax(similarity_matrix, axis=0)
-    # norm_similarity_matrix = 0.5 * (similarity_matrix/max_similarity_matrix[np.newaxis, :] +
-    #                                 similarity_matrix/max_similarity_matrix[:, np.newaxis])
-    # normalized by diagonal elements
-    # diag_similarity_matrix = np.diag(similarity_matrix)
-    # norm_similarity_matrix = 0.5 * (similarity_matrix/diag_similarity_matrix[np.newaxis, :] +
-    #                                 similarity_matrix/diag_similarity_matrix[:, np.newaxis])
-    # normalized Euclidean norm
-    Euclid_norm = np.sqrt(np.diag(similarity_matrix))
-    norm_similarity_matrix = similarity_matrix / np.outer(Euclid_norm, Euclid_norm)
+    if 0:
+        # Retrieve Yang 2019 results
+        FILE_PATH = './files/similarity/'
+        tick_names = np.load(FILE_PATH + 'tick_names.npy')
+        norm_task_variance = np.load(FILE_PATH + 'norm_task_variance.npy')
+        task_ids = []
+        for i in range(len(tick_names)):
+            if tick_names[i] not in ['dlydm1', 'dlydm2', 'ctxdlydm1', 'ctxdlydm2', 'multidlydm']: # we don't use delayed DM family
+                task_ids.append(i)
+        tick_names = tick_names[task_ids]
+        tick_names_dict = dict()
+        for id, tick_name in enumerate(tick_names):
+            tick_names_dict[str(id)] = tick_name
+        tick_names_dict_reversed = {v:k for k, v in tick_names_dict.items()}
+        
+        norm_task_variance = norm_task_variance[task_ids, :]
+        similarity_matrix = norm_task_variance @ norm_task_variance.T
+        # normalized by max
+        # max_similarity_matrix = np.amax(similarity_matrix, axis=0)
+        # norm_similarity_matrix = 0.5 * (similarity_matrix/max_similarity_matrix[np.newaxis, :] +
+        #                                 similarity_matrix/max_similarity_matrix[:, np.newaxis])
+        # normalized by diagonal elements
+        # diag_similarity_matrix = np.diag(similarity_matrix)
+        # norm_similarity_matrix = 0.5 * (similarity_matrix/diag_similarity_matrix[np.newaxis, :] +
+        #                                 similarity_matrix/diag_similarity_matrix[:, np.newaxis])
+        # normalized Euclidean norm
+        Euclid_norm = np.sqrt(np.diag(similarity_matrix))
+        norm_similarity_matrix = similarity_matrix / np.outer(Euclid_norm, Euclid_norm)
 
-    # heatmap norm_task_variance
-    fig, axes = plt.subplots(figsize=(6, 4))
-    ax = axes
-    ax = sns.heatmap(norm_task_variance,
-                     vmin=0, vmax=1, cmap='hot', ax=ax,
-                     cbar_kws={'fraction':0.046, 'pad':0.04})
-    plt.xticks([])
-    plt.yticks([i+0.5 for i in range(len(tick_names))], tick_names, 
-               rotation=0, va='center', font='arial', fontsize=12)
-    # plt.title('Units')
-    plt.xlabel('Units')
-    ax.tick_params('both', length=0)
-    cbar = ax.collections[0].colorbar
-    cbar.outline.set_linewidth(1.2)
-    cbar.set_label('Normalized Task Variance', labelpad=15)
-    cbar.ax.tick_params(labelsize=12, width=1.2)
-    # cbar.set_ticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
-    # cbar.ax.set_yticklabels([0, 0.2, 0.4, 0.6, 0.8, 1.0])
-    plt.tight_layout()
-    # plt.show()
-    plt.savefig('./files/' + 'norm_task_variance.pdf')
-    plt.close()
+        # heatmap norm_task_variance
+        fig, axes = plt.subplots(figsize=(6, 4))
+        ax = axes
+        ax = sns.heatmap(norm_task_variance,
+                        vmin=0, vmax=1, cmap='hot', ax=ax,
+                        cbar_kws={'fraction':0.046, 'pad':0.04})
+        plt.xticks([])
+        plt.yticks([i+0.5 for i in range(len(tick_names))], tick_names, 
+                rotation=0, va='center', font='arial', fontsize=12)
+        # plt.title('Units')
+        plt.xlabel('Units')
+        ax.tick_params('both', length=0)
+        cbar = ax.collections[0].colorbar
+        cbar.outline.set_linewidth(1.2)
+        cbar.set_label('Normalized Task Variance', labelpad=15)
+        cbar.ax.tick_params(labelsize=12, width=1.2)
+        # cbar.set_ticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        # cbar.ax.set_yticklabels([0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        plt.tight_layout()
+        plt.show()
+        # plt.savefig('./files/' + 'norm_task_variance.pdf')
+        # plt.close()
 
-    # heatmap norm_similarity_matrix
-    fig, axes = plt.subplots(figsize=(5, 4))
-    ax = axes
-    mask = np.zeros_like(norm_similarity_matrix, dtype=bool)
-    mask[np.triu_indices_from(mask)] = True
-    mask[np.diag_indices_from(mask)] = False
-    ax = sns.heatmap(norm_similarity_matrix,
-                     vmin=0, vmax=1, mask=mask,
-                     cmap='OrRd', ax=ax, square=True,
-                     cbar_kws={'fraction':0.046, 'pad':0.04})
-    ax.xaxis.tick_bottom()
-    plt.xticks([i+0.5 for i in range(len(tick_names))], tick_names, 
-               rotation='vertical', ha='center', font='arial', fontsize=12)
-    plt.yticks([i+0.5 for i in range(len(tick_names))], tick_names, 
-               rotation=0, va='center', font='arial', fontsize=12)
-    ax.tick_params('both', length=0)
-    cbar = ax.collections[0].colorbar
-    cbar.set_label('Normalized Task Similarity', labelpad=15)
-    cbar.outline.set_linewidth(1.2)
-    cbar.ax.tick_params(labelsize=12, width=1.2)
-    # plt.show()
-    plt.tight_layout()
-    plt.savefig('./files/' + 'norm_similarity_matrix.pdf')
-    plt.close()
+        # heatmap norm_similarity_matrix
+        fig, axes = plt.subplots(figsize=(5, 4))
+        ax = axes
+        mask = np.zeros_like(norm_similarity_matrix, dtype=bool)
+        mask[np.triu_indices_from(mask)] = True
+        mask[np.diag_indices_from(mask)] = False
+        ax = sns.heatmap(norm_similarity_matrix,
+                        vmin=0, vmax=1, mask=mask,
+                        cmap='OrRd', ax=ax, square=True,
+                        cbar_kws={'fraction':0.046, 'pad':0.04})
+        ax.xaxis.tick_bottom()
+        plt.xticks([i+0.5 for i in range(len(tick_names))], tick_names, 
+                rotation='vertical', ha='center', font='arial', fontsize=12)
+        plt.yticks([i+0.5 for i in range(len(tick_names))], tick_names, 
+                rotation=0, va='center', font='arial', fontsize=12)
+        ax.tick_params('both', length=0)
+        cbar = ax.collections[0].colorbar
+        cbar.set_label('Normalized Task Similarity', labelpad=15)
+        cbar.outline.set_linewidth(1.2)
+        cbar.ax.tick_params(labelsize=12, width=1.2)
+        plt.tight_layout()
+        plt.show()
+        # plt.savefig('./files/' + 'norm_similarity_matrix.pdf')
+        # plt.close()
 
-    # select task seqs with high similarity
-    sim_task_seqs = []
-    similarity_threshold = 0.6
-    for sim_task_seq_id in np.argwhere(norm_similarity_matrix > similarity_threshold):
-        if sim_task_seq_id[0] == sim_task_seq_id[1]: # exclude two identical tasks
-            continue
-        sim_task_seqs.append(
-            ('yang19.' + tick_names_dict[f'{sim_task_seq_id[0]}'] + '-v0',
-             'yang19.' + tick_names_dict[f'{sim_task_seq_id[1]}'] + '-v0')
+        # select task seqs with high similarity
+        sim_task_seqs = []
+        similarity_threshold = 0.5
+        for sim_task_seq_id in np.argwhere(norm_similarity_matrix > similarity_threshold):
+            if sim_task_seq_id[0] == sim_task_seq_id[1]: # exclude two identical tasks
+                continue
+            sim_task_seqs.append(
+                ('yang19.' + tick_names_dict[f'{sim_task_seq_id[0]}'] + '-v0',
+                'yang19.' + tick_names_dict[f'{sim_task_seq_id[1]}'] + '-v0')
             )
-    
     '''
-    sim_task_seqs based on similarity_matrix:
+    sim_task_seqs based on similarity_matrix (threshold = 0.6):
+    [('yang19.go-v0', 'yang19.rtgo-v0'), ('yang19.go-v0', 'yang19.dlygo-v0'),
+    ('yang19.go-v0', 'yang19.anti-v0'), ('yang19.go-v0', 'yang19.dlyanti-v0'),
+    ('yang19.go-v0', 'yang19.dm1-v0'), ('yang19.go-v0', 'yang19.dm2-v0'),
+    ('yang19.rtgo-v0', 'yang19.go-v0'), ('yang19.rtgo-v0', 'yang19.rtanti-v0'),
+    ('yang19.dlygo-v0', 'yang19.go-v0'), ('yang19.dlygo-v0', 'yang19.anti-v0'),
+    ('yang19.dlygo-v0', 'yang19.dlyanti-v0'), ('yang19.anti-v0', 'yang19.go-v0'),
+    ('yang19.anti-v0', 'yang19.dlygo-v0'), ('yang19.anti-v0', 'yang19.rtanti-v0'),
+    ('yang19.anti-v0', 'yang19.dlyanti-v0'), ('yang19.rtanti-v0', 'yang19.rtgo-v0'),
+    ('yang19.rtanti-v0', 'yang19.anti-v0'), ('yang19.rtanti-v0', 'yang19.dlyanti-v0'),
+    ('yang19.dlyanti-v0', 'yang19.go-v0'), ('yang19.dlyanti-v0', 'yang19.dlygo-v0'),
+    ('yang19.dlyanti-v0', 'yang19.anti-v0'), ('yang19.dlyanti-v0', 'yang19.rtanti-v0'),
+    ('yang19.dm1-v0', 'yang19.go-v0'), ('yang19.dm1-v0', 'yang19.dm2-v0'),
+    ('yang19.dm1-v0', 'yang19.ctxdm1-v0'), ('yang19.dm1-v0', 'yang19.ctxdm2-v0'),
+    ('yang19.dm1-v0', 'yang19.multidm-v0'), ('yang19.dm2-v0', 'yang19.go-v0'),
+    ('yang19.dm2-v0', 'yang19.dm1-v0'), ('yang19.dm2-v0', 'yang19.ctxdm1-v0'),
+    ('yang19.dm2-v0', 'yang19.ctxdm2-v0'), ('yang19.dm2-v0', 'yang19.multidm-v0'),
+    ('yang19.ctxdm1-v0', 'yang19.dm1-v0'), ('yang19.ctxdm1-v0', 'yang19.dm2-v0'),
+    ('yang19.ctxdm1-v0', 'yang19.ctxdm2-v0'), ('yang19.ctxdm1-v0', 'yang19.multidm-v0'),
+    ('yang19.ctxdm2-v0', 'yang19.dm1-v0'), ('yang19.ctxdm2-v0', 'yang19.dm2-v0'),
+    ('yang19.ctxdm2-v0', 'yang19.ctxdm1-v0'), ('yang19.ctxdm2-v0', 'yang19.multidm-v0'),
+    ('yang19.multidm-v0', 'yang19.dm1-v0'), ('yang19.multidm-v0', 'yang19.dm2-v0'),
+    ('yang19.multidm-v0', 'yang19.ctxdm1-v0'), ('yang19.multidm-v0', 'yang19.ctxdm2-v0'),
+    ('yang19.dms-v0', 'yang19.dnms-v0'), ('yang19.dms-v0', 'yang19.dmc-v0'),
+    ('yang19.dms-v0', 'yang19.dnmc-v0'), ('yang19.dnms-v0', 'yang19.dms-v0'),
+    ('yang19.dnms-v0', 'yang19.dmc-v0'), ('yang19.dnms-v0', 'yang19.dnmc-v0'),
+    ('yang19.dmc-v0', 'yang19.dms-v0'), ('yang19.dmc-v0', 'yang19.dnms-v0'),
+    ('yang19.dmc-v0', 'yang19.dnmc-v0'), ('yang19.dnmc-v0', 'yang19.dms-v0'),
+    ('yang19.dnmc-v0', 'yang19.dnms-v0'), ('yang19.dnmc-v0', 'yang19.dmc-v0')]
+    
+    Based on the meaning of task, removed some task seqs in sim_task_seqs:
+    1. One task is in Go task family, and the other is in Anti task family. e.g. ('yang19.go-v0', 'yang19.anti-v0').
+    2. One task is a Match task, and the other is a non-match task. e.g. ('yang19.dms-v0', 'yang19.dnms-v0').
+    
+    sim_task_seqs = \
+    [('yang19.go-v0', 'yang19.rtgo-v0'), ('yang19.go-v0', 'yang19.dlygo-v0'),
+    ('yang19.go-v0', 'yang19.dm1-v0'), ('yang19.go-v0', 'yang19.dm2-v0'),
+    ('yang19.rtgo-v0', 'yang19.go-v0'), ('yang19.dlygo-v0', 'yang19.go-v0'),
+    ('yang19.anti-v0', 'yang19.rtanti-v0'), ('yang19.anti-v0', 'yang19.dlyanti-v0'),
+    ('yang19.rtanti-v0', 'yang19.anti-v0'), ('yang19.rtanti-v0', 'yang19.dlyanti-v0'),
+    ('yang19.dlyanti-v0', 'yang19.anti-v0'), ('yang19.dlyanti-v0', 'yang19.rtanti-v0'),
+    ('yang19.dm1-v0', 'yang19.go-v0'), ('yang19.dm1-v0', 'yang19.dm2-v0'),
+    ('yang19.dm1-v0', 'yang19.ctxdm1-v0'), ('yang19.dm1-v0', 'yang19.ctxdm2-v0'),
+    ('yang19.dm1-v0', 'yang19.multidm-v0'), ('yang19.dm2-v0', 'yang19.go-v0'),
+    ('yang19.dm2-v0', 'yang19.dm1-v0'), ('yang19.dm2-v0', 'yang19.ctxdm1-v0'),
+    ('yang19.dm2-v0', 'yang19.ctxdm2-v0'), ('yang19.dm2-v0', 'yang19.multidm-v0'),
+    ('yang19.ctxdm1-v0', 'yang19.dm1-v0'), ('yang19.ctxdm1-v0', 'yang19.dm2-v0'),
+    ('yang19.ctxdm1-v0', 'yang19.ctxdm2-v0'), ('yang19.ctxdm1-v0', 'yang19.multidm-v0'),
+    ('yang19.ctxdm2-v0', 'yang19.dm1-v0'), ('yang19.ctxdm2-v0', 'yang19.dm2-v0'),
+    ('yang19.ctxdm2-v0', 'yang19.ctxdm1-v0'), ('yang19.ctxdm2-v0', 'yang19.multidm-v0'),
+    ('yang19.multidm-v0', 'yang19.dm1-v0'), ('yang19.multidm-v0', 'yang19.dm2-v0'),
+    ('yang19.multidm-v0', 'yang19.ctxdm1-v0'), ('yang19.multidm-v0', 'yang19.ctxdm2-v0'),
+    ('yang19.dms-v0', 'yang19.dmc-v0'), ('yang19.dnms-v0', 'yang19.dnmc-v0'),
+    ('yang19.dmc-v0', 'yang19.dms-v0'), ('yang19.dnmc-v0', 'yang19.dnms-v0')]
+
+    sim_task_seqs based on similarity_matrix (threshold = 0.5):
     [('yang19.go-v0', 'yang19.rtgo-v0'), ('yang19.go-v0', 'yang19.dlygo-v0'),
      ('yang19.go-v0', 'yang19.anti-v0'), ('yang19.go-v0', 'yang19.dlyanti-v0'),
      ('yang19.go-v0', 'yang19.dm1-v0'), ('yang19.go-v0', 'yang19.dm2-v0'),
-     ('yang19.rtgo-v0', 'yang19.go-v0'), ('yang19.rtgo-v0', 'yang19.rtanti-v0'),
-     ('yang19.dlygo-v0', 'yang19.go-v0'), ('yang19.dlygo-v0', 'yang19.anti-v0'),
+     ('yang19.go-v0', 'yang19.ctxdm2-v0'), ('yang19.go-v0', 'yang19.multidm-v0'),
+     ('yang19.go-v0', 'yang19.dnmc-v0'), ('yang19.rtgo-v0', 'yang19.go-v0'),
+     ('yang19.rtgo-v0', 'yang19.dlygo-v0'), ('yang19.rtgo-v0', 'yang19.anti-v0'),
+     ('yang19.rtgo-v0', 'yang19.rtanti-v0'), ('yang19.rtgo-v0', 'yang19.dm1-v0'),
+     ('yang19.rtgo-v0', 'yang19.dm2-v0'), ('yang19.rtgo-v0', 'yang19.ctxdm1-v0'),
+     ('yang19.rtgo-v0', 'yang19.ctxdm2-v0'), ('yang19.rtgo-v0', 'yang19.multidm-v0'),
+     ('yang19.rtgo-v0', 'yang19.dnmc-v0'), ('yang19.dlygo-v0', 'yang19.go-v0'),
+     ('yang19.dlygo-v0', 'yang19.rtgo-v0'), ('yang19.dlygo-v0', 'yang19.anti-v0'),
      ('yang19.dlygo-v0', 'yang19.dlyanti-v0'), ('yang19.anti-v0', 'yang19.go-v0'),
-     ('yang19.anti-v0', 'yang19.dlygo-v0'), ('yang19.anti-v0', 'yang19.rtanti-v0'),
-     ('yang19.anti-v0', 'yang19.dlyanti-v0'), ('yang19.rtanti-v0', 'yang19.rtgo-v0'),
-     ('yang19.rtanti-v0', 'yang19.anti-v0'), ('yang19.rtanti-v0', 'yang19.dlyanti-v0'),
-     ('yang19.dlyanti-v0', 'yang19.go-v0'), ('yang19.dlyanti-v0', 'yang19.dlygo-v0'),
-     ('yang19.dlyanti-v0', 'yang19.anti-v0'), ('yang19.dlyanti-v0', 'yang19.rtanti-v0'),
-     ('yang19.dm1-v0', 'yang19.go-v0'), ('yang19.dm1-v0', 'yang19.dm2-v0'),
+     ('yang19.anti-v0', 'yang19.rtgo-v0'), ('yang19.anti-v0', 'yang19.dlygo-v0'),
+     ('yang19.anti-v0', 'yang19.rtanti-v0'), ('yang19.anti-v0', 'yang19.dlyanti-v0'),
+     ('yang19.rtanti-v0', 'yang19.rtgo-v0'), ('yang19.rtanti-v0', 'yang19.anti-v0'),
+     ('yang19.rtanti-v0', 'yang19.dlyanti-v0'), ('yang19.dlyanti-v0', 'yang19.go-v0'),
+     ('yang19.dlyanti-v0', 'yang19.dlygo-v0'), ('yang19.dlyanti-v0', 'yang19.anti-v0'),
+     ('yang19.dlyanti-v0', 'yang19.rtanti-v0'), ('yang19.dm1-v0', 'yang19.go-v0'),
+     ('yang19.dm1-v0', 'yang19.rtgo-v0'), ('yang19.dm1-v0', 'yang19.dm2-v0'),
      ('yang19.dm1-v0', 'yang19.ctxdm1-v0'), ('yang19.dm1-v0', 'yang19.ctxdm2-v0'),
      ('yang19.dm1-v0', 'yang19.multidm-v0'), ('yang19.dm2-v0', 'yang19.go-v0'),
-     ('yang19.dm2-v0', 'yang19.dm1-v0'), ('yang19.dm2-v0', 'yang19.ctxdm1-v0'),
-     ('yang19.dm2-v0', 'yang19.ctxdm2-v0'), ('yang19.dm2-v0', 'yang19.multidm-v0'),
+     ('yang19.dm2-v0', 'yang19.rtgo-v0'), ('yang19.dm2-v0', 'yang19.dm1-v0'),
+     ('yang19.dm2-v0', 'yang19.ctxdm1-v0'), ('yang19.dm2-v0', 'yang19.ctxdm2-v0'),
+     ('yang19.dm2-v0', 'yang19.multidm-v0'), ('yang19.ctxdm1-v0', 'yang19.rtgo-v0'),
      ('yang19.ctxdm1-v0', 'yang19.dm1-v0'), ('yang19.ctxdm1-v0', 'yang19.dm2-v0'),
      ('yang19.ctxdm1-v0', 'yang19.ctxdm2-v0'), ('yang19.ctxdm1-v0', 'yang19.multidm-v0'),
+     ('yang19.ctxdm2-v0', 'yang19.go-v0'), ('yang19.ctxdm2-v0', 'yang19.rtgo-v0'),
      ('yang19.ctxdm2-v0', 'yang19.dm1-v0'), ('yang19.ctxdm2-v0', 'yang19.dm2-v0'),
      ('yang19.ctxdm2-v0', 'yang19.ctxdm1-v0'), ('yang19.ctxdm2-v0', 'yang19.multidm-v0'),
+     ('yang19.multidm-v0', 'yang19.go-v0'), ('yang19.multidm-v0', 'yang19.rtgo-v0'),
      ('yang19.multidm-v0', 'yang19.dm1-v0'), ('yang19.multidm-v0', 'yang19.dm2-v0'),
      ('yang19.multidm-v0', 'yang19.ctxdm1-v0'), ('yang19.multidm-v0', 'yang19.ctxdm2-v0'),
      ('yang19.dms-v0', 'yang19.dnms-v0'), ('yang19.dms-v0', 'yang19.dmc-v0'),
      ('yang19.dms-v0', 'yang19.dnmc-v0'), ('yang19.dnms-v0', 'yang19.dms-v0'),
      ('yang19.dnms-v0', 'yang19.dmc-v0'), ('yang19.dnms-v0', 'yang19.dnmc-v0'),
      ('yang19.dmc-v0', 'yang19.dms-v0'), ('yang19.dmc-v0', 'yang19.dnms-v0'),
-     ('yang19.dmc-v0', 'yang19.dnmc-v0'), ('yang19.dnmc-v0', 'yang19.dms-v0'),
+     ('yang19.dmc-v0', 'yang19.dnmc-v0'), ('yang19.dnmc-v0', 'yang19.go-v0'),
+     ('yang19.dnmc-v0', 'yang19.rtgo-v0'), ('yang19.dnmc-v0', 'yang19.dms-v0'),
      ('yang19.dnmc-v0', 'yang19.dnms-v0'), ('yang19.dnmc-v0', 'yang19.dmc-v0')]
-    
-    Based on the meaning of task, removed some task seqs in sim_task_seqs:
-    1. One task is in Go task family, and the other is in Anti task family. e.g. ('yang19.go-v0', 'yang19.anti-v0').
-    2. One task is a Match task, and the other is a non-match task. e.g. ('yang19.dms-v0', 'yang19.dnms-v0').
     '''
+
     sim_task_seqs = \
     [('yang19.go-v0', 'yang19.rtgo-v0'), ('yang19.go-v0', 'yang19.dlygo-v0'),
+     ('yang19.go-v0', 'yang19.anti-v0'), ('yang19.go-v0', 'yang19.dlyanti-v0'),
      ('yang19.go-v0', 'yang19.dm1-v0'), ('yang19.go-v0', 'yang19.dm2-v0'),
-     ('yang19.rtgo-v0', 'yang19.go-v0'), ('yang19.dlygo-v0', 'yang19.go-v0'),
+     ('yang19.go-v0', 'yang19.ctxdm2-v0'), ('yang19.go-v0', 'yang19.multidm-v0'),
+     ('yang19.go-v0', 'yang19.dnmc-v0'), ('yang19.rtgo-v0', 'yang19.go-v0'),
+     ('yang19.rtgo-v0', 'yang19.dlygo-v0'), ('yang19.rtgo-v0', 'yang19.anti-v0'),
+     ('yang19.rtgo-v0', 'yang19.rtanti-v0'), ('yang19.rtgo-v0', 'yang19.dm1-v0'),
+     ('yang19.rtgo-v0', 'yang19.dm2-v0'), ('yang19.rtgo-v0', 'yang19.ctxdm1-v0'),
+     ('yang19.rtgo-v0', 'yang19.ctxdm2-v0'), ('yang19.rtgo-v0', 'yang19.multidm-v0'),
+     ('yang19.rtgo-v0', 'yang19.dnmc-v0'), ('yang19.dlygo-v0', 'yang19.go-v0'),
+     ('yang19.dlygo-v0', 'yang19.rtgo-v0'), ('yang19.dlygo-v0', 'yang19.anti-v0'),
+     ('yang19.dlygo-v0', 'yang19.dlyanti-v0'), ('yang19.anti-v0', 'yang19.go-v0'),
+     ('yang19.anti-v0', 'yang19.rtgo-v0'), ('yang19.anti-v0', 'yang19.dlygo-v0'),
      ('yang19.anti-v0', 'yang19.rtanti-v0'), ('yang19.anti-v0', 'yang19.dlyanti-v0'),
-     ('yang19.rtanti-v0', 'yang19.anti-v0'), ('yang19.rtanti-v0', 'yang19.dlyanti-v0'),
-     ('yang19.dlyanti-v0', 'yang19.anti-v0'), ('yang19.dlyanti-v0', 'yang19.rtanti-v0'),
-     ('yang19.dm1-v0', 'yang19.go-v0'), ('yang19.dm1-v0', 'yang19.dm2-v0'),
+     ('yang19.rtanti-v0', 'yang19.rtgo-v0'), ('yang19.rtanti-v0', 'yang19.anti-v0'),
+     ('yang19.rtanti-v0', 'yang19.dlyanti-v0'), ('yang19.dlyanti-v0', 'yang19.go-v0'),
+     ('yang19.dlyanti-v0', 'yang19.dlygo-v0'), ('yang19.dlyanti-v0', 'yang19.anti-v0'),
+     ('yang19.dlyanti-v0', 'yang19.rtanti-v0'), ('yang19.dm1-v0', 'yang19.go-v0'),
+     ('yang19.dm1-v0', 'yang19.rtgo-v0'), ('yang19.dm1-v0', 'yang19.dm2-v0'),
      ('yang19.dm1-v0', 'yang19.ctxdm1-v0'), ('yang19.dm1-v0', 'yang19.ctxdm2-v0'),
      ('yang19.dm1-v0', 'yang19.multidm-v0'), ('yang19.dm2-v0', 'yang19.go-v0'),
-     ('yang19.dm2-v0', 'yang19.dm1-v0'), ('yang19.dm2-v0', 'yang19.ctxdm1-v0'),
-     ('yang19.dm2-v0', 'yang19.ctxdm2-v0'), ('yang19.dm2-v0', 'yang19.multidm-v0'),
+     ('yang19.dm2-v0', 'yang19.rtgo-v0'), ('yang19.dm2-v0', 'yang19.dm1-v0'),
+     ('yang19.dm2-v0', 'yang19.ctxdm1-v0'), ('yang19.dm2-v0', 'yang19.ctxdm2-v0'),
+     ('yang19.dm2-v0', 'yang19.multidm-v0'), ('yang19.ctxdm1-v0', 'yang19.rtgo-v0'),
      ('yang19.ctxdm1-v0', 'yang19.dm1-v0'), ('yang19.ctxdm1-v0', 'yang19.dm2-v0'),
      ('yang19.ctxdm1-v0', 'yang19.ctxdm2-v0'), ('yang19.ctxdm1-v0', 'yang19.multidm-v0'),
+     ('yang19.ctxdm2-v0', 'yang19.go-v0'), ('yang19.ctxdm2-v0', 'yang19.rtgo-v0'),
      ('yang19.ctxdm2-v0', 'yang19.dm1-v0'), ('yang19.ctxdm2-v0', 'yang19.dm2-v0'),
      ('yang19.ctxdm2-v0', 'yang19.ctxdm1-v0'), ('yang19.ctxdm2-v0', 'yang19.multidm-v0'),
+     ('yang19.multidm-v0', 'yang19.go-v0'), ('yang19.multidm-v0', 'yang19.rtgo-v0'),
      ('yang19.multidm-v0', 'yang19.dm1-v0'), ('yang19.multidm-v0', 'yang19.dm2-v0'),
      ('yang19.multidm-v0', 'yang19.ctxdm1-v0'), ('yang19.multidm-v0', 'yang19.ctxdm2-v0'),
-     ('yang19.dms-v0', 'yang19.dmc-v0'), ('yang19.dnms-v0', 'yang19.dnmc-v0'),
-     ('yang19.dmc-v0', 'yang19.dms-v0'), ('yang19.dnmc-v0', 'yang19.dnms-v0')]
+     ('yang19.dms-v0', 'yang19.dnms-v0'), ('yang19.dms-v0', 'yang19.dmc-v0'),
+     ('yang19.dms-v0', 'yang19.dnmc-v0'), ('yang19.dnms-v0', 'yang19.dms-v0'),
+     ('yang19.dnms-v0', 'yang19.dmc-v0'), ('yang19.dnms-v0', 'yang19.dnmc-v0'),
+     ('yang19.dmc-v0', 'yang19.dms-v0'), ('yang19.dmc-v0', 'yang19.dnms-v0'),
+     ('yang19.dmc-v0', 'yang19.dnmc-v0'), ('yang19.dnmc-v0', 'yang19.go-v0'),
+     ('yang19.dnmc-v0', 'yang19.rtgo-v0'), ('yang19.dnmc-v0', 'yang19.dms-v0'),
+     ('yang19.dnmc-v0', 'yang19.dnms-v0'), ('yang19.dnmc-v0', 'yang19.dmc-v0')]
 
     # match the task seqs with high similarity with those in the scale up test
     scaleup_task_seqs = np.load('./files/similarity/scaleup_task_seqs.npy').tolist()
@@ -814,56 +897,66 @@ if 0:
     
     # compute performance
     # 1. non-similar task seqs + original PFCMD
-    FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
-    settings = ['PFCMD']
-    ITER = list(range(420))
-    ITER = list(set(ITER) - set(take_seq_ids))
-    LEN = len(ITER)
+    # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
+    # SAVE_FILE_NAME = 'nonsimilar_PFCMD'
+    # settings = ['PFCMD']
+    # ITER = list(range(420))
+    # ITER = list(set(ITER) - set(take_seq_ids))
+    # LEN = len(ITER)
     # 2. non-similar task seqs + reduced PFCMD
     # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
+    # SAVE_FILE_NAME = 'nonsimilar_reducedPFCMD'
     # settings = ['PFCMD']
     # ITER = list(range(420))
     # ITER = list(set(ITER) - set(take_seq_ids))
     # LEN = len(ITER)
     # 3. similar task seqs + original PFCMD
     # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
+    # SAVE_FILE_NAME = 'similar_PFCMD'
     # settings = ['PFCMD']
     # ITER = list(take_seq_ids)
     # LEN = len(ITER)
     # 4. similar task seqs + reduced PFCMD
     # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
+    # SAVE_FILE_NAME = 'similar_reducedPFCMD'
     # settings = ['PFCMD']
     # ITER = list(take_seq_ids)
     # LEN = len(ITER)
     # 5. similar task seqs + PFC
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # SAVE_FILE_NAME = 'similar_PFC'
     # settings = ['PFC']
     # ITER = take_seq_ids
     # LEN = len(ITER)
     # 6. non-similar task seqs + PFC
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # SAVE_FILE_NAME = 'nonsimilar_PFC'
     # settings = ['PFC']
     # ITER = list(range(420))
     # ITER = list(set(ITER) - set(take_seq_ids))
     # LEN = len(ITER)
     # 7. similar task seqs + PFCEWC
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # SAVE_FILE_NAME = 'similar_PFCEWC'
     # settings = ['EWC']
     # ITER = take_seq_ids
     # LEN = len(ITER)
     # 8. non-similar task seqs + PFCEWC
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # SAVE_FILE_NAME = 'nonsimilar_PFCEWC'
     # settings = ['EWC']
     # ITER = list(range(420))
     # ITER = list(set(ITER) - set(take_seq_ids))
     # LEN = len(ITER)
     # 9. similar task seqs + PFCSI
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # SAVE_FILE_NAME = 'similar_PFCSI'
     # settings = ['SI']
     # ITER = take_seq_ids
     # LEN = len(ITER)
     # 10. non-similar task seqs + PFCSI
     FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    SAVE_FILE_NAME = 'nonsimilar_PFCSI'
     settings = ['SI']
     ITER = list(range(420))
     ITER = list(set(ITER) - set(take_seq_ids))
@@ -883,12 +976,12 @@ if 0:
     # plot performance
     fig, axes = plt.subplots(figsize=(4, 4))
     ax = axes
-    line_colors = ['tab:red', 'tab:blue']
+    line_colors = ['tab:orange', 'tab:green']
     labels = ['Task1', 'Task2']
     linewidth = 2
-    ax.axvspan(    0, 20000, alpha=0.08, color=line_colors[0])
-    ax.axvspan(20000, 40000, alpha=0.08, color=line_colors[1])
-    ax.axvspan(40000, 50000, alpha=0.08, color=line_colors[0])
+    ax.axvspan(    0, 20000, alpha=0.1, color=line_colors[0])
+    ax.axvspan(20000, 40000, alpha=0.1, color=line_colors[1])
+    ax.axvspan(40000, 50000, alpha=0.1, color=line_colors[0])
     for env_id in range(2): # 2 tasks
         plt.plot(time_stamps, act_perfs_mean[env_id, :],
                  linewidth=linewidth, color=line_colors[env_id], label=labels[env_id])
@@ -906,7 +999,7 @@ if 0:
     plt.legend(loc='lower right', bbox_to_anchor=(0.99, 0.05))
     plt.tight_layout()
     # plt.show()
-    plt.savefig('./files/' + 'performance.pdf')
+    plt.savefig('./files/' + SAVE_FILE_NAME + '.pdf')
     plt.close()
 
 # forward transfer, continual learning VS task similarity
@@ -919,8 +1012,8 @@ if 0:
 
     # forward transfer, continual learning and task similarity of each task pair
     # 1. original PFCMD
-    FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
-    setting = 'PFCMD'
+    # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
+    # setting = 'PFCMD'
     # 2. reduced PFCMD
     # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
     # setting = 'PFCMD'
@@ -931,8 +1024,8 @@ if 0:
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
     # setting = 'EWC'
     # 5. PFCSI
-    # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
-    # setting = 'SI'
+    FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    setting = 'SI'
 
     forward_transfer_perf = np.zeros(shape=(420))
     continual_learning_perf = np.zeros(shape=(420))
@@ -967,7 +1060,7 @@ if 0:
     # plot
     fig, axes = plt.subplots(figsize=(4, 4))
     ax = axes
-    line_colors = ['tab:orange', 'tab:blue']
+    line_colors = ['deeppink', 'deepskyblue']
     labels = ['CL', 'FT']
     linewidth = 2
     # fill is better than errorbar
@@ -996,9 +1089,9 @@ if 0:
     plt.yticks(ticks=[0, 0.2, 0.4, 0.6, 0.8, 1.0], labels=[0, 0.2, 0.4, 0.6, 0.8, 1.0])
     plt.legend(loc='lower right', bbox_to_anchor=(1.05, 0.1))
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('./files/' + 'FTCL_VS_similarity.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('./files/' + 'FTCL_VS_similarity.pdf')
+    plt.close()
 
 # decoding analysis
 # train and score linear decoder
@@ -1093,7 +1186,7 @@ if 0:
 
     plt.figure(figsize=(4, 4))
     plt.semilogx(noise_std_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=9, label='MD')
-    plt.semilogx(noise_std_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=9, label='PFC-ctx')
+    plt.semilogx(noise_std_data, PFCctx_scores_mean, '-v', color='goldenrod', linewidth=3, markersize=9, label='PFC-ctx')
     plt.fill_between(noise_std_data,
                      MD_scores_mean - MD_scores_std,
                      np.clip(MD_scores_mean + MD_scores_std, 0, 1),
@@ -1101,7 +1194,7 @@ if 0:
     plt.fill_between(noise_std_data,
                      PFCctx_scores_mean - PFCctx_scores_std,
                      np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
-                     alpha=0.2, color='tab:red')
+                     alpha=0.2, color='goldenrod')
     plt.legend(loc='lower left', bbox_to_anchor=(0, 0.05))
     plt.xlabel('Noise STD')
     plt.ylabel('$R^2$') # R-squared is the Coefficient of Determination
@@ -1136,7 +1229,7 @@ if 0:
 
     plt.figure(figsize=(4, 4))
     plt.plot(sub_active_prob_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=9, label='MD')
-    plt.plot(sub_active_prob_data, PFCctx_scores_mean, '-v', color='tab:red', linewidth=3, markersize=9, label='PFC-ctx')
+    plt.plot(sub_active_prob_data, PFCctx_scores_mean, '-v', color='goldenrod', linewidth=3, markersize=9, label='PFC-ctx')
     plt.fill_between(sub_active_prob_data,
                      MD_scores_mean - MD_scores_std,
                      np.clip(MD_scores_mean + MD_scores_std, 0, 1),
@@ -1144,7 +1237,7 @@ if 0:
     plt.fill_between(sub_active_prob_data,
                      PFCctx_scores_mean - PFCctx_scores_std,
                      np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
-                     alpha=0.2, color='tab:red')
+                     alpha=0.2, color='goldenrod')
     plt.legend(loc='lower right', bbox_to_anchor=(1.0, 0.05))
     plt.xlabel('Activated Probability') 
     plt.ylabel('$R^2$') # R-squared is the Coefficient of Determination
