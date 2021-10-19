@@ -629,6 +629,31 @@ if 0:
         # plt.savefig('./files/' + f'wPFC-ctx2MD_trial{trial_num}.pdf')
         # plt.close()
 
+# how PFCMD_Rikhye doesn't work?
+if 0:
+    FILE_PATH = './files/PFCMD_Rikhye/'
+    for trial_num in [j*4000-1 for j in range(1, 13)]: # two tasks
+        data = np.load(FILE_PATH + f'wPFC2MD_trial{trial_num}.npy')
+        fig, axes = plt.subplots(figsize=(5, 4))
+        ax = axes
+        ax = sns.heatmap(data, cmap='Reds', ax=ax, vmin=0, vmax=2)
+        ax.set_xticks([0, 600-1])
+        ax.set_xticklabels([1, 600], rotation=0)
+        ax.set_yticklabels([j+1 for j in range(2)], rotation=0)
+        ax.set_xlabel('PFC Neurons')
+        ax.set_ylabel('MD Neurons')
+        # ax.set_title('wPFC2MD')
+        cbar = ax.collections[0].colorbar
+        cbar.set_ticks([0, 0.5, 1.0, 1.5, 2.0])
+        cbar.set_ticklabels([0, 0.5, 1.0, 1.5, 2.0])
+        cbar.set_label('Connection Weight', labelpad=15)
+        cbar.outline.set_linewidth(1.2)
+        cbar.ax.tick_params(labelsize=12, width=1.2)
+        plt.tight_layout()
+        plt.show()
+        # plt.savefig('./files/' + f'wPFC2MD_trial{trial_num}.pdf')
+        # plt.close()
+
 # Task similarity analysis
 if 0:
     # Retrieve Yang 2019 results
