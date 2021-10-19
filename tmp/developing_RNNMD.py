@@ -20,7 +20,8 @@ import neurogym as ngym
 from neurogym.wrappers import ScheduleEnvs
 from neurogym.utils.scheduler import RandomSchedule
 from utils import get_full_performance
-from model_dev import RNN_MD
+from PFCMD_Rikhye import RNN_MD
+# from model_dev import RNN_MD
 # from model_ideal import RNN_MD
 import matplotlib as mpl
 mpl.rcParams['axes.spines.left'] = True
@@ -89,13 +90,13 @@ act_size = 17
 # Model settings
 model_config = {
     'input_size': ob_size,
-    'hidden_size': 400,
-    'sub_size': 200,
+    'hidden_size': 600,
+    'sub_size': 300,
     'output_size': act_size,
     'num_task': len(tasks),
     'MDeffect': True,
-    'md_size': 4,
-    'md_active_size': 2,
+    'md_size': 2,
+    'md_active_size': 1,
     'md_dt': 0.001,
 }
 config.update(model_config)
@@ -203,8 +204,10 @@ for i in range(total_training_cycle):
 
     # plot during training
     if i % 4000 == 3999:
+        np.save(f'./files/wPFC2MD_trial{i}.npy', net.rnn.md.wPFC2MD.copy())
+        
         font = {'family':'Times New Roman','weight':'normal', 'size':20}
-        # PFC activities
+        # PFC activities11
         plt.figure()
         plt.plot(rnn_activity[-1, 0, :].cpu().detach().numpy())
         plt.title('PFC activities', fontdict=font)
@@ -231,27 +234,27 @@ for i in range(total_training_cycle):
             plt.plot(net.rnn.md.md_output_t[-1, :])
             plt.title('MD activities', fontdict=font)
             # Heatmap wPFC2MD
-            # ax = plt.subplot(2, 2, 4)
-            # ax = sns.heatmap(net.rnn.md.wPFC2MD, cmap='Reds')
-            # ax.set_xticks([0, config['hidden_size']-1])
-            # ax.set_xticklabels([1, config['hidden_size']], rotation=0)
-            # ax.set_yticklabels([i for i in range(config['md_size'])], rotation=0)
-            # ax.set_xlabel('PFC neuron index', fontdict=font)
-            # ax.set_ylabel('MD neuron index', fontdict=font)
-            # ax.set_title('wPFC2MD', fontdict=font)
-            # cbar = ax.collections[0].colorbar
-            # cbar.set_label('connection weight', fontdict=font)
-            ## Heatmap wMD2PFC
             ax = plt.subplot(2, 2, 4)
-            ax = sns.heatmap(net.rnn.md.wMD2PFC, cmap='Blues_r')
-            ax.set_xticklabels([i for i in range(config['md_size'])], rotation=0)
-            ax.set_yticks([0, config['hidden_size']-1])
-            ax.set_yticklabels([1, config['hidden_size']], rotation=0)
-            ax.set_xlabel('MD neuron index', fontdict=font)
-            ax.set_ylabel('PFC neuron index', fontdict=font)
-            ax.set_title('wMD2PFC', fontdict=font)
+            ax = sns.heatmap(net.rnn.md.wPFC2MD, cmap='Reds')
+            ax.set_xticks([0, config['hidden_size']-1])
+            ax.set_xticklabels([1, config['hidden_size']], rotation=0)
+            ax.set_yticklabels([i for i in range(config['md_size'])], rotation=0)
+            ax.set_xlabel('PFC neuron index', fontdict=font)
+            ax.set_ylabel('MD neuron index', fontdict=font)
+            ax.set_title('wPFC2MD', fontdict=font)
             cbar = ax.collections[0].colorbar
             cbar.set_label('connection weight', fontdict=font)
+            ## Heatmap wMD2PFC
+            # ax = plt.subplot(2, 2, 4)
+            # ax = sns.heatmap(net.rnn.md.wMD2PFC, cmap='Blues_r')
+            # ax.set_xticklabels([i for i in range(config['md_size'])], rotation=0)
+            # ax.set_yticks([0, config['hidden_size']-1])
+            # ax.set_yticklabels([1, config['hidden_size']], rotation=0)
+            # ax.set_xlabel('MD neuron index', fontdict=font)
+            # ax.set_ylabel('PFC neuron index', fontdict=font)
+            # ax.set_title('wMD2PFC', fontdict=font)
+            # cbar = ax.collections[0].colorbar
+            # cbar.set_label('connection weight', fontdict=font)
             ## Heatmap wMD2PFCMult
             # font = {'family':'Times New Roman','weight':'normal', 'size':20}
             # ax = plt.subplot(2, 3, 6)
