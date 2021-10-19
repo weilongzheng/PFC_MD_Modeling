@@ -130,6 +130,13 @@ class BaseConfig(object):
         }
         # continual learning mode
         self.mode = None
+    def set_task_seq(self, task_seq):
+        self.task_seq = task_seq
+        self.num_task = len(self.task_seq)
+    def set_tasks(self,tasks):
+        self.tasks = tasks
+        # self.tasks_id_name = [(i, self.tasks[i]) for i in range(len(self.tasks))]
+        # self.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in self.tasks] #removes yang19 and -v0
     
     def set_strings(self, exp_name):
         self.exp_name = exp_name
@@ -282,12 +289,4 @@ class SerialConfig(BaseConfig):
             new_task_ids.append( *[t[0] for t in self._tasks_id_name if t[1] == tasks[i]] )
             
         self._tasks_id_name = [(s,t) for s,t in zip(new_task_ids, tasks)]
-    
-    def set_task_seq(self, task_seq):
-        self.task_seq = task_seq
-        self.num_task = len(self.task_seq)
-    def set_tasks(self,tasks):
-        self.tasks = tasks
-        # self.tasks_id_name = [(i, self.tasks[i]) for i in range(len(self.tasks))]
-        # self.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in self.tasks] #removes yang19 and -v0
     
