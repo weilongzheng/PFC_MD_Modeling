@@ -61,7 +61,7 @@ class MD_GYM():
         for i in range(self.wMD2PFC.shape[0]):
             if np.random.rand() < self.config.MDtoPFC_connect_prob:
                 j = np.floor(np.random.rand()*self.md_size).astype(int)
-                self.wMD2PFC[i, j] = -5 # original -5
+                self.wMD2PFC[i, j] = 1 # -5 # original -5
         self.wMD2PFCMult = np.random.normal(0,
                                             1 / np.sqrt(self.md_size * self.hidden_size),
                                             size=(self.hidden_size, self.md_size))
@@ -297,7 +297,7 @@ class CTRNN_MD(nn.Module):
         # self.h2h.weight.data = torch.block_diag(*weights)
 
         # random orthogonal noise
-        nn.init.orthogonal_(self.h2h.weight, gain=np.sqrt(2)) # torch.nn.init.calculate_gain() returns the recommended gain value
+        # nn.init.orthogonal_(self.h2h.weight, gain=0.5)
 
         # all uniform noise
         # k = (1./self.hidden_size)**0.5
@@ -361,7 +361,8 @@ class CTRNN_MD(nn.Module):
             # only MD additive inputs
             # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
             self.md.md_output = self.md(PFC_ctx_input.cpu().detach().numpy()[0, :])
-            md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), np.logical_not(self.md.md_output).astype(float))
+            # md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), np.logical_not(self.md.md_output).astype(float))
+            md2pfc = np.dot(self.md.wMD2PFC, np.logical_not(self.md.md_output).astype(float))
             md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
 
             # ideal MD inputs analysis
@@ -377,9 +378,10 @@ class CTRNN_MD(nn.Module):
             # #  ideal inputs
             # md2pfc = md2pfcAdd
             # md2pfc = torch.from_numpy(md2pfc).view_as(hidden).to(input.device)
-
             if self.md.sendinputs:
-                pre_activation += md2pfc
+                # pre_activation += md2pfc
+                pre_activation = pre_activation * md2pfc
+                pre_activation = pre_activation.float()
         
         h_new = torch.relu(hidden * self.oneminusalpha + pre_activation * self.alpha)
         
