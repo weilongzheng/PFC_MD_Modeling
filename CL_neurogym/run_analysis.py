@@ -56,7 +56,7 @@ if 0:
     # settings = ['EWC', 'SI', 'PFC']
     settings = ['PFCMD']
 
-    ITER = list(range(0, 92))+list(range(140, 260))+list(range(280, 394))
+    ITER = list(range(0, 114))+list(range(140, 420))
     LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
@@ -1248,7 +1248,7 @@ if 0:
                      alpha=0.2, color='#f47e76')
     plt.legend(loc='lower left', bbox_to_anchor=(0, 0.05))
     plt.xlabel('Noise STD')
-    plt.ylabel('$R^2$') # R-squared is the Coefficient of Determination
+    plt.ylabel('Model Score') # R-squared is the Coefficient of Determination
     plt.ylim([0.8, 1.01])
     plt.yticks([0.1*i for i in range(8, 11)])
     plt.tight_layout()
@@ -1291,7 +1291,7 @@ if 0:
                      alpha=0.2, color='#f47e76')
     plt.legend(loc='lower right', bbox_to_anchor=(1.0, 0.05))
     plt.xlabel('Activated Probability', labelpad=14) 
-    plt.ylabel('$R^2$') # R-squared is the Coefficient of Determination
+    plt.ylabel('Model Score') # R-squared is the Coefficient of Determination
     plt.xlim([0, 1.08])
     plt.ylim([0.6, 1.01])
     plt.xticks([0.2*i for i in range(6)])
