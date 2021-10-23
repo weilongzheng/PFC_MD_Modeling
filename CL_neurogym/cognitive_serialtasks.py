@@ -143,7 +143,7 @@ for sub_seq in task_sub_seqs: task_seq+=sub_seq
 task_seq+=sub_seq # One additional final rehearsal, 
 
 # Now adding many random rehearsals:
-Random_rehearsals = 10
+Random_rehearsals = 20
 for _ in range(Random_rehearsals):
     random.shuffle(sub_seq)
     task_seq+=sub_seq
@@ -215,7 +215,7 @@ def test_model(model, test_inputs, test_outputs, step_i=0 ):
         ax.set_xlabel('Task ID')
 
         ax = axes[1]
-        to_oh = F.one_hot(torch.from_numpy(test_outputs),config.md_size).numpy()
+        to_oh = F.one_hot(torch.from_numpy(test_outputs).long(),config.md_size).numpy()
         ax.matshow(to_oh)
         # ax.plot(range(15), [29.5]*15, linewidth=(3))
         # ax.text(4, 31, 'Testing data', {'color': 'white'})
@@ -292,7 +292,12 @@ def train(config, task_seq):
         training_bar = trange(config.max_trials_per_task//config.batch_size)
         for i in training_bar:
             # control training paradigm
-            config.use_supplied_task_id = True if step_i < 3500 else False # False leads to using cog_obs predictions
+            trials_to_independence= 5500
+            if step_i < trials_to_independence :
+                config.use_supplied_task_id = True 
+            else:  # False leads to using cog_obs predictions
+                config.use_supplied_task_id = False
+            if step_i == trials_to_independence: print(' Let the games begin ----------------------------')
 
             if config.use_supplied_task_id:
                 context_id = F.one_hot(torch.tensor([task_id]* config.batch_size), config.md_size).type(torch.float)
@@ -312,7 +317,7 @@ def train(config, task_seq):
                 expanded_previous_acc = np.repeat(accuracies[..., np.newaxis], 10, axis=-1)   #Expanded merely to emphasize their signal over the numerous acts
                 gathered_inputs = np.concatenate([acts, labels_horizon, expanded_previous_acc], axis=-1) #shape  7100 100 266
 
-                task_ids_oh= F.one_hot(torch.from_numpy(task_ids), 15)
+                task_ids_oh= F.one_hot(torch.from_numpy(task_ids).long(), 15)
                 task_ids_repeated = task_ids[..., np.newaxis].repeat(100,1)
                 
                 training_inputs = gathered_inputs
@@ -379,14 +384,14 @@ def train(config, task_seq):
                 expanded_previous_acc = np.repeat(accuracies[..., np.newaxis], 10, axis=-1)   #Expanded merely to emphasize their signal over the numerous acts
                 gathered_inputs = np.concatenate([acts, labels_horizon, expanded_previous_acc], axis=-1) #shape  7100 100 266
 
-                task_ids_oh= F.one_hot(torch.from_numpy(task_ids), 15)
+                task_ids_oh= F.one_hot(torch.from_numpy(task_ids).long(), 15)
                 task_ids_repeated = task_ids[..., np.newaxis].repeat(100,1)
                 
                 training_inputs = gathered_inputs
                 # training_outputs= task_ids_oh.reshape([task_ids_oh.shape[0], 1, task_ids_oh.shape[1]]).repeat([1,training_inputs.shape[1], 1])
                 training_outputs= task_ids_repeated
                 ins =  torch.tensor(training_inputs, device=config.device) # (input_length, 100, 266)
-                outs = torch.tensor(training_outputs, device=config.device)
+                outs = torch.tensor(training_outputs, device=config.device).long()
                 #################################################
                 if config.use_cognitive_observer:
 
