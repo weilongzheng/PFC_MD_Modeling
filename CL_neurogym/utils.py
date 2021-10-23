@@ -270,3 +270,18 @@ def save_variables(config, log, task_seq_id):
     np.save(config.FILEPATH + f'{task_seq_id}_' + config.FILENAME['log'], log)
     # log = np.load('./files/'+'log.npy', allow_pickle=True).item()
     # config = np.load('./files/'+'config.npy', allow_pickle=True).item()
+
+# given color name, return color hex code
+def color_to_hexcode(color_name):
+    import matplotlib.colors as mcolors
+    mcolors.TABLEAU_COLORS
+    mcolors.XKCD_COLORS
+    mcolors.CSS4_COLORS
+    # Base colors are in RGB so they need to be converted to HEX
+    BASE_COLORS_hex = {name:mcolors.rgb2hex(color) for name,color in mcolors.BASE_COLORS.items()}
+    all_named_colors = {}
+    all_named_colors.update(mcolors.TABLEAU_COLORS)
+    all_named_colors.update(BASE_COLORS_hex)
+    all_named_colors.update(mcolors.CSS4_COLORS)
+    all_named_colors.update(mcolors.XKCD_COLORS)
+    return all_named_colors[color_name]

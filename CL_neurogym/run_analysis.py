@@ -56,7 +56,7 @@ if 0:
     # settings = ['EWC', 'SI', 'PFC']
     settings = ['PFCMD']
 
-    ITER = list(range(0, 77))+list(range(140, 241))+list(range(280, 373))
+    ITER = list(range(0, 92))+list(range(140, 260))+list(range(280, 394))
     LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
@@ -377,9 +377,9 @@ if 0:
     plt.legend(loc='upper right', bbox_to_anchor=(1.05, 1.0))
     # plt.title('PFC activity of a trial')
     plt.tight_layout()
-    # plt.show()
-    plt.savefig('./files/' + 'trajectory_' + mode + '.pdf')
-    plt.close()
+    plt.show()
+    # plt.savefig('./files/' + 'trajectory_' + mode + '.pdf')
+    # plt.close()
 
 # MD trajectory
 if 0:
@@ -1115,7 +1115,6 @@ if 0:
             error_kw = {'ecolor':'lightgray', 'capsize':0.0}
             index_CL = np.arange(len(task_similarity_data))
             index_FT = index_CL + bar_width
-            plt.ylim([0.0, 1.0])
             plt.bar(x=index_CL, height=continual_learning_perf_data,
                     color=line_colors[0], width=bar_width, label=labels[0],
                     yerr=continual_learning_perf_std_data,
@@ -1127,11 +1126,12 @@ if 0:
             plt.xticks(index_CL + bar_width/2, [round(0.1*i, 1) for i in range(3, 11)])
             plt.xlabel('Task Similarity')
             plt.ylabel('Performance')
+            plt.ylim([0.0, 1.01])
             plt.legend(bbox_to_anchor=(0.98, 0.6))
             plt.tight_layout()
-            plt.show()
-            # plt.savefig('./files/' + 'FTCL_VS_similarity_' + SAVE_FILE_NAME + '.pdf')
-            # plt.close()
+            # plt.show()
+            plt.savefig('./files/' + 'FTCL_VS_similarity_' + SAVE_FILE_NAME + '.pdf')
+            plt.close()
     
     # 2. scatter plot and linear regression
     if 0:
@@ -1237,7 +1237,7 @@ if 0:
 
     plt.figure(figsize=(4, 4))
     plt.semilogx(noise_std_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=9, label='MD')
-    plt.semilogx(noise_std_data, PFCctx_scores_mean, '-v', color='goldenrod', linewidth=3, markersize=9, label='PFC-ctx')
+    plt.semilogx(noise_std_data, PFCctx_scores_mean, '-v', color='#f47e76', linewidth=3, markersize=9, label='PFC-ctx')
     plt.fill_between(noise_std_data,
                      MD_scores_mean - MD_scores_std,
                      np.clip(MD_scores_mean + MD_scores_std, 0, 1),
@@ -1245,7 +1245,7 @@ if 0:
     plt.fill_between(noise_std_data,
                      PFCctx_scores_mean - PFCctx_scores_std,
                      np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
-                     alpha=0.2, color='goldenrod')
+                     alpha=0.2, color='#f47e76')
     plt.legend(loc='lower left', bbox_to_anchor=(0, 0.05))
     plt.xlabel('Noise STD')
     plt.ylabel('$R^2$') # R-squared is the Coefficient of Determination
@@ -1280,7 +1280,7 @@ if 0:
 
     plt.figure(figsize=(4, 4))
     plt.plot(sub_active_prob_data, MD_scores_mean, '-s', color='tab:blue', linewidth=3, markersize=9, label='MD')
-    plt.plot(sub_active_prob_data, PFCctx_scores_mean, '-v', color='goldenrod', linewidth=3, markersize=9, label='PFC-ctx')
+    plt.plot(sub_active_prob_data, PFCctx_scores_mean, '-v', color='#f47e76', linewidth=3, markersize=9, label='PFC-ctx')
     plt.fill_between(sub_active_prob_data,
                      MD_scores_mean - MD_scores_std,
                      np.clip(MD_scores_mean + MD_scores_std, 0, 1),
@@ -1288,9 +1288,9 @@ if 0:
     plt.fill_between(sub_active_prob_data,
                      PFCctx_scores_mean - PFCctx_scores_std,
                      np.clip(PFCctx_scores_mean + PFCctx_scores_std, 0, 1),
-                     alpha=0.2, color='goldenrod')
+                     alpha=0.2, color='#f47e76')
     plt.legend(loc='lower right', bbox_to_anchor=(1.0, 0.05))
-    plt.xlabel('Activated Probability') 
+    plt.xlabel('Activated Probability', labelpad=14) 
     plt.ylabel('$R^2$') # R-squared is the Coefficient of Determination
     plt.xlim([0, 1.08])
     plt.ylim([0.6, 1.01])
