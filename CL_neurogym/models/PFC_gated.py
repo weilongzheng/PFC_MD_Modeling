@@ -84,7 +84,7 @@ class CTRNN_MD(nn.Module):
 
         if self.use_multiplicative_gates:
             #TODO restructure to have sub_id already passed per trial in a batch, and one_hot encoded [batch, md_size]
-            batch_sub_encoding = F.one_hot(torch.tensor([sub_id]* input.shape[0]), self.md_size).type(torch.float)
+            batch_sub_encoding = sub_id 
             gates = torch.matmul(batch_sub_encoding.to(self.device), self.gates)
             rec_input = torch.multiply( gates, rec_input)
             # import pdb; pdb.set_trace()

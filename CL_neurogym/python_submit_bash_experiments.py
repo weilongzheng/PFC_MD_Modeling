@@ -7,11 +7,11 @@ import sys
 
 #%% Create the parameters for experiments in a table (expVars list of lists)
 
-exp_name = 'gates_mul_add_fixed_bug'
-Var1 = [40, 9, 7,15,]#[41, 8, 6,13,]  15, 20, 30, 48]#range() # task pair number
-Var2 = [0., 0.2 ,  0.5,  0.8,] # gates_sparsity
-Var3 = [1]# additive, mul
-Var4 = [ 0.0, 0.1, .5] # gates std
+exp_name = 'pairs_corr_gates'
+Var1 = list(range(30)) #[40, 9, 7,15,41, 8, 6,13,]  #15, 20, 30, 48]#range() # task pair number
+Var2 = [ 0.5,  ] # gates_sparsity
+Var3 = [0 , 1]# additive, mul
+Var4 = [ 0.5] # gates std
 
 # exp_name = 'batch_pairs'
 # Var1 = range( 2)

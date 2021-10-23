@@ -219,7 +219,7 @@ def get_args_from_parser(my_parser):
                         type=int,
                         help='TODO')
     my_parser.add_argument('--var1',
-                        default=2, nargs='?',
+                        default=3, nargs='?',
                         type=int,
                         help='Generic var to be used in various places, Currently, the variance of the fixed multiplicative MD to RNN weights')
     my_parser.add_argument('--var2',
@@ -309,7 +309,8 @@ def get_performance(net, envs, context_ids, config, batch_size=100):
         if config.use_lstm:
             action_pred, _ = net(inputs) # shape [500, 10, 17]
         else:
-            action_pred, _ = net(inputs, sub_id=context_id) # shape [500, 10, 17]
+            context_id_oh = F.one_hot(torch.tensor([context_id]* batch_size), config.md_size).type(torch.float)        
+            action_pred, _ = net(inputs, sub_id=context_id_oh) # shape [500, 10, 17]
         ap = torch.argmax(action_pred, -1) # shape ap [500, 10]
 
         gt = torch.argmax(labels, -1)

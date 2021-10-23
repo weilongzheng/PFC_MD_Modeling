@@ -45,6 +45,8 @@ if USE_PARSER:
     config.gates_std = args.var4
 
     config.train_to_criterion = bool(args.train_to_criterion)
+    config.load_corr_gates = True
+    config.gates_gaussian_cut_off = -0.3
     config.EXPSIGNATURE += f'Gm_{config.gates_mean}_s_{config.gates_std}_s_{config.gates_sparsity}' 
     config.EXPSIGNATURE = config.EXPSIGNATURE + f'MDprob_{config.MD2PFC_prob}_{"tc" if config.train_to_criterion else "nc"}_{"mul" if config.MDeffect_mul else "add"}'
     config.FILEPATH += exp_name +'/'
@@ -155,11 +157,11 @@ plot_both_perf(config, log, net)
 # plot_md_activity(net, log, config)
 
 # plot the recurrent weights
-plt.close('all')
-nw = [np for np in net.named_parameters() if 'h2h' in np[0]]
-plt.matshow(nw[0][1].detach().cpu().numpy())
-plt.gca().set_title(nw[0][0])
-plt.savefig('end_of_training_weights.jpg')
-np.save( config.FILEPATH+'weights_' + config.EXPSIGNATURE + '.npy', nw[0][1].detach().cpu().numpy())
-print('weights at the end')
-print( nw[0][1].detach().cpu().numpy()[:20,:10])
+# plt.close('all')
+# nw = [np for np in net.named_parameters() if 'h2h' in np[0]]
+# plt.matshow(nw[0][1].detach().cpu().numpy())
+# plt.gca().set_title(nw[0][0])
+# plt.savefig('end_of_training_weights.jpg')
+# np.save( config.FILEPATH+'weights_' + config.EXPSIGNATURE + '.npy', nw[0][1].detach().cpu().numpy())
+# print('weights at the end')
+# print( nw[0][1].detach().cpu().numpy()[:20,:10])

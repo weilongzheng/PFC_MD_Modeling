@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+                    #!/usr/bin/env python
 # coding: utf-8
 # system
 import os
@@ -49,11 +49,11 @@ from tqdm import tqdm, trange
 import argparse
 my_parser = argparse.ArgumentParser(description='Train neurogym tasks sequentially')
 my_parser.add_argument('exp_name',
-                       default='correlated_gates',
+                       default='cognitive_obs',
                        type=str, nargs='?',
                        help='Experiment name, also used to create the path to save results')
 my_parser.add_argument('use_gates',
-                       default=0, nargs='?',
+                       default=1, nargs='?',
                        type=int,
                        help='Use multiplicative gating or not')
 my_parser.add_argument('same_rnn',
@@ -69,7 +69,7 @@ my_parser.add_argument('--experiment_type',
                        type=str,
                        help='Which experimental or setup to run: "pairs") task-pairs a b a "serial") Serial neurogym "interleave") Interleaved ')
 my_parser.add_argument('--var1',
-                       default=100, nargs='?',
+                       default=0, nargs='?',
                        type=int,
                        help='Seed')
 my_parser.add_argument('--var2',
@@ -77,7 +77,7 @@ my_parser.add_argument('--var2',
                        type=float,
                        help='the ratio of active neurons in gates ')
 my_parser.add_argument('--var3',
-                        default=2000, nargs='?',
+                        default=100, nargs='?',
                         type=float,
                         help='tau')
 my_parser.add_argument('--num_of_tasks',
@@ -115,7 +115,7 @@ config.use_gates = bool(args.use_gates)
 config.gates_gaussian_cut_off = args.var2
 config.same_rnn = bool(args.same_rnn)
 config.train_to_criterion = bool(args.train_to_criterion)
-config.load_corr_gates = False
+config.load_corr_gates = True
 
 config.exp_signature = config.exp_signature + f'gaus_cut_{"tc" if config.train_to_criterion else "nc"}_{"mul" if config.MDeffect_mul else "add"}_{"gates" if config.use_gates else "nog"}'
 config.FILEPATH += exp_name +'/'
@@ -128,23 +128,10 @@ config.MDeffect = False
 if not args.var1 == 0: # if given seed is not zero, shuffle the task_seq
     #Shuffle tasks
     if True:
-        print('previous tasks id name:')
-        print(config.tasks_id_name)
         rng = np.random.default_rng(int(args.var1))
-        print(rng.integers(10, size=(10)))
         idx = rng.permutation(range(len(config.tasks)))
-        print('idx: ', idx)
         config.set_tasks((np.array(config.tasks)[idx]).tolist())
         config.tasks_id_name = config.tasks
-        print('Updated tasks id name:')
-        print(config.tasks_id_name)
-
-    #Move delayGO and rt GO to args.var1 position:
-    # go, rtgo = config.tasks[:2]
-    # config.tasks.pop(0)
-    # config.tasks.pop(0)
-    # config.tasks.insert( args.var1, go)
-    # config.tasks.insert( args.var1+1, rtgo)
 
 # config.set_tasks((np.array(config.tasks)[:2]).tolist())
 
@@ -152,10 +139,11 @@ task_seq = []
 # Add tasks gradually with rehearsal 1 2 1 2 3 1 2 3 4 ...
 task_sub_seqs = [[config.tasks_id_name[i] for i in range(s)] for s in range(2, len(config.tasks)+1)] # interleave tasks and add one task at a time
 for sub_seq in task_sub_seqs: task_seq+=sub_seq
-task_seq+=list(reversed(sub_seq)) # One additional final rehearsal, but revearsed for best final score.
+# task_seq+=list(reversed(sub_seq)) # One additional final rehearsal, but revearsed for best final score.
+task_seq+=sub_seq # One additional final rehearsal, 
 
 # Now adding many random rehearsals:
-Random_rehearsals = 0
+Random_rehearsals = 10
 for _ in range(Random_rehearsals):
     random.shuffle(sub_seq)
     task_seq+=sub_seq
@@ -171,6 +159,71 @@ def create_model():
     net.to(config.device)
     return(net )
 
+class Cognitive_Net(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(Cognitive_Net, self).__init__()
+        # self.bn = nn.BatchNorm1d(input_size)
+        self.gru = nn.GRU(input_size, hidden_size, batch_first=False)
+        self.linear = nn.Linear(hidden_size, output_size)
+
+    def forward(self, inp):
+        # inp = self.bn(inp)
+        out, hidden = self.gru(inp)
+        x = self.linear(out)
+        return x, out
+
+config.use_cognitive_observer = True
+if config.use_cognitive_observer:
+    cog_net = Cognitive_Net(input_size=10+config.hidden_size+config.output_size, hidden_size=256, output_size = config.md_size)
+    cog_net.to(config.device)
+
+
+def test_model(model, test_inputs, test_outputs, step_i=0 ):
+    '''test_outputs are given as task_ids as integers '''
+    model.eval()
+    model_acts= []
+    model_preds= []
+    test_input_length = test_inputs.shape[0]
+    with torch.no_grad():
+        eins= torch.tensor(test_inputs)
+        gpreds, gacts = model(eins) # torch.Size([50, 100, 1])  gacts:  torch.Size([50, 100, 256])
+        #     gacts, gpreds = model(eins) # torch.Size([50, 100, 1])  gacts:  torch.Size([50, 100, 256])
+        model_acts =gacts.detach().cpu().numpy()
+        model_preds= gpreds.detach().cpu().numpy()
+        # print('gru_preds shape : ', model_preds.shape)
+        # print('taskIDs : ', task_ids[b_example:b_example+test_input_length])
+        preds = np.argmax(model_preds, axis=-1)
+
+        # preds # [60, 100] for the whole seq, and 100 batchs. not each seq step of 60 compared to its
+        acc = 0
+        for s in range(test_input_length):
+            acc += (preds[s]== test_outputs[s]).sum()/ len(preds[s])
+        acc = acc/test_input_length 
+        # print('accuracy: ', acc)
+        # acc = accuracy_measure(input= gpreds.squeeze().permute([0,2,1]), target=torch.Tensor(task_ids_repeated[b_example:b_example+test_input_length],))
+
+    model.train()
+    # model_preds = np.stack(model_preds)
+    # model_acts = np.stack(model_acts)
+    if True: #plot
+        fig, axes = plt.subplots(1,2, figsize=[8,12])
+        ax = axes[0]
+        ax.matshow(model_preds.reshape([-1, 100, 15]).mean(1))
+        # ax.plot(range(15), [29.5]*15, linewidth=(3))
+        # ax.text(4, 31, 'Testing data', {'color': 'white'})
+        ax.set_ylabel('Trials')
+        ax.set_xlabel('Task ID')
+
+        ax = axes[1]
+        to_oh = F.one_hot(torch.from_numpy(test_outputs),config.md_size).numpy()
+        ax.matshow(to_oh)
+        # ax.plot(range(15), [29.5]*15, linewidth=(3))
+        # ax.text(4, 31, 'Testing data', {'color': 'white'})
+        ax.set_ylabel('Trials')
+        ax.set_xlabel('Task ID')
+
+        plt.savefig(f'./files/cog_observer_sample_preds{step_i}.jpg')
+    return (model_preds, model_acts, acc)
 
 def train(config, task_seq):
 
@@ -200,8 +253,18 @@ def train(config, task_seq):
         training_params.append(param)
     optimizer = torch.optim.Adam(training_params, lr=config.lr)
 
+    if config.use_cognitive_observer:
+        cog_training_params = list()
+        print('cognitive network optimized parameters')
+        for name, param in cog_net.named_parameters():
+            print(name)
+            cog_training_params.append(param)
+        cog_optimizer = torch.optim.Adam(cog_training_params, lr=config.lr)
+
+
     training_log = SerialLogger(config=config)
     testing_log = SerialLogger(config=config)
+    training_log.cog_obs_preds = []
 
     # Make all tasks, but reorder them from the tasks_id_name list of tuples
     envs = [None] * len(config.tasks_id_name)
@@ -213,7 +276,7 @@ def train(config, task_seq):
     for (task_id, task_name) in bar_tasks:
     
         env = envs[task_id]
-        bar_tasks.set_description('task: ' + config.human_task_names[task_id])
+        bar_tasks.set_description('i: ' + str(step_i))
         testing_log.switch_trialxxbatch.append(step_i)
         testing_log.switch_task_id.append(task_id)
         
@@ -229,25 +292,60 @@ def train(config, task_seq):
         training_bar = trange(config.max_trials_per_task//config.batch_size)
         for i in training_bar:
             # control training paradigm
-            context_id = task_id if config.use_gates else 0 
+            config.use_supplied_task_id = True if step_i < 3500 else False # False leads to using cog_obs predictions
 
+            if config.use_supplied_task_id:
+                context_id = F.one_hot(torch.tensor([task_id]* config.batch_size), config.md_size).type(torch.float)
+                # context_id = task_id if config.use_gates else 0 
+            else:
+                #########Gather cognitive inputs ###############
+                horizon =50
+                acts = np.stack(training_log.rnn_activity[-horizon:])  # (3127, 100, 356)
+                outputs_horizon = np.stack(training_log.outputs[-horizon:])
+                labels_horizon = np.stack(training_log.labels[-horizon:])
+                task_ids = np.stack(training_log.task_ids[-horizon:])
+                rl = np.argmax(labels_horizon, axis=-1)
+                ro = np.argmax(outputs_horizon, axis=-1)
+                accuracies = (rl==ro).astype(np.float32)
+
+                # previous_acc = np.concatenate([accuracies[:1], accuracies ])[:-1] #shift by one place to make it run one step behind. 
+                expanded_previous_acc = np.repeat(accuracies[..., np.newaxis], 10, axis=-1)   #Expanded merely to emphasize their signal over the numerous acts
+                gathered_inputs = np.concatenate([acts, labels_horizon, expanded_previous_acc], axis=-1) #shape  7100 100 266
+
+                task_ids_oh= F.one_hot(torch.from_numpy(task_ids), 15)
+                task_ids_repeated = task_ids[..., np.newaxis].repeat(100,1)
+                
+                training_inputs = gathered_inputs
+                # training_outputs= task_ids_oh.reshape([task_ids_oh.shape[0], 1, task_ids_oh.shape[1]]).repeat([1,training_inputs.shape[1], 1])
+                training_outputs= task_ids_repeated
+                ins =  torch.tensor(training_inputs, device=config.device) # (input_length, 100, 266)
+                outs = torch.tensor(training_outputs, device=config.device)
+                #################################################
+                cpred, _, = cog_net(ins)
+                context_id  = F.softmax(cpred[-1], dim = 1) # will give 15 one_hot.
+                # print('context id shape  ', context_id.shape)
+                  
             # fetch data
             inputs, labels = get_trials_batch(envs=env, config = config, batch_size = config.batch_size)
-
             # zero the parameter gradients
             optimizer.zero_grad()
-
+            # cog_optimizer.zero_grad()
             # forward + backward + optimize
             if config.use_lstm:
                 outputs, rnn_activity = net(inputs)
             else:
                 outputs, rnn_activity = net(inputs, sub_id=context_id)
+
+            acc  = accuracy_metric(outputs.detach(), labels.detach())
             # print(f'shape of outputs: {outputs.shape},    and shape of rnn_activity: {rnn_activity.shape}')
             #Shape of outputs: torch.Size([20, 100, 17]),    and shape of rnn_activity: torch.Size ([20, 100, 256
             loss = criterion(outputs, labels)
             loss.backward()
-            optimizer.step()
-            acc  = accuracy_metric(outputs.detach(), labels.detach())
+            if config.use_supplied_task_id:
+                optimizer.step()
+            else:
+                cog_optimizer.step()
+
             # from utils import show_input_output
             # show_input_output(inputs, labels, outputs)
             # plt.savefig('example_inpujt_label_output.jpg')
@@ -256,7 +354,7 @@ def train(config, task_seq):
 
             training_log.write_basic(step_i, loss.item(), acc)
             training_log.gradients.append(np.array([torch.norm(p.grad).item() for p in net.parameters()]) )
-            if config.save_detailed:
+            if config.save_detailed or config.use_cognitive_observer:
                 training_log.write_detailed( rnn_activity= rnn_activity.detach().cpu().numpy().mean(0),
                 inputs=   inputs.detach().cpu().numpy(),
                 outputs = outputs.detach().cpu().numpy()[-1, :, :],
@@ -265,8 +363,57 @@ def train(config, task_seq):
                 task_id =task_id,
                 # rnn_activity.shape             torch.Size([15, 100, 356])
                 )
+            ################################################
+            #########Gather cognitive inputs ###############
+            horizon =50
+            if (((step_i+1) % horizon) ==0):# and not config.use_supplied_task_id:
+                acts = np.stack(training_log.rnn_activity[-horizon:])  # (3127, 100, 356)
+                outputs_horizon = np.stack(training_log.outputs[-horizon:])
+                labels_horizon = np.stack(training_log.labels[-horizon:])
+                task_ids = np.stack(training_log.task_ids[-horizon:])
+                rl = np.argmax(labels_horizon, axis=-1)
+                ro = np.argmax(outputs_horizon, axis=-1)
+                accuracies = (rl==ro).astype(np.float32)
 
-            training_bar.set_description('ls, acc: {:0.3F}, {:0.2F} '.format(loss.item(), acc)+ config.human_task_names[task_id])
+                # previous_acc = np.concatenate([accuracies[:1], accuracies ])[:-1] #shift by one place to make it run one step behind. 
+                expanded_previous_acc = np.repeat(accuracies[..., np.newaxis], 10, axis=-1)   #Expanded merely to emphasize their signal over the numerous acts
+                gathered_inputs = np.concatenate([acts, labels_horizon, expanded_previous_acc], axis=-1) #shape  7100 100 266
+
+                task_ids_oh= F.one_hot(torch.from_numpy(task_ids), 15)
+                task_ids_repeated = task_ids[..., np.newaxis].repeat(100,1)
+                
+                training_inputs = gathered_inputs
+                # training_outputs= task_ids_oh.reshape([task_ids_oh.shape[0], 1, task_ids_oh.shape[1]]).repeat([1,training_inputs.shape[1], 1])
+                training_outputs= task_ids_repeated
+                ins =  torch.tensor(training_inputs, device=config.device) # (input_length, 100, 266)
+                outs = torch.tensor(training_outputs, device=config.device)
+                #################################################
+                if config.use_cognitive_observer:
+
+                    cog_optimizer.zero_grad()
+                    # cin = torch.cat([rnn1_means.detach(), labels_horizon[-1]],dim =-1)
+                    # cin = cin.reshape([1, *cin.shape])
+                    # cog_out = cog_net(cin)
+                    cog_out, cog_acts = cog_net(ins) # Cog_out shape [horizon, batch, 15]
+                    tids = torch.tensor([task_id]*100, device=config.device)
+                    # cog_loss  = F.cross_entropy(input=cog_out.cpu().squeeze(), target=tids.type(torch.LongTensor))
+                    #Train on all task_ids in horizon:
+                    cog_loss = F.cross_entropy(input= cog_out.squeeze().permute([0,2,1]) , target = outs)
+                    # Or just the current task:
+                    # cog_loss = F.cross_entropy(input= cog_out.squeeze()[-1] , target = tids)
+                    # if step_i < 4000: # start testing cog obs on useen data
+                    cog_loss.backward()
+                    cog_optimizer.step()
+
+                    training_log.cog_obs_preds.append(cog_out.detach().cpu().numpy())
+
+                    if step_i > 100 and (step_i % (config.print_every_batches*50) == (config.print_every_batches*50 - 1)):
+                        _,_,cacc = test_model(cog_net, ins, task_ids, step_i)    
+
+
+                training_bar.set_description('cog_ls, acc: {:0.3F}, {:0.2F} '.format(cog_loss.item(), acc)+ config.human_task_names[task_id])
+            else:
+                training_bar.set_description('ls, acc: {:0.3F}, {:0.2F} '.format(loss.item(), acc)+ config.human_task_names[task_id])
 
             # print statistics
             if step_i % config.print_every_batches == (config.print_every_batches - 1):
@@ -274,9 +421,12 @@ def train(config, task_seq):
                 net.eval()
                 if config.MDeffect:
                     net.rnn.md.learn = False
+                # torch.set_grad_enabled(True)
                 with torch.no_grad():
                     testing_log.stamps.append(step_i)
                     testing_context_ids = list(range(len(envs)))  # envs are ordered by task id sequentially now.
+                    # testing_context_ids_oh = [F.one_hot(torch.tensor([task_id]* config.test_num_trials), config.md_size).type(torch.float) for task_id in testing_context_ids]
+
                     fix_perf, act_perf = get_performance(
                         net,
                         envs,
@@ -287,12 +437,17 @@ def train(config, task_seq):
                     
                     testing_log.accuracies.append(act_perf)
                     testing_log.gradients.append(np.mean(np.stack(training_log.gradients[-config.print_every_batches:]),axis=0))
+                # torch.set_grad_enabled(False)
                 net.train()
                 if config.MDeffect:
                     net.rnn.md.learn = True
+                
                 #### End testing
 
-            criterion_accuaracy = config.criterion if task_name not in config.DMFamily else config.criterion_DMfam
+            if config.use_supplied_task_id:
+                criterion_accuaracy = config.criterion if task_name not in config.DMFamily else config.criterion_DMfam
+            else: # relax a little! Only optimizing context signal!
+                criterion_accuaracy -=0#.12
             if ((running_acc > criterion_accuaracy) and config.train_to_criterion) or (i+1== config.max_trials_per_task//config.batch_size):
             # switch task if reached the max trials per task, and/or if train_to_criterion then when criterion reached
                 # import pdb; pdb.set_trace()
@@ -378,7 +533,13 @@ for logi in range(num_tasks):
         ax.plot(log.stamps, [test_acc[logi] for test_acc in log.accuracies], linewidth=1)
         ax.plot(log.stamps, np.ones_like(log.stamps)*0.5, ':', color='grey', linewidth=1)
         ax.set_ylabel(config.human_task_names[logi], fontdict={'color': cmap.to_rgba(logi)})
-        for ri in range(len(log.switch_trialxxbatch)-1):
+        if logi == num_tasks-1: # the last subplot, put the preds from cog_obx
+            cop = np.stack(training_log.cog_obs_preds).reshape([-1,100,15])
+            cop_colors = np.argmax(cop, axis=-1).mean(-1)
+            for ri in range(max_x-2):
+                ax.axvspan(ri, ri+1, color =cmap.to_rgba(cop_colors[ri]) , alpha=0.2)
+        else:            
+            for ri in range(len(log.switch_trialxxbatch)-1):
                 ax.axvspan(log.switch_trialxxbatch[ri], log.switch_trialxxbatch[ri+1], color =cmap.to_rgba(log.switch_task_id[ri]) , alpha=0.2)
 for ti, id in enumerate(log.switch_task_id):
     if id not in already_seen:

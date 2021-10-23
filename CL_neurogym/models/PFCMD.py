@@ -71,27 +71,49 @@ class MD_GYM():
 
             
             # Binary gates formulation:
-        # self.gates = np.random.uniform(size=(self.hidden_size, self.md_size))
-        # self.gates = (self.gates < self.config.MD2PFC_prob).astype(float) 
-        # self.wMD2PFC = (self.gates -1) *5 #shift it to match Zhongxuan's -5 inhibition.
-        # self.wMD2PFCMult = self.gates
-        
-            #Sparse uniform formulation
-        self.mul_gates = torch.empty(size=(self.hidden_size, self.md_size))
-        self.add_gates = torch.empty(size=(self.hidden_size, self.md_size))
-        # torch.nn.init.sparse_(self.gates, self.config.gates_sparsity, std=self.config.gates_std)
-        
-        self.wMD2PFCMult = sparse_with_mean(self.mul_gates, self.config.gates_sparsity, mean=1., std=self.config.gates_std)
-        self.wMD2PFC = sparse_with_mean(self.add_gates, self.config.gates_sparsity, mean=0, std=self.config.gates_std)
-        stats(self.wMD2PFCMult, 'wMD2PFC mul: ')
-        stats(self.wMD2PFC, 'wMD2PFC add:')
 
         
-        
-        # torch.nn.init.sparse_(tensor, sparsity, std=0.01)
-        # N(0, std=0.01)
-        # sparsity – The fraction of elements in each column to be set to zero
-        # std – the standard deviation of the normal distribution used to generate the non-zero values
+
+
+        # self.wMD2PFCMult = get_corr_gates(self.mul_gates, self.config)
+        config = self.config
+        import os
+
+        if config.load_corr_gates and (os.path.isfile(f'./data/perf_corr_mat_var1_0.npy',)):#else pfc_gated will pick random overlapping gates. 
+            print('------------------   loading correlations from ' +f'./data/perf_corr_mat_var1_0.npy')
+            gates_tasks = np.load(f'./data/perf_corr_mat_var1_0.npy', allow_pickle=True).item()
+            gates_corr = gates_tasks['corr_mat'] 
+            task_order = gates_tasks['tasks'] 
+            task_ids = np.argwhere(np.array(task_order) == config.task_seq[0]), np.argwhere(np.array(task_order) == config.task_seq[1])
+            task_ids = task_ids[0].squeeze(), task_ids[1].squeeze()
+            print('task_ids: ', task_ids)
+            gates_cov = np.array([[ 1., gates_corr[task_ids].squeeze(),], [gates_corr[task_ids].squeeze(), 1.]])
+            sampled_gates = np.random.multivariate_normal(np.zeros(self.md_size), gates_cov, self.hidden_size)
+            self.wMD2PFC = sampled_gates.copy()
+            sampled_gates = torch.tensor(sampled_gates> config.gates_gaussian_cut_off, device=config.device).float()
+            self.wMD2PFCMult = sampled_gates.clone()
+
+            # NOTE As a control for the correlated gates exp I'm comparing to the additive effects
+            self.gates = np.random.uniform(size=(self.hidden_size, self.md_size))
+            self.gates = (self.gates < self.config.MD2PFC_prob).astype(float) 
+            self.wMD2PFC = (self.gates -1) *5 #shift it to match Zhongxuan's -5 inhibition.
+            # self.wMD2PFCMult = self.gates
+
+        else:
+            #Sparse uniform formulation
+            self.mul_gates = torch.empty(size=(self.hidden_size, self.md_size))
+            self.add_gates = torch.empty(size=(self.hidden_size, self.md_size))
+            # torch.nn.init.sparse_(self.gates, self.config.gates_sparsity, std=self.config.gates_std)
+            
+            self.wMD2PFCMult = sparse_with_mean(self.mul_gates, self.config.gates_sparsity, mean=1., std=self.config.gates_std)
+            self.wMD2PFC = sparse_with_mean(self.add_gates, self.config.gates_sparsity, mean=0, std=self.config.gates_std)
+            # torch.nn.init.sparse_(tensor, sparsity, std=0.01)
+            # N(0, std=0.01)
+            # sparsity – The fraction of elements in each column to be set to zero
+            # std – the standard deviation of the normal distribution used to generate the non-zero values
+
+        stats(self.wMD2PFCMult, 'wMD2PFC mul: ')
+        stats(self.wMD2PFC, 'wMD2PFC add:')
 
         # self.wMD2PFCMult = np.random.normal(0,
                                             # 1 / np.sqrt(self.md_size * self.hidden_size),

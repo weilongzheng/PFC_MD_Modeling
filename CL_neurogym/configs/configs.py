@@ -38,37 +38,52 @@ class BaseConfig(object):
         ['yang19.dlygo-v0', 'yang19.dmc-v0'],]
 
         # self.tasks = ngym.get_collection('yang19')
-        self.tasks= ['yang19.dlygo-v0',
-                    'yang19.rtgo-v0',
+        self.tasks= [
                     'yang19.go-v0',
-                    'yang19.dms-v0',
-                    'yang19.dnms-v0',
-                    'yang19.dmc-v0',
-                    'yang19.dnmc-v0',
+                    'yang19.rtgo-v0',
+                    'yang19.dlygo-v0',
                     'yang19.dm1-v0',
-                    'yang19.dm2-v0',
                     'yang19.ctxdm1-v0',
+                    'yang19.dms-v0',
+                    'yang19.dmc-v0',
+                    'yang19.dm2-v0',
                     'yang19.ctxdm2-v0',
                     'yang19.multidm-v0',
+                    'yang19.rtanti-v0',
                     'yang19.anti-v0',
                     'yang19.dlyanti-v0',
-                    'yang19.rtanti-v0'
+                    'yang19.dnms-v0',
+                    'yang19.dnmc-v0',
                     ]
+        self._tasks_id_name = [(i, self.tasks[i]) for i in range(len(self.tasks))]
         self.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in self.tasks] #removes yang19 and -v0
+        
+        import itertools
+        unique_combinations = []
+        permut = itertools.permutations(self.tasks, 2)
+        for comb in permut:
+            unique_combinations.append(comb)
+        import numpy as np
+        rng = np.random.default_rng(1)
+        idx = rng.permutation(range(len(unique_combinations)))
+
+        self.sequences = (np.array(unique_combinations)[idx]).tolist()
         
         self.GoFamily = ['yang19.dlygo-v0', 'yang19.go-v0']
         self.AntiFamily = ['yang19.dlyanti-v0', 'yang19.anti-v0']
         self.DMFamily = ['yang19.dm1-v0', 'yang19.dm2-v0', 'yang19.ctxdm1-v0', 'yang19.ctxdm2-v0', 'yang19.multidm-v0']
         self.MatchFamily = ['yang19.dms-v0', 'yang19.dmc-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0']
         ### 2.1 two tasks
-        TaskA = self.GoFamily + self.AntiFamily
-        TaskB = self.MatchFamily + ['yang19.ctxdm1-v0', 'yang19.dm2-v0']
-        task_seqs = []
-        for a in TaskA:
-            for b in TaskB:
-                task_seqs.append((a, b))
-                task_seqs.append((b, a))
-        self.sequences = task_seqs
+        # TaskA = self.GoFamily + self.AntiFamily
+        # TaskB = self.MatchFamily + ['yang19.ctxdm1-v0', 'yang19.dm2-v0']
+        # task_seqs = []
+        # for a in TaskA:
+        #     for b in TaskB:
+        #         task_seqs.append((a, b))
+        #         task_seqs.append((b, a))
+        
+        # task_seqs
+        # self.sequences = task_seqs
         # 2. Three tasks
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0', 'yang19.dnmc-v0']
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm2-v0', 'yang19.dmc-v0']
@@ -138,6 +153,19 @@ class BaseConfig(object):
         # self.tasks_id_name = [(i, self.tasks[i]) for i in range(len(self.tasks))]
         # self.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in self.tasks] #removes yang19 and -v0
     
+    @property
+    def tasks_id_name(self):
+        return self._tasks_id_name
+    @tasks_id_name.setter
+    def tasks_id_name(self,tasks):
+        new_task_ids = []
+        for i in range(len(tasks)):
+            new_task_ids.append( *[t[0] for t in self._tasks_id_name if t[1] == tasks[i]] )
+            
+        self._tasks_id_name = [(s,t) for s,t in zip(new_task_ids, tasks)]
+    
+
+
     def set_strings(self, exp_name):
         self.exp_name = exp_name
         self.exp_signature = self.exp_name +f'_{self.args}_'+\
@@ -278,15 +306,4 @@ class SerialConfig(BaseConfig):
         task_sub_seqs = [[(i, self.task_seq[i]) for i in range(s)] for s in range(2, len(self.task_seq))] # interleave tasks and add one task at a time
         self.task_seq_with_rehearsal = []
         for sub_seq in task_sub_seqs: self.task_seq_with_rehearsal+=sub_seq
-    
-    @property
-    def tasks_id_name(self):
-        return self._tasks_id_name
-    @tasks_id_name.setter
-    def tasks_id_name(self,tasks):
-        new_task_ids = []
-        for i in range(len(tasks)):
-            new_task_ids.append( *[t[0] for t in self._tasks_id_name if t[1] == tasks[i]] )
-            
-        self._tasks_id_name = [(s,t) for s,t in zip(new_task_ids, tasks)]
     
