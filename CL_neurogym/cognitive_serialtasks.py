@@ -328,14 +328,9 @@ def train(config, task_seq):
                 #################################################
                 cpred, _, = cog_net(ins)
                 context_id  = F.softmax(cpred[-1], dim = 1) # will give 15 one_hot.
-                # print('context id shape  ', context_id.shape)
                   
-            # fetch data
             inputs, labels = get_trials_batch(envs=env, config = config, batch_size = config.batch_size)
-            # zero the parameter gradients
-            optimizer.zero_grad()
-            # cog_optimizer.zero_grad()
-            # forward + backward + optimize
+    
             if config.use_lstm:
                 outputs, rnn_activity = net(inputs)
             else:
@@ -344,6 +339,8 @@ def train(config, task_seq):
             acc  = accuracy_metric(outputs.detach(), labels.detach())
             # print(f'shape of outputs: {outputs.shape},    and shape of rnn_activity: {rnn_activity.shape}')
             #Shape of outputs: torch.Size([20, 100, 17]),    and shape of rnn_activity: torch.Size ([20, 100, 256
+            optimizer.zero_grad()
+            cog_optimizer.zero_grad()
             loss = criterion(outputs, labels)
             loss.backward()
             if config.use_supplied_task_id:
@@ -361,17 +358,17 @@ def train(config, task_seq):
             training_log.gradients.append(np.array([torch.norm(p.grad).item() for p in net.parameters()]) )
             if config.save_detailed or config.use_cognitive_observer:
                 training_log.write_detailed( rnn_activity= rnn_activity.detach().cpu().numpy().mean(0),
-                inputs=   inputs.detach().cpu().numpy(),
+                inputs=   [] ,# inputs.detach().cpu().numpy(),
                 outputs = outputs.detach().cpu().numpy()[-1, :, :],
                 labels =   labels.detach().cpu().numpy()[-1, :, :],
-                sampled_act = rnn_activity.detach().cpu().numpy()[:,:, 1:356:36], # Sample about 10 neurons 
+                sampled_act = [], # rnn_activity.detach().cpu().numpy()[:,:, 1:356:36], # Sample about 10 neurons 
                 task_id =task_id,
                 # rnn_activity.shape             torch.Size([15, 100, 356])
                 )
             ################################################
             #########Gather cognitive inputs ###############
             horizon =50
-            if (((step_i+1) % horizon) ==0):# and not config.use_supplied_task_id:
+            if (((step_i+1) % horizon) ==0):# and config.use_supplied_task_id:
                 acts = np.stack(training_log.rnn_activity[-horizon:])  # (3127, 100, 356)
                 outputs_horizon = np.stack(training_log.outputs[-horizon:])
                 labels_horizon = np.stack(training_log.labels[-horizon:])
@@ -452,7 +449,8 @@ def train(config, task_seq):
             if config.use_supplied_task_id:
                 criterion_accuaracy = config.criterion if task_name not in config.DMFamily else config.criterion_DMfam
             else: # relax a little! Only optimizing context signal!
-                criterion_accuaracy -=0#.12
+                criterion_accuaracy = config.criterion if task_name not in config.DMFamily else config.criterion_DMfam
+                criterion_accuaracy -=0.08
             if ((running_acc > criterion_accuaracy) and config.train_to_criterion) or (i+1== config.max_trials_per_task//config.batch_size):
             # switch task if reached the max trials per task, and/or if train_to_criterion then when criterion reached
                 # import pdb; pdb.set_trace()
