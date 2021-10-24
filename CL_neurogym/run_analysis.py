@@ -51,12 +51,12 @@ mpl.rcParams['legend.fontsize'] = 12 # 'medium'
 if 0:
     # FILE_PATH = './files/scaleup_threetasks_4/baselines/'
     # FILE_PATH = './files/scaleup_threetasks_4/PFCMD/'
-    FILE_PATH = './files/temp/'
+    FILE_PATH = './files/randomortho_init/PFCMD/'
 
     # settings = ['EWC', 'SI', 'PFC']
     settings = ['PFCMD']
 
-    ITER = list(range(0, 114))+list(range(140, 420))
+    ITER = list(range(420))
     LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
@@ -68,17 +68,15 @@ if 0:
         time_stamps = log.stamps
         act_perfs_mean = np.mean(act_perfs_all, axis=0)
         act_perfs_std = np.std(act_perfs_all, axis=0)
-        # np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
-        # np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
-        # np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
-    for i in range(2):
-        plt.plot(act_perfs_mean[i, :])
-    plt.show()
+        np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
+        np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
+        np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
     
 
 # main performance curve: two tasks
 if 0:
     FILE_PATH = './files/scaleup_twotasks_5/'
+    # FILE_PATH = './files/randomortho_init/'
     setting = 'PFCMD'
     act_perfs_mean = np.load(FILE_PATH + 'avg_perfs_mean_' + setting + '.npy')
     act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + setting + '.npy')
@@ -448,6 +446,7 @@ if 0:
 # Connections weights
 if 0:
     FILE_PATH = './files/trajectory/PFCMD/'
+    # FILE_PATH = './files/randomortho_init/cases/'
     log = np.load(FILE_PATH + 'log.npy', allow_pickle=True).item()
     config = np.load(FILE_PATH + 'config.npy', allow_pickle=True).item()
     dataset = np.load(FILE_PATH + 'dataset.npy', allow_pickle=True).item()
@@ -534,9 +533,9 @@ if 0:
     cbar.outline.set_linewidth(1.2)
     cbar.ax.tick_params(labelsize=12, width=1.2)
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('./files/' + 'weights_wPFC2PFC.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('./files/' + 'weights_wPFC2PFC.pdf')
+    plt.close()
 
     # wPFCtoPFC with masked diagonal elements
     fig, axes = plt.subplots(figsize=(6, 6))
