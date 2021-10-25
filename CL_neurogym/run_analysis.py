@@ -1027,9 +1027,9 @@ if 0:
     # SAVE_FILE_NAME = 'PFCMD'
     # setting = 'PFCMD'
     # 2. reduced PFCMD
-    # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
-    # SAVE_FILE_NAME = 'reducedPFCMD'
-    # setting = 'PFCMD'
+    FILE_PATH = './files/similarity/scaleup_twotasks_3/'
+    SAVE_FILE_NAME = 'reducedPFCMD'
+    setting = 'PFCMD'
     # 3. PFC
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
     # SAVE_FILE_NAME = 'PFC'
@@ -1039,9 +1039,9 @@ if 0:
     # SAVE_FILE_NAME = 'PFCEWC'
     # setting = 'EWC'
     # 5. PFCSI
-    FILE_PATH = './files/scaleup_twotasks_5/baselines/'
-    SAVE_FILE_NAME = 'PFCSI'
-    setting = 'SI'
+    # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # SAVE_FILE_NAME = 'PFCSI'
+    # setting = 'SI'
 
     forward_transfer_perf = np.zeros(shape=(420))
     continual_learning_perf = np.zeros(shape=(420))
@@ -1057,7 +1057,7 @@ if 0:
     
     # different ways to plot the data
     # 1. split data into a few intervals
-    if 1:
+    if 0:
         task_similarity_data = np.array([0.1*i for i in range(3, 11)])
         L = len(task_similarity_data)
         forward_transfer_perf_data = np.zeros(shape=(L))
@@ -1141,13 +1141,17 @@ if 0:
             plt.close()
     
     # 2. scatter plot and linear regression
-    if 0:
-        fig, axes = plt.subplots(figsize=(4, 4))
-        ax = axes
+    if 1:
+        fig, axes = plt.subplots(1, 2, figsize=(8, 4))
         line_colors = ['deeppink', 'deepskyblue']
         labels = ['CL', 'FT']
-        plt.scatter(task_similarity, continual_learning_perf, c=line_colors[0], label=labels[0])
-        plt.scatter(task_similarity, forward_transfer_perf, c=line_colors[1], label=labels[1])
+        axes[0].scatter(task_similarity, continual_learning_perf, c=line_colors[0], s=10)
+        axes[0].set_xlabel('Task Similarity')
+        axes[0].set_ylabel('CL Performance')
+        axes[1].scatter(task_similarity, forward_transfer_perf, c=line_colors[1], s=10)
+        axes[1].set_xlabel('Task Similarity')
+        axes[1].set_ylabel('FT Performance')
+        plt.tight_layout(w_pad=3.0)
         plt.show()
 
 

@@ -1,6 +1,7 @@
 import os
 import sys
 from models import MODES
+from configs.utils import get_similarity
 
 '''
 Class names of configs are based on the class names of models:
@@ -39,6 +40,7 @@ class BaseConfig(object):
         self.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in self.task_seq] #removes yang19 and -v0
 
         self.num_task = len(self.task_seq)
+        self.task_similarity = get_similarity(task_seq=self.task_seq) if self.num_task == 2 else None
         self.env_kwargs = {'dt': 100}
         self.batch_size = 1
 
