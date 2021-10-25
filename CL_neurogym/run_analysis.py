@@ -60,7 +60,7 @@ if 0:
     # settings = ['SI']
     # settings = ['PFC']
 
-    ITER = list(range(43))
+    ITER = list(range(56))
     LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
@@ -1143,14 +1143,35 @@ if 0:
     # 2. scatter plot and linear regression
     if 1:
         fig, axes = plt.subplots(1, 2, figsize=(8, 4))
-        line_colors = ['deeppink', 'deepskyblue']
+        line_colors = ['orchid', 'deepskyblue']
         labels = ['CL', 'FT']
-        axes[0].scatter(task_similarity, continual_learning_perf, c=line_colors[0], s=10)
+        # subplot 1
+        axes[0].scatter(task_similarity, continual_learning_perf, c=line_colors[0], s=10, alpha=0.5)
         axes[0].set_xlabel('Task Similarity')
         axes[0].set_ylabel('CL Performance')
-        axes[1].scatter(task_similarity, forward_transfer_perf, c=line_colors[1], s=10)
+        axes[0].set_xlim([0.3, 1.0])
+        axes[0].set_ylim([0.0, 1.01])
+        axes[0].set_xticks(ticks=[round(0.1*i, 1) for i in range(3, 11)])
+        axes[0].set_yticks(ticks=[0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        reg = LinearRegression()
+        reg.fit(task_similarity.reshape(-1, 1), continual_learning_perf.reshape(-1, 1))
+        X_pred = np.linspace(0.3, 1.0, 100)
+        y_pred = reg.predict(X_pred.reshape(-1, 1)).squeeze()
+        axes[0].plot(X_pred, y_pred, linewidth=2, color=line_colors[0])
+        # subplot 2
+        axes[1].scatter(task_similarity, forward_transfer_perf, c=line_colors[1], s=10, alpha=0.5)
+        axes[1].set_xlim([0.3, 1.0])
+        axes[1].set_ylim([0.0, 1.01])
+        axes[1].set_xticks(ticks=[round(0.1*i, 1) for i in range(3, 11)])
+        axes[1].set_yticks(ticks=[0, 0.2, 0.4, 0.6, 0.8, 1.0])
         axes[1].set_xlabel('Task Similarity')
         axes[1].set_ylabel('FT Performance')
+        reg = LinearRegression()
+        reg.fit(task_similarity.reshape(-1, 1), forward_transfer_perf.reshape(-1, 1))
+        X_pred = np.linspace(0.3, 1.0, 100)
+        y_pred = reg.predict(X_pred.reshape(-1, 1)).squeeze()
+        axes[1].plot(X_pred, y_pred, linewidth=2, color=line_colors[1])
+        # show
         plt.tight_layout(w_pad=3.0)
         plt.show()
 
