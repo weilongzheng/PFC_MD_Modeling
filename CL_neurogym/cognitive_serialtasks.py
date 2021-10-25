@@ -111,11 +111,9 @@ elif args.experiment_type == 'serial':
 # config.MDeffect_add = not config.MDeffect_mul
 config.tau= args.var3
 config.MD2PFC_prob = 0.5
-config.use_gates = bool(args.use_gates)
 config.gates_gaussian_cut_off = args.var2
 config.same_rnn = bool(args.same_rnn)
 config.train_to_criterion = bool(args.train_to_criterion)
-config.load_corr_gates = True
 
 config.exp_signature = config.exp_signature + f'gaus_cut_{"tc" if config.train_to_criterion else "nc"}_{"mul" if config.MDeffect_mul else "add"}_{"gates" if config.use_gates else "nog"}'
 config.FILEPATH += exp_name +'/'
@@ -123,6 +121,17 @@ config.FILEPATH += exp_name +'/'
 config.save_detailed = True
 config.use_external_inputs_mask = False
 config.MDeffect = False
+
+############################################
+############################################
+############################################
+config.use_cognitive_observer = False
+config.use_gates = bool(args.use_gates)
+config.use_gates = True
+config.load_corr_gates = False
+############################################
+############################################
+
 
 ###--------------------------Training configs--------------------------###
 if not args.var1 == 0: # if given seed is not zero, shuffle the task_seq
@@ -143,7 +152,7 @@ for sub_seq in task_sub_seqs: task_seq+=sub_seq
 task_seq+=sub_seq # One additional final rehearsal, 
 
 # Now adding many random rehearsals:
-Random_rehearsals = 20
+Random_rehearsals = 20 if config.use_cognitive_observer else 0
 for _ in range(Random_rehearsals):
     random.shuffle(sub_seq)
     task_seq+=sub_seq
@@ -172,7 +181,6 @@ class Cognitive_Net(nn.Module):
         x = self.linear(out)
         return x, out
 
-config.use_cognitive_observer = True
 if config.use_cognitive_observer:
     cog_net = Cognitive_Net(input_size=10+config.hidden_size+config.output_size, hidden_size=256, output_size = config.md_size)
     cog_net.to(config.device)
@@ -242,6 +250,7 @@ def train(config, task_seq):
             sampled_gates = torch.tensor(sampled_gates> config.gates_gaussian_cut_off, device=config.device).float()
             net.rnn.gates = sampled_gates.clone()
         else:
+            #PFC_gated.py has already created random gates at init, so just not updating them.
             print('------------------   using random gates...')    
 
     # criterion & optimizer
@@ -284,6 +293,7 @@ def train(config, task_seq):
             net= create_model()
 
         # training
+        # train with no cog obs at all
         
         if config.MDeffect:
             net.rnn.md.learn = True
@@ -294,15 +304,18 @@ def train(config, task_seq):
             # control training paradigm
             trials_to_independence= 5500
             if step_i < trials_to_independence :
-                config.use_supplied_task_id = True 
+                config.use_external_task_id = True 
+                config.train_cog_obs_on_recent_trials = True
             else:  # False leads to using cog_obs predictions
-                config.use_supplied_task_id = False
-            if step_i == trials_to_independence: print(' Let the games begin ----------------------------')
+                config.use_external_task_id = False
+                config.train_cog_obs_only = True
+                config.train_cog_obs_on_recent_trials = True
+            if step_i == trials_to_independence: print(' Cognitive-observer-only training begins ----------------------------')
 
-            if config.use_supplied_task_id:
+            if config.use_external_task_id:
                 context_id = F.one_hot(torch.tensor([task_id]* config.batch_size), config.md_size).type(torch.float)
                 # context_id = task_id if config.use_gates else 0 
-            else:
+            elif config.train_cog_obs_only:
                 #########Gather cognitive inputs ###############
                 horizon =50
                 acts = np.stack(training_log.rnn_activity[-horizon:])  # (3127, 100, 356)
@@ -340,12 +353,12 @@ def train(config, task_seq):
             # print(f'shape of outputs: {outputs.shape},    and shape of rnn_activity: {rnn_activity.shape}')
             #Shape of outputs: torch.Size([20, 100, 17]),    and shape of rnn_activity: torch.Size ([20, 100, 256
             optimizer.zero_grad()
-            cog_optimizer.zero_grad()
+            if config.use_cognitive_observer: cog_optimizer.zero_grad()
             loss = criterion(outputs, labels)
             loss.backward()
-            if config.use_supplied_task_id:
+            if config.use_external_task_id:
                 optimizer.step()
-            else:
+            elif config.train_cog_obs_only:
                 cog_optimizer.step()
 
             # from utils import show_input_output
@@ -367,30 +380,30 @@ def train(config, task_seq):
                 )
             ################################################
             #########Gather cognitive inputs ###############
-            horizon =50
-            if (((step_i+1) % horizon) ==0):# and config.use_supplied_task_id:
-                acts = np.stack(training_log.rnn_activity[-horizon:])  # (3127, 100, 356)
-                outputs_horizon = np.stack(training_log.outputs[-horizon:])
-                labels_horizon = np.stack(training_log.labels[-horizon:])
-                task_ids = np.stack(training_log.task_ids[-horizon:])
-                rl = np.argmax(labels_horizon, axis=-1)
-                ro = np.argmax(outputs_horizon, axis=-1)
-                accuracies = (rl==ro).astype(np.float32)
+            if config.use_cognitive_observer and config.train_cog_obs_on_recent_trials:
+                horizon =50
+                if (((step_i+1) % horizon) ==0):
+                    acts = np.stack(training_log.rnn_activity[-horizon:])  # (3127, 100, 356)
+                    outputs_horizon = np.stack(training_log.outputs[-horizon:])
+                    labels_horizon = np.stack(training_log.labels[-horizon:])
+                    task_ids = np.stack(training_log.task_ids[-horizon:])
+                    rl = np.argmax(labels_horizon, axis=-1)
+                    ro = np.argmax(outputs_horizon, axis=-1)
+                    accuracies = (rl==ro).astype(np.float32)
 
-                # previous_acc = np.concatenate([accuracies[:1], accuracies ])[:-1] #shift by one place to make it run one step behind. 
-                expanded_previous_acc = np.repeat(accuracies[..., np.newaxis], 10, axis=-1)   #Expanded merely to emphasize their signal over the numerous acts
-                gathered_inputs = np.concatenate([acts, labels_horizon, expanded_previous_acc], axis=-1) #shape  7100 100 266
+                    # previous_acc = np.concatenate([accuracies[:1], accuracies ])[:-1] #shift by one place to make it run one step behind. 
+                    expanded_previous_acc = np.repeat(accuracies[..., np.newaxis], 10, axis=-1)   #Expanded merely to emphasize their signal over the numerous acts
+                    gathered_inputs = np.concatenate([acts, labels_horizon, expanded_previous_acc], axis=-1) #shape  7100 100 266
 
-                task_ids_oh= F.one_hot(torch.from_numpy(task_ids).long(), 15)
-                task_ids_repeated = task_ids[..., np.newaxis].repeat(100,1)
-                
-                training_inputs = gathered_inputs
-                # training_outputs= task_ids_oh.reshape([task_ids_oh.shape[0], 1, task_ids_oh.shape[1]]).repeat([1,training_inputs.shape[1], 1])
-                training_outputs= task_ids_repeated
-                ins =  torch.tensor(training_inputs, device=config.device) # (input_length, 100, 266)
-                outs = torch.tensor(training_outputs, device=config.device).long()
-                #################################################
-                if config.use_cognitive_observer:
+                    task_ids_oh= F.one_hot(torch.from_numpy(task_ids).long(), 15)
+                    task_ids_repeated = task_ids[..., np.newaxis].repeat(100,1)
+                    
+                    training_inputs = gathered_inputs
+                    # training_outputs= task_ids_oh.reshape([task_ids_oh.shape[0], 1, task_ids_oh.shape[1]]).repeat([1,training_inputs.shape[1], 1])
+                    training_outputs= task_ids_repeated
+                    ins =  torch.tensor(training_inputs, device=config.device) # (input_length, 100, 266)
+                    outs = torch.tensor(training_outputs, device=config.device).long()
+                    #################################################
 
                     cog_optimizer.zero_grad()
                     # cin = torch.cat([rnn1_means.detach(), labels_horizon[-1]],dim =-1)
@@ -413,7 +426,7 @@ def train(config, task_seq):
                         _,_,cacc = test_model(cog_net, ins, task_ids, step_i)    
 
 
-                training_bar.set_description('cog_ls, acc: {:0.3F}, {:0.2F} '.format(cog_loss.item(), acc)+ config.human_task_names[task_id])
+                    training_bar.set_description('cog_ls, acc: {:0.3F}, {:0.2F} '.format(cog_loss.item(), acc)+ config.human_task_names[task_id])
             else:
                 training_bar.set_description('ls, acc: {:0.3F}, {:0.2F} '.format(loss.item(), acc)+ config.human_task_names[task_id])
 
@@ -446,9 +459,9 @@ def train(config, task_seq):
                 
                 #### End testing
 
-            if config.use_supplied_task_id:
+            if config.use_external_task_id:
                 criterion_accuaracy = config.criterion if task_name not in config.DMFamily else config.criterion_DMfam
-            else: # relax a little! Only optimizing context signal!
+            elif config.train_cog_obs_only: # relax a little! Only optimizing context signal!
                 criterion_accuaracy = config.criterion if task_name not in config.DMFamily else config.criterion_DMfam
                 criterion_accuaracy -=0.08
             if ((running_acc > criterion_accuaracy) and config.train_to_criterion) or (i+1== config.max_trials_per_task//config.batch_size):
@@ -536,7 +549,7 @@ for logi in range(num_tasks):
         ax.plot(log.stamps, [test_acc[logi] for test_acc in log.accuracies], linewidth=1)
         ax.plot(log.stamps, np.ones_like(log.stamps)*0.5, ':', color='grey', linewidth=1)
         ax.set_ylabel(config.human_task_names[logi], fontdict={'color': cmap.to_rgba(logi)})
-        if logi == num_tasks-1: # the last subplot, put the preds from cog_obx
+        if (logi == num_tasks-1) and config.use_cognitive_observer: # the last subplot, put the preds from cog_obx
             cop = np.stack(training_log.cog_obs_preds).reshape([-1,100,15])
             cop_colors = np.argmax(cop, axis=-1).mean(-1)
             for ri in range(max_x-2):
