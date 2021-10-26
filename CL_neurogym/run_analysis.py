@@ -60,7 +60,7 @@ if 0:
     # settings = ['SI']
     # settings = ['PFC']
 
-    ITER = list(range(56))
+    ITER = list(range(88))
     LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
@@ -1027,9 +1027,9 @@ if 0:
     # SAVE_FILE_NAME = 'PFCMD'
     # setting = 'PFCMD'
     # 2. reduced PFCMD
-    FILE_PATH = './files/similarity/scaleup_twotasks_3/'
-    SAVE_FILE_NAME = 'reducedPFCMD'
-    setting = 'PFCMD'
+    # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
+    # SAVE_FILE_NAME = 'reducedPFCMD'
+    # setting = 'PFCMD'
     # 3. PFC
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
     # SAVE_FILE_NAME = 'PFC'
@@ -1054,6 +1054,30 @@ if 0:
         x = int(tick_names_dict_reversed[config.task_seq[0][len('yang19.'):-len('-v0')]])
         y = int(tick_names_dict_reversed[config.task_seq[1][len('yang19.'):-len('-v0')]])
         task_similarity[i] = norm_similarity_matrix[x, y]
+    
+    # 6. binary control: similar -> overlapping; dissimilar -> disjoint
+    # SAVE_FILE_NAME = 'binarycontrol'
+    # setting = 'PFCMD'
+    # scaleup_task_seqs = np.load('./files/similarity/scaleup_task_seqs.npy').tolist()
+    # threshold = 0.5
+    # forward_transfer_perf = np.zeros(shape=(420))
+    # continual_learning_perf = np.zeros(shape=(420))
+    # task_similarity = np.zeros(shape=(420))
+    # for i in range(420):
+    #     # fetch task similarity
+    #     task_seq = scaleup_task_seqs[i]
+    #     x = int(tick_names_dict_reversed[task_seq[0][len('yang19.'):-len('-v0')]])
+    #     y = int(tick_names_dict_reversed[task_seq[1][len('yang19.'):-len('-v0')]])
+    #     task_similarity[i] = norm_similarity_matrix[x, y]
+    #     # binary control
+    #     if task_similarity[i] > threshold:
+    #         FILE_PATH = './files/similarity/scaleup_twotasks_3/'
+    #     else:
+    #         FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
+    #     config = np.load(FILE_PATH + str(i) + '_config_' + setting + '.npy', allow_pickle=True).item()
+    #     log = np.load(FILE_PATH + str(i) + '_log_' + setting + '.npy', allow_pickle=True).item()
+    #     forward_transfer_perf[i] = np.array(log.act_perfs)[1, 39]
+    #     continual_learning_perf[i] = np.array(log.act_perfs)[0, 79]
     
     # different ways to plot the data
     # 1. split data into a few intervals
@@ -1157,7 +1181,7 @@ if 0:
         reg.fit(task_similarity.reshape(-1, 1), continual_learning_perf.reshape(-1, 1))
         X_pred = np.linspace(0.3, 1.0, 100)
         y_pred = reg.predict(X_pred.reshape(-1, 1)).squeeze()
-        axes[0].plot(X_pred, y_pred, linewidth=2, color=line_colors[0])
+        axes[0].plot(X_pred, y_pred, linewidth=2.5, color=line_colors[0])
         # subplot 2
         axes[1].scatter(task_similarity, forward_transfer_perf, c=line_colors[1], s=10, alpha=0.5)
         axes[1].set_xlim([0.3, 1.0])
@@ -1170,10 +1194,12 @@ if 0:
         reg.fit(task_similarity.reshape(-1, 1), forward_transfer_perf.reshape(-1, 1))
         X_pred = np.linspace(0.3, 1.0, 100)
         y_pred = reg.predict(X_pred.reshape(-1, 1)).squeeze()
-        axes[1].plot(X_pred, y_pred, linewidth=2, color=line_colors[1])
+        axes[1].plot(X_pred, y_pred, linewidth=2.5, color=line_colors[1])
         # show
         plt.tight_layout(w_pad=3.0)
         plt.show()
+        # plt.savefig('./files/' + 'FTCL_VS_similarity_scatterplot_' + SAVE_FILE_NAME + '.pdf')
+        # plt.close()
 
 
 # decoding analysis
