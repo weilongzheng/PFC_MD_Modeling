@@ -51,16 +51,13 @@ mpl.rcParams['legend.fontsize'] = 12 # 'medium'
 if 0:
     # FILE_PATH = './files/scaleup_threetasks_4/baselines/'
     # FILE_PATH = './files/scaleup_threetasks_4/PFCMD/'
+    FILE_PATH = './files/randomortho_init/baselines/'
     # FILE_PATH = './files/randomortho_init/PFCMD/'
-    FILE_PATH = './files/temp/'
 
-    # settings = ['EWC', 'SI', 'PFC']
+    settings = ['EWC', 'SI', 'PFC']
     # settings = ['PFCMD']
-    settings = ['EWC']
-    # settings = ['SI']
-    # settings = ['PFC']
 
-    ITER = list(range(88))
+    ITER = list(range(420))
     LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
@@ -72,13 +69,9 @@ if 0:
         time_stamps = log.stamps
         act_perfs_mean = np.mean(act_perfs_all, axis=0)
         act_perfs_std = np.std(act_perfs_all, axis=0)
-        # np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
-        # np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
-        # np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
-    
-    for i in range(2):
-        plt.plot(act_perfs_mean[i])
-    plt.show()
+        np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
+        np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
+        np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
     
 
 # main performance curve: two tasks
@@ -160,6 +153,7 @@ if 0:
 # PFC+MD VS baselines: two tasks
 if 0:
     FILE_PATH = './files/scaleup_twotasks_5/'
+    # FILE_PATH = './files/randomortho_init/'
     settings = ['PFCMD', 'EWC', 'SI', 'PFC']
     line_colors = ['darkviolet', 'brown', 'tab:olive', 'darkgrey']
     labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
