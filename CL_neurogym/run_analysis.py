@@ -181,6 +181,7 @@ if 0:
             axes[env_id].set_yticklabels([round(0.2*i, 1) for i in range(6)])
             axes[env_id].legend(loc='lower right', bbox_to_anchor=(0.81, 0.05))
     plt.tight_layout()
+    # plt.tight_layout(w_pad=8.0) # used when FILE_PATH = './files/randomortho_init/'
     # plt.show()
     plt.savefig('./files/' + 'twotasksperformance-baselines-alltaskseqs.pdf')
     plt.close()
