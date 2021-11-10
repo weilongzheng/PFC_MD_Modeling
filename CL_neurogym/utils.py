@@ -141,7 +141,7 @@ def get_optimizer(net, config):
     for name, param in net.named_parameters():
         # if 'rnn.h2h' not in name: # reservoir
         # if True: # learnable RNN
-        if 'rnn.input2PFCctx' not in name:
+        if name in ['rnn.input2h.weight', 'rnn.input2h.bias', 'rnn.h2h.weight', 'rnn.h2h.bias', 'fc.weight', 'fc.bias']:
             print(name)
             training_params.append(param)
             named_training_params[name] = param

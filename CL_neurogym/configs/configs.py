@@ -25,8 +25,9 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dnms-v0']
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dms-v0']
         # self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
-        self.task_seq = ['yang19.dlygo-v0', 'yang19.dnmc-v0'] # single task pair analysis
-        # self.task_seq = ['yang19.dnmc-v0', 'yang19.dms-v0']
+        # self.task_seq = ['yang19.dlygo-v0', 'yang19.dnmc-v0'] # single task pair analysis
+        self.task_seq = ['yang19.dnmc-v0', 'yang19.dms-v0']
+        # self.task_seq = ['yang19.dnmc-v0', 'yang19.dm2-v0']
         # 2. Three tasks
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0', 'yang19.dnmc-v0']
         # self.task_seq = ['yang19.dm1-v0', 'yang19.dlygo-v0', 'yang19.dnmc-v0']
@@ -96,6 +97,22 @@ class BaseConfig(object):
 
     def __str__(self):
         return str(self.__dict__)
+
+class PFCPFCctxConfig(BaseConfig):
+    def __init__(self):
+        super(PFCPFCctxConfig, self).__init__()
+        # PFC context
+        self.hidden_ctx_size = 400 # 450
+        self.sub_size = 200 # 150
+        self.sub_active_size = 50 # this config is deprecated right now
+        self.sub_active_prob = 0.40
+        self.hidden_ctx_noise = 0.01
+        # save variables
+        self.FILENAME = {
+                        'config':    'config_PFCPFCctx.npy',
+                        'log':       'log_PFCPFCctx.npy',
+                        'plot_perf': 'performance_PFCPFCctx_task.png',
+        }
 
 class PFCMDConfig(BaseConfig):
     def __init__(self):
