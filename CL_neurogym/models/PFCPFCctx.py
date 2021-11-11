@@ -61,7 +61,7 @@ class CTRNN_PFCctx(nn.Module):
         weight_data = torch.zeros(self.hidden_size, self.hidden_ctx_size)
         for i in range(weight_data.shape[0]):
             j = np.floor(np.random.rand()*self.hidden_ctx_size).astype(int)
-            weight_data[i, j] = -20 # original -5
+            weight_data[i, j] = -5 # original -5
         self.PFCctx2PFC.weight.data = weight_data
 
         ### PFC recurrent weights initialization

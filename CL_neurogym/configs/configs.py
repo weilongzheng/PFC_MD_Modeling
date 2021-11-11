@@ -26,8 +26,8 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dms-v0']
         # self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dnmc-v0'] # single task pair analysis
-        self.task_seq = ['yang19.dnmc-v0', 'yang19.dms-v0']
-        # self.task_seq = ['yang19.dnmc-v0', 'yang19.dm2-v0']
+        # self.task_seq = ['yang19.dms-v0', 'yang19.dnms-v0']
+        self.task_seq = ['yang19.dlyanti-v0', 'yang19.dmc-v0']
         # 2. Three tasks
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0', 'yang19.dnmc-v0']
         # self.task_seq = ['yang19.dm1-v0', 'yang19.dlygo-v0', 'yang19.dnmc-v0']
@@ -83,6 +83,7 @@ class BaseConfig(object):
         self.FILENAME = {
                         'config':    'config_PFC.npy',
                         'log':       'log_PFC.npy',
+                        'net':       'net_PFC.pt',
                         'plot_perf': 'performance_PFC_task.png',
         }
         # continual learning mode
@@ -111,6 +112,7 @@ class PFCPFCctxConfig(BaseConfig):
         self.FILENAME = {
                         'config':    'config_PFCPFCctx.npy',
                         'log':       'log_PFCPFCctx.npy',
+                        'net':       'net_PFCPFCctx.pt',
                         'plot_perf': 'performance_PFCPFCctx_task.png',
         }
 
@@ -133,6 +135,7 @@ class PFCMDConfig(BaseConfig):
         self.FILENAME = {
                         'config':    'config_PFCMD.npy',
                         'log':       'log_PFCMD.npy',
+                        'net':       'net_PFCMD.pt',
                         'plot_perf': 'performance_PFCMD_task.png',
         }
 
@@ -147,6 +150,7 @@ class EWCConfig(BaseConfig):
         self.FILENAME = {
                         'config':    'config_EWC.npy',
                         'log':       'log_EWC.npy',
+                        'net':       'net_EWC.pt',
                         'plot_perf': 'performance_EWC_task.png',
         }
 
@@ -164,6 +168,7 @@ class SIConfig(BaseConfig):
         self.FILENAME = {
                         'config':    'config_SI.npy',
                         'log':       'log_SI.npy',
+                        'net':       'net_SI.pt',
                         'plot_perf': 'performance_SI_task.png',
         }
 

@@ -265,9 +265,10 @@ def get_args_from_parser(my_parser):
 
 
 # save variables
-def save_variables(config, log, task_seq_id):
+def save_variables(config, log, net, task_seq_id):
     np.save(config.FILEPATH + f'{task_seq_id}_' + config.FILENAME['config'], config)
     np.save(config.FILEPATH + f'{task_seq_id}_' + config.FILENAME['log'], log)
+    # torch.save(net, config.FILEPATH + f'{task_seq_id}_'+ config.FILENAME['net'])
     # log = np.load('./files/'+'log.npy', allow_pickle=True).item()
     # config = np.load('./files/'+'config.npy', allow_pickle=True).item()
 

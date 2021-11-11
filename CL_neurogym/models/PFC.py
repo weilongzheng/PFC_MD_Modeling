@@ -74,7 +74,7 @@ class CTRNN(nn.Module):
         # self.h2h.weight.data = torch.block_diag(*weights)
 
         # random orthogonal noise
-        # nn.init.orthogonal_(self.h2h.weight, gain=0.5)
+        # nn.init.orthogonal_(self.h2h.weight, gain=np.sqrt(2)) # torch.nn.init.calculate_gain() returns the recommended gain value
 
         # all uniform noise
         # k = (1./self.hidden_size)**0.5
