@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 from torch.nn import init
 from torch.nn import functional as F
+from data.ngym import NGYM
+
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LinearRegression
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -51,13 +53,18 @@ mpl.rcParams['legend.fontsize'] = 12 # 'medium'
 if 0:
     # FILE_PATH = './files/scaleup_threetasks_4/baselines/'
     # FILE_PATH = './files/scaleup_threetasks_4/PFCMD/'
-    FILE_PATH = './files/randomortho_init/baselines/'
+    # FILE_PATH = './files/randomortho_init/baselines/'
     # FILE_PATH = './files/randomortho_init/PFCMD/'
 
-    settings = ['EWC', 'SI', 'PFC']
-    # settings = ['PFCMD']
+    FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # FILE_PATH = './files/temp/'
 
-    ITER = list(range(420))
+    settings = ['PFC']
+    # settings = ['PFCPFCctx']
+    # settings = ['EWC', 'SI', 'PFC']
+
+    ITER = list(range(0, 11)) + list(range(140, 156)) + list(range(280, 293)) 
+
     LEN = len(ITER)
     for setting in settings:
         act_perfs_all = []
@@ -69,9 +76,12 @@ if 0:
         time_stamps = log.stamps
         act_perfs_mean = np.mean(act_perfs_all, axis=0)
         act_perfs_std = np.std(act_perfs_all, axis=0)
-        np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
-        np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
-        np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
+        # np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
+        # np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
+        # np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
+    plt.plot(act_perfs_mean[0])
+    plt.plot(act_perfs_mean[1])
+    plt.show()
     
 
 # main performance curve: two tasks
@@ -298,11 +308,18 @@ if 0:
 
 # Record activity
 if 0:
-    FILE_PATH = './files/trajectory/PFC/'
-    log = np.load(FILE_PATH + 'log.npy', allow_pickle=True).item()
-    config = np.load(FILE_PATH + 'config.npy', allow_pickle=True).item()
-    dataset = np.load(FILE_PATH + 'dataset.npy', allow_pickle=True).item()
-    net = torch.load(FILE_PATH + 'net.pt')
+    
+    # FILE_PATH = './files/trajectory/PFC/'
+    # FILE_PATH = './files/energy_efficiency/PFConly/'
+    FILE_PATH = './files/energy_efficiency/PFCMDfull/'
+    # TASK_PAIR = 'dlyantidm2'
+    # TASK_PAIR = 'dlyantidmc'
+    TASK_PAIR = 'dlygodnmc'
+
+    log = np.load(FILE_PATH + 'log_' + TASK_PAIR + '.npy', allow_pickle=True).item()
+    config = np.load(FILE_PATH + 'config_' + TASK_PAIR + '.npy', allow_pickle=True).item()
+    dataset = NGYM(config) # dataset = np.load(FILE_PATH + 'dataset.npy', allow_pickle=True).item()
+    net = torch.load(FILE_PATH + 'net_' + TASK_PAIR + '.pt')
     crit = nn.MSELoss()
 
     # turn on test mode
@@ -315,13 +332,19 @@ if 0:
         for task_id in [0, 1]:
             inputs, labels = dataset(task_id=task_id)
             outputs, rnn_activity = net(inputs, task_id=task_id)
-            loss = crit(outputs, labels)
-            np.save('./files/'+f'PFC_activity_{task_id}.npy', rnn_activity)
-            if hasattr(config, 'MDeffect'):
-                if config.MDeffect:
-                    np.save('./files/'+f'MD_activity_{task_id}.npy', net.rnn.md.md_output_t)
-                    np.save('./files/'+f'PFC_ctx_activity_{task_id}.npy', net.rnn.PFC_ctx_acts)
-            print(loss)
+            ### double-check performance
+            # loss = crit(outputs, labels)
+            # print(loss)
+            plt.plot(np.array(log.act_perfs)[0])
+            plt.plot(np.array(log.act_perfs)[1])
+            plt.show()
+            ### save activity
+            np.save('./files/' + 'PFC_activity_' + TASK_PAIR + f'_{task_id}.npy', rnn_activity) # PFC activity
+            # if hasattr(config, 'MDeffect'):
+            #     if config.MDeffect:
+            #         np.save('./files/'+f'MD_activity_{task_id}.npy', net.rnn.md.md_output_t) # MD activity
+            #         np.save('./files/'+f'PFC_ctx_activity_{task_id}.npy', net.rnn.PFC_ctx_acts) # PFC-ctx activity
+            
 
 # PFC trajectory
 if 0:
@@ -445,6 +468,74 @@ if 0:
     plt.legend(bbox_to_anchor = (1.2, 0.6), prop=legend_font)
     plt.title('PFC_ctx activity in two tasks', fontdict=title_font)
     plt.show()
+
+# Energy efficiency
+if 0:
+    FILE_PATH = './files/energy_efficiency/'
+    
+    # TASK_PAIR = 'dlyantidm2'
+    # TASK_PAIR = 'dlyantidmc'
+    TASK_PAIR = 'dlygodnmc'
+
+    PFC_activity = {'PFConly':dict(), 'PFCMDfull':dict()}
+    for mode in ['PFConly', 'PFCMDfull']:
+        # fetch dataset and model
+        log = np.load(FILE_PATH + mode + '/log_' + TASK_PAIR + '.npy', allow_pickle=True).item()
+        config = np.load(FILE_PATH + mode + '/config_' + TASK_PAIR + '.npy', allow_pickle=True).item()
+        dataset = NGYM(config)
+        net = torch.load(FILE_PATH + mode + '/net_' + TASK_PAIR + '.pt')
+        # double-check performance
+        # plt.plot(np.array(log.act_perfs)[0])
+        # plt.plot(np.array(log.act_perfs)[1])
+        # plt.show()
+        # turn on test mode
+        net.eval()
+        if hasattr(config, 'MDeffect'):
+            if config.MDeffect:
+                net.rnn.md.learn = False
+        # testing
+        with torch.no_grad():
+            num_trials = 100
+            for task_id in [0, 1]:
+                PFC_activity_sub = []
+                for _ in range(num_trials):
+                    inputs, labels = dataset(task_id=task_id)
+                    outputs, rnn_activity = net(inputs, task_id=task_id)
+                    PFC_activity_sub.append(np.mean(rnn_activity.numpy(), axis=(0, 1)))
+                PFC_activity[mode][task_id] = np.mean(np.array(PFC_activity_sub), axis=0)
+                
+    # plots
+    fig = plt.figure(figsize=(4, 4))
+    bins = np.arange(0, 0.3, 0.01)
+    sns.histplot(data=np.concatenate((PFC_activity['PFCMDfull'][0], PFC_activity['PFCMDfull'][1])),
+                 stat='probability', kde=True,
+                 bins=bins, alpha=0.4, color='darkviolet', label='Full Model',
+                 edgecolor='k', linewidth=1.0)
+    sns.histplot(data=np.concatenate((PFC_activity['PFConly'][0], PFC_activity['PFConly'][1])),
+                 stat='probability', kde=True,
+                 bins=bins, alpha=0.4, color='dimgray', label='PFC only',
+                 edgecolor='k', linewidth=1.0)
+    plt.xlabel('Activity (a.u.)')
+    plt.ylabel('Probability')
+    plt.xlim([-0.01, 0.3])
+    plt.ylim([0., 0.62])
+    plt.xticks([0, 0.1, 0.2, 0.3])
+    plt.yticks([0, 0.2, 0.4, 0.6])
+    plt.legend(loc='upper right')
+    plt.tight_layout()
+    plt.show()
+
+    # Representation vector to prove disjoint representation
+    for mode in ['PFConly', 'PFCMDfull']:
+        a = PFC_activity[mode][0]
+        b = PFC_activity[mode][1]
+        print(mode, (a/np.linalg.norm(a)) @ (b/np.linalg.norm(b)))
+    
+    # FTV: task variance analysis
+    # a = np.square(PFC_activity['PFConly'][0] - np.mean(PFC_activity['PFConly'][0]))
+    # b = np.square(PFC_activity['PFConly'][1] - np.mean(PFC_activity['PFCMDfull'][1]))
+    # sns.histplot(data=(a-b)/(a+b))
+    # plt.show()
 
 # Connections weights
 if 0:
