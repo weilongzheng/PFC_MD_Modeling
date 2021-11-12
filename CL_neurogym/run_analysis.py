@@ -63,7 +63,7 @@ if 0:
     # settings = ['PFCPFCctx']
     # settings = ['EWC', 'SI', 'PFC']
 
-    ITER = list(range(0, 11)) + list(range(140, 156)) + list(range(280, 293)) 
+    ITER = list(range(0, 34)) + list(range(140, 190)) + list(range(280, 323)) 
 
     LEN = len(ITER)
     for setting in settings:
@@ -473,6 +473,8 @@ if 0:
 if 0:
     FILE_PATH = './files/energy_efficiency/'
     
+    # TASK_PAIR = 'dm1anti'
+    # TASK_PAIR = 'gomultidm'
     # TASK_PAIR = 'dlyantidm2'
     # TASK_PAIR = 'dlyantidmc'
     TASK_PAIR = 'dlygodnmc'
@@ -503,8 +505,8 @@ if 0:
                     outputs, rnn_activity = net(inputs, task_id=task_id)
                     PFC_activity_sub.append(np.mean(rnn_activity.numpy(), axis=(0, 1)))
                 PFC_activity[mode][task_id] = np.mean(np.array(PFC_activity_sub), axis=0)
-                
-    # plots
+
+    # histogram plot
     fig = plt.figure(figsize=(4, 4))
     bins = np.arange(0, 0.3, 0.01)
     sns.histplot(data=np.concatenate((PFC_activity['PFCMDfull'][0], PFC_activity['PFCMDfull'][1])),
@@ -525,12 +527,73 @@ if 0:
     plt.tight_layout()
     plt.show()
 
-    # Representation vector to prove disjoint representation
-    for mode in ['PFConly', 'PFCMDfull']:
+    # prove disjoint representation: correlation between mean activities of two tasks
+    modes = ['PFConly', 'PFCMDfull']
+    x_pos = np.arange(len(modes))
+    correlations = dict()
+    for mode in modes:
         a = PFC_activity[mode][0]
         b = PFC_activity[mode][1]
-        print(mode, (a/np.linalg.norm(a)) @ (b/np.linalg.norm(b)))
-    
+        correlations[mode] = (a/np.linalg.norm(a)) @ (b/np.linalg.norm(b))
+    text_font = {'family':'Arial','weight':'bold', 'size':15}
+    fig, ax = plt.subplots(figsize=(4, 4))
+    ax.bar(x=x_pos, height=[correlations['PFConly'], correlations['PFCMDfull']], color=['dimgray', 'darkviolet'])
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(modes)
+    ax.set_ylabel('Correlation')
+    plt.text(x=0-0.17, y=correlations['PFConly']+0.01,
+             s=str(round(correlations['PFConly'], 3)),
+             fontdict=text_font, color='dimgray')
+    plt.text(x=1-0.17, y=correlations['PFCMDfull']+0.01, 
+             s=str(round(correlations['PFCMDfull'], 3))+'00',
+             fontdict=text_font, color='darkviolet')
+    plt.tight_layout()
+    plt.show()
+
+    # norm plot
+    modes = ['PFConly', 'PFCMDfull']
+    x_pos = np.arange(len(modes))
+    norms = dict()
+    for mode in modes:
+        a = np.concatenate((PFC_activity[mode][0], PFC_activity[mode][1]))
+        a = np.linalg.norm(a)
+        norms[mode] = a
+    fig = plt.figure(figsize=(4, 4))
+    plt.bar(x=x_pos, height=[norms['PFConly'], norms['PFCMDfull']], color=['dimgray', 'darkviolet'])
+    plt.xticks(x_pos, modes)
+    plt.ylabel('PFC Mean Activity Norm')
+    plt.tight_layout()
+    plt.show()
+
+    # mean activity plot
+    modes = ['PFConly', 'PFCMDfull']
+    x_pos = np.arange(len(modes))
+    means = dict()
+    for mode in modes:
+        a = np.concatenate((PFC_activity[mode][0], PFC_activity[mode][1]))
+        a = np.mean(a)
+        means[mode] = a
+    fig = plt.figure(figsize=(4, 4))
+    plt.bar(x=x_pos, height=[means['PFConly'], means['PFCMDfull']], color=['dimgray', 'darkviolet'])
+    plt.xticks(x_pos, modes)
+    plt.ylabel('PFC Mean Activity')
+    plt.tight_layout()
+    plt.show()
+
+    # sort PFC neurons for visualization
+    for task_id in [0, 1]:
+        sorted_PFCMDfull = np.sort(PFC_activity['PFCMDfull'][task_id])
+        sorted_PFConly = np.sort(PFC_activity['PFConly'][task_id])
+        fig = plt.figure(figsize=(4, 4))
+        plt.plot(sorted_PFConly, linewidth=2, color='dimgray', label='PFConly')
+        plt.plot(sorted_PFCMDfull, linewidth=2, color='darkviolet', label='PFCMDfull')
+        plt.xticks([])
+        plt.xlabel('PFC Neuron Index')
+        plt.ylabel('Sorted Mean Activity')
+        plt.legend()
+        plt.title(f'Task {task_id+1}')
+        plt.show()
+
     # FTV: task variance analysis
     # a = np.square(PFC_activity['PFConly'][0] - np.mean(PFC_activity['PFConly'][0]))
     # b = np.square(PFC_activity['PFConly'][1] - np.mean(PFC_activity['PFCMDfull'][1]))
@@ -790,7 +853,7 @@ if 0:
                         cbar_kws={'fraction':0.046, 'pad':0.04})
         plt.xticks([])
         plt.yticks([i+0.5 for i in range(len(tick_names))], tick_names, 
-                rotation=0, va='center', font='arial', fontsize=12)
+                    rotation=0, va='center', font='arial', fontsize=12)
         # plt.title('Units')
         plt.xlabel('Units')
         ax.tick_params('both', length=0)
