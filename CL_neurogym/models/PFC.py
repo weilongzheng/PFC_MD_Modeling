@@ -38,8 +38,8 @@ class CTRNN(nn.Module):
     def reset_parameters(self):
         ### recurrent weights initialization
         # identity*0.5
-        nn.init.eye_(self.h2h.weight)
-        self.h2h.weight.data *= 0.5
+        # nn.init.eye_(self.h2h.weight)
+        # self.h2h.weight.data *= 0.5
 
         # identity*other value
         # nn.init.eye_(self.h2h.weight)
@@ -74,7 +74,7 @@ class CTRNN(nn.Module):
         # self.h2h.weight.data = torch.block_diag(*weights)
 
         # random orthogonal noise
-        # nn.init.orthogonal_(self.h2h.weight, gain=np.sqrt(2)) # torch.nn.init.calculate_gain() returns the recommended gain value
+        nn.init.orthogonal_(self.h2h.weight, gain=np.sqrt(2)) # torch.nn.init.calculate_gain() returns the recommended gain value
 
         # all uniform noise
         # k = (1./self.hidden_size)**0.5

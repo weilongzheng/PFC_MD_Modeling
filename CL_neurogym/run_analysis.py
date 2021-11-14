@@ -57,13 +57,12 @@ if 0:
     # FILE_PATH = './files/randomortho_init/PFCMD/'
 
     FILE_PATH = './files/scaleup_twotasks_5/baselines/'
-    # FILE_PATH = './files/temp/'
 
-    settings = ['PFC']
-    # settings = ['PFCPFCctx']
+    # settings = ['PFC']
+    settings = ['PFCPFCctx']
     # settings = ['EWC', 'SI', 'PFC']
 
-    ITER = list(range(0, 34)) + list(range(140, 190)) + list(range(280, 323)) 
+    ITER = list(range(420)) 
 
     LEN = len(ITER)
     for setting in settings:
@@ -76,12 +75,12 @@ if 0:
         time_stamps = log.stamps
         act_perfs_mean = np.mean(act_perfs_all, axis=0)
         act_perfs_std = np.std(act_perfs_all, axis=0)
-        # np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
-        # np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
-        # np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
-    plt.plot(act_perfs_mean[0])
-    plt.plot(act_perfs_mean[1])
-    plt.show()
+        np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
+        np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
+        np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
+    # plt.plot(act_perfs_mean[0])
+    # plt.plot(act_perfs_mean[1])
+    # plt.show()
     
 
 # main performance curve: two tasks
@@ -194,6 +193,41 @@ if 0:
     # plt.tight_layout(w_pad=8.0) # used when FILE_PATH = './files/randomortho_init/'
     # plt.show()
     plt.savefig('./files/' + 'twotasksperformance-baselines-alltaskseqs.pdf')
+    plt.close()
+
+# Knockout experiment: two tasks
+if 0:
+    FILE_PATH = './files/scaleup_twotasks_5/'
+    settings = ['PFCMD', 'PFCPFCctx', 'PFC']
+    line_colors = ['darkviolet', '#70e000', 'darkgrey']
+    labels = ['Full Model', 'No MD', 'No MD & PFC-ctx']
+    linewidths = [2, 2, 2, 2]
+
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4))
+    for env_id in range(2): # 2 tasks
+        color1, color2= 'tab:orange', 'tab:green'
+        axes[env_id].axvspan(    0, 20000, alpha=0.15, color=color1)
+        axes[env_id].axvspan(20000, 40000, alpha=0.15, color=color2)
+        axes[env_id].axvspan(40000, 50000, alpha=0.15, color=color1)
+        for i in range(len(settings)):
+            act_perfs_mean = np.load(FILE_PATH + 'avg_perfs_mean_' + settings[i] + '.npy')
+            act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + settings[i] + '.npy')
+            time_stamps = np.load(FILE_PATH + 'time_stamps_' + settings[i] + '.npy')
+            axes[env_id].plot(time_stamps, act_perfs_mean[env_id, :], linewidth=linewidths[i], color=line_colors[i], label=labels[i])
+            axes[env_id].set_xlabel('Trials')
+            axes[env_id].set_ylabel('Performance')
+            # axes[env_id].set_title('Task{:d} Performance'.format(env_id+1))
+            axes[env_id].set_xlim([0.0, 51000])
+            axes[env_id].set_ylim([0.0, 1.01])
+            axes[env_id].set_xticks([0, 20000, 40000, 50000])
+            axes[env_id].set_yticks([0.2*i for i in range(6)])
+            axes[env_id].set_xticklabels([0, 20, 40, 50])
+            axes[env_id].set_yticklabels([round(0.2*i, 1) for i in range(6)])
+            axes[env_id].legend(loc='lower right', bbox_to_anchor=(0.94, 0.04))
+    plt.tight_layout()
+    # plt.tight_layout(w_pad=8.0) # used when FILE_PATH = './files/randomortho_init/'
+    # plt.show()
+    plt.savefig('./files/' + 'twotasksperformance-knockout-alltaskseqs.pdf')
     plt.close()
 
 # PFC+MD VS baselines: three tasks
@@ -471,14 +505,18 @@ if 0:
 
 # Energy efficiency
 if 0:
-    FILE_PATH = './files/energy_efficiency/'
+    FILE_PATH = './files/energy_efficiency/identity_init/'
+    # FILE_PATH = './files/energy_efficiency/notraining/'
     
     # TASK_PAIR = 'dm1anti'
     # TASK_PAIR = 'gomultidm'
     # TASK_PAIR = 'dlyantidm2'
     # TASK_PAIR = 'dlyantidmc'
     TASK_PAIR = 'dlygodnmc'
+    # TASK_PAIR = 'dlygodm1dnmc'
+    # TASK_PAIR = ''
 
+    # record activity
     PFC_activity = {'PFConly':dict(), 'PFCMDfull':dict()}
     for mode in ['PFConly', 'PFCMDfull']:
         # fetch dataset and model
@@ -521,7 +559,7 @@ if 0:
     plt.ylabel('Probability')
     plt.xlim([-0.01, 0.3])
     plt.ylim([0., 0.62])
-    plt.xticks([0, 0.1, 0.2, 0.3])
+    plt.xticks(ticks=[0, 0.1, 0.2, 0.3], labels=[0, 0.1, 0.2, ''])
     plt.yticks([0, 0.2, 0.4, 0.6])
     plt.legend(loc='upper right')
     plt.tight_layout()
@@ -541,10 +579,10 @@ if 0:
     ax.set_xticks(x_pos)
     ax.set_xticklabels(modes)
     ax.set_ylabel('Correlation')
-    plt.text(x=0-0.17, y=correlations['PFConly']+0.01,
+    plt.text(x=0-0.17, y=correlations['PFConly']+0.015,
              s=str(round(correlations['PFConly'], 3)),
              fontdict=text_font, color='dimgray')
-    plt.text(x=1-0.17, y=correlations['PFCMDfull']+0.01, 
+    plt.text(x=1-0.17, y=correlations['PFCMDfull']+0.015, 
              s=str(round(correlations['PFCMDfull'], 3))+'00',
              fontdict=text_font, color='darkviolet')
     plt.tight_layout()
