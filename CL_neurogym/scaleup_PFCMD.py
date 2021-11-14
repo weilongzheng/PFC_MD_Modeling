@@ -95,7 +95,7 @@ for task_seq_id, task_seq in enumerate(task_seqs, start=0):
             running_train_time = 0
 
     # save variables
-    save_variables(config=config, log=log, task_seq_id=task_seq_id)
+    save_variables(config=config, log=log, net=net, task_seq_id=task_seq_id)
 
     # visualization
     plot_perf(config, log, task_seq_id=task_seq_id)
