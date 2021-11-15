@@ -50,19 +50,22 @@ mpl.rcParams['legend.fontsize'] = 12 # 'medium'
 # scale up test performance
 # TODO: make this a helper function
 ## compute mean & std of performance
-if 0:
+if 1:
     # FILE_PATH = './files/scaleup_threetasks_4/baselines/'
     # FILE_PATH = './files/scaleup_threetasks_4/PFCMD/'
     # FILE_PATH = './files/randomortho_init/baselines/'
     # FILE_PATH = './files/randomortho_init/PFCMD/'
 
-    FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
+    FILE_PATH = './files/temp/'
 
     # settings = ['PFC']
-    settings = ['PFCPFCctx']
+    # settings = ['EWC']
+    # settings = ['SI']
+    # settings = ['PFCPFCctx']
     # settings = ['EWC', 'SI', 'PFC']
 
-    ITER = list(range(420)) 
+    ITER = list(range(24)) 
 
     LEN = len(ITER)
     for setting in settings:
@@ -75,12 +78,12 @@ if 0:
         time_stamps = log.stamps
         act_perfs_mean = np.mean(act_perfs_all, axis=0)
         act_perfs_std = np.std(act_perfs_all, axis=0)
-        np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
-        np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
-        np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
-    # plt.plot(act_perfs_mean[0])
-    # plt.plot(act_perfs_mean[1])
-    # plt.show()
+        # np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
+        # np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
+        # np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
+    plt.plot(act_perfs_mean[0])
+    plt.plot(act_perfs_mean[1])
+    plt.show()
     
 
 # main performance curve: two tasks
