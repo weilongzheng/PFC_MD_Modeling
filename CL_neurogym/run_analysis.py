@@ -50,22 +50,23 @@ mpl.rcParams['legend.fontsize'] = 12 # 'medium'
 # scale up test performance
 # TODO: make this a helper function
 ## compute mean & std of performance
-if 1:
+if 0:
     # FILE_PATH = './files/scaleup_threetasks_4/baselines/'
     # FILE_PATH = './files/scaleup_threetasks_4/PFCMD/'
-    # FILE_PATH = './files/randomortho_init/baselines/'
-    # FILE_PATH = './files/randomortho_init/PFCMD/'
+    # FILE_PATH = './files/randomortho_init_2/baselines/'
+    FILE_PATH = './files/randomortho_init_2/PFCMD/'
 
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
-    FILE_PATH = './files/temp/'
+    # FILE_PATH = './files/temp/'
 
     # settings = ['PFC']
     # settings = ['EWC']
     # settings = ['SI']
     # settings = ['PFCPFCctx']
+    settings = ['PFCMD']
     # settings = ['EWC', 'SI', 'PFC']
 
-    ITER = list(range(24)) 
+    ITER = list(range(420)) 
 
     LEN = len(ITER)
     for setting in settings:
@@ -78,12 +79,12 @@ if 1:
         time_stamps = log.stamps
         act_perfs_mean = np.mean(act_perfs_all, axis=0)
         act_perfs_std = np.std(act_perfs_all, axis=0)
-        # np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
-        # np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
-        # np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
-    plt.plot(act_perfs_mean[0])
-    plt.plot(act_perfs_mean[1])
-    plt.show()
+        np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
+        np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
+        np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
+    # plt.plot(act_perfs_mean[0])
+    # plt.plot(act_perfs_mean[1])
+    # plt.show()
     
 
 # main performance curve: two tasks
@@ -164,8 +165,8 @@ if 0:
 
 # PFC+MD VS baselines: two tasks
 if 0:
-    FILE_PATH = './files/scaleup_twotasks_5/'
-    # FILE_PATH = './files/randomortho_init/'
+    # FILE_PATH = './files/scaleup_twotasks_5/'
+    FILE_PATH = './files/randomortho_init_2/'
     settings = ['PFCMD', 'EWC', 'SI', 'PFC']
     line_colors = ['darkviolet', 'brown', 'tab:olive', 'darkgrey']
     labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
@@ -566,7 +567,9 @@ if 0:
     plt.yticks([0, 0.2, 0.4, 0.6])
     plt.legend(loc='upper right')
     plt.tight_layout()
-    plt.show()
+    # plt.show()
+    plt.savefig('./files/' + 'energy_efficiency_distribution.pdf')
+    plt.close()
 
     # prove disjoint representation: correlation between mean activities of two tasks
     modes = ['PFConly', 'PFCMDfull']
@@ -633,7 +636,11 @@ if 0:
         plt.ylabel('Sorted Mean Activity')
         plt.legend()
         plt.title(f'Task {task_id+1}')
-        plt.show()
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig('./files/' + f'energy_efficiency_meanactivity_task{task_id+1}.pdf')
+        plt.close()
+
 
     # FTV: task variance analysis
     # a = np.square(PFC_activity['PFConly'][0] - np.mean(PFC_activity['PFConly'][0]))
