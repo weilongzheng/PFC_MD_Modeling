@@ -148,6 +148,10 @@ class CTRNN_PFCctx(nn.Module):
         # save PFC-ctx activity
         self.PFC_ctx_act = PFC_ctx_input
 
+        # Winner-take-all
+        # PFC_ctx_input_threshold = torch.mean(PFC_ctx_input)
+        # PFC_ctx_input = (torch.logical_not(PFC_ctx_input>PFC_ctx_input_threshold)).to(torch.float32)
+
         # PFCctx outputs
         PFC_ctx_output = self.PFCctx2PFC(PFC_ctx_input)
         self.PFC_ctx_out = PFC_ctx_output
