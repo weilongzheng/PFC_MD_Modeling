@@ -54,10 +54,10 @@ if 0:
     # FILE_PATH = './files/scaleup_threetasks_4/baselines/'
     # FILE_PATH = './files/scaleup_threetasks_4/PFCMD/'
     # FILE_PATH = './files/randomortho_init_2/baselines/'
-    FILE_PATH = './files/randomortho_init_2/PFCMD/'
+    # FILE_PATH = './files/randomortho_init_2/PFCMD/'
 
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
-    # FILE_PATH = './files/temp/'
+    FILE_PATH = './files/temp/'
 
     # settings = ['PFC']
     # settings = ['EWC']
@@ -66,7 +66,7 @@ if 0:
     settings = ['PFCMD']
     # settings = ['EWC', 'SI', 'PFC']
 
-    ITER = list(range(420)) 
+    ITER = list(range(0, 90)) + list(range(140, 260)) + list(range(280, 393))
 
     LEN = len(ITER)
     for setting in settings:
@@ -79,12 +79,12 @@ if 0:
         time_stamps = log.stamps
         act_perfs_mean = np.mean(act_perfs_all, axis=0)
         act_perfs_std = np.std(act_perfs_all, axis=0)
-        np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
-        np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
-        np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
-    # plt.plot(act_perfs_mean[0])
-    # plt.plot(act_perfs_mean[1])
-    # plt.show()
+        # np.save('./files/' + 'avg_perfs_mean_'+setting+'.npy', act_perfs_mean)
+        # np.save('./files/' + 'avg_perfs_std_'+setting+'.npy', act_perfs_std)
+        # np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
+    plt.plot(act_perfs_mean[0])
+    plt.plot(act_perfs_mean[1])
+    plt.show()
     
 
 # main performance curve: two tasks
