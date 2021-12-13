@@ -58,6 +58,7 @@ if 0:
 
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
     FILE_PATH = './files/temp/'
+    # FILE_PATH = './files/temp_randomortho/'
 
     # settings = ['PFC']
     # settings = ['EWC']
@@ -66,7 +67,8 @@ if 0:
     settings = ['PFCMD']
     # settings = ['EWC', 'SI', 'PFC']
 
-    ITER = list(range(0, 90)) + list(range(140, 260)) + list(range(280, 393))
+    ITER = list(range(0, 111)) + list(range(140, 420))
+    # ITER = list(range(0, 18))
 
     LEN = len(ITER)
     for setting in settings:
