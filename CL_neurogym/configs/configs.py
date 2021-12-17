@@ -26,7 +26,7 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.dlyanti-v0', 'yang19.dms-v0']
         # self.task_seq = ['yang19.rtgo-v0', 'yang19.ctxdm2-v0']
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dnmc-v0'] # single task pair analysis
-        self.task_seq = ['yang19.dms-v0', 'yang19.dnms-v0']
+        # self.task_seq = ['yang19.dms-v0', 'yang19.dnms-v0']
         # self.task_seq = ['yang19.dm2-v0', 'yang19.dlyanti-v0']
         # 2. Three tasks
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.dm1-v0', 'yang19.dnmc-v0']
@@ -38,8 +38,11 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.dms-v0', 'yang19.dnms-v0', 'yang19.dlygo-v0', 'yang19.go-v0']
         # self.task_seq = ['yang19.dlygo-v0', 'yang19.go-v0', 'yang19.dmc-v0', 'yang19.dnmc-v0']
         # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.anti-v0', 'yang19.dlyanti-v0']
-        self.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in self.task_seq] #removes yang19 and -v0
 
+        # 4. More tasks
+        self.task_seq = ['yang19.dms-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.dlygo-v0', 'yang19.go-v0', 'yang19.dlyanti-v0', 'yang19.dm1-v0']
+        
+        self.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in self.task_seq] #removes yang19 and -v0
         self.num_task = len(self.task_seq)
         self.task_similarity = get_similarity(task_seq=self.task_seq) if self.num_task == 2 else None
         self.env_kwargs = {'dt': 100}
@@ -59,14 +62,14 @@ class BaseConfig(object):
         4. Change the task_ids of CL_model.end_task() in the run_baselines.py & scaleup_baselines.py
         5. Change self.FILEPATH
         '''
-        self.total_trials = 50000 # 70000
-        self.switch_points = [0, 20000, 40000] # [0, 20000, 40000, 60000]
-        self.switch_taskid = [0, 1, 0] # [0, 1, 2, 0] # this config is deprecated right now
+        self.total_trials = 140000 # 50000 # 70000
+        self.switch_points = [0, 20000, 40000, 60000, 80000, 100000, 120000] # [0, 20000, 40000] # [0, 20000, 40000, 60000]
+        self.switch_taskid = [0, 1, 2, 3, 4, 5, 6] # [0, 1, 0] # [0, 1, 2, 0] # this config is deprecated right now
         assert len(self.switch_points) == len(self.switch_taskid)
 
         # RNN model
         self.input_size = 33
-        self.hidden_size = 600
+        self.hidden_size = 1400 # 600
         self.output_size = 17
         self.lr = 1e-4
 
@@ -75,7 +78,7 @@ class BaseConfig(object):
         self.test_num_trials = 30
 
         # plot
-        self.plot_every_trials = 4000
+        self.plot_every_trials = 10000 # 4000
         self.save_fig = True
 
         # save variables
@@ -120,14 +123,14 @@ class PFCMDConfig(BaseConfig):
     def __init__(self):
         super(PFCMDConfig, self).__init__()
         # PFC context
-        self.hidden_ctx_size = 400 # 450
-        self.sub_size = 200 # 150
+        self.hidden_ctx_size = 560 # 400 # 450
+        self.sub_size = 80 # 200 # 150
         self.sub_active_size = 50 # this config is deprecated right now
         self.sub_active_prob = 0.40
         self.hidden_ctx_noise = 0.01
         # MD
         self.MDeffect = True
-        self.md_size = 2 # 3
+        self.md_size = 7 # 2 # 3
         self.md_active_size = 1
         self.md_dt = 0.001
         self.MDtoPFC_connect_prob = 1.00 # original 1.00

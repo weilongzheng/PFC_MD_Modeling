@@ -150,11 +150,12 @@ class MD_GYM():
         # self.MDpreTrace_binary = (self.MDpreTrace_filtered>self.MDpreTrace_threshold).astype(float)
         
         # compute thresholds
-        self.MDpreTrace_binary_threshold = 0.6 * np.mean(self.MDpreTrace_binary)
+        self.MDpreTrace_binary_threshold = 0.6 * np.mean(self.MDpreTrace_binary) # 0.6 * np.mean(self.MDpreTrace_binary)
         MDoutTrace_threshold = 0.5
         
         # update and clip the PFC context -> MD weights
-        wPFC2MDdelta = 0.5 * 0.2 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
+        # wPFC2MDdelta = 0.5 * 0.2 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
+        wPFC2MDdelta = 0.5 * 0.1 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace_binary - self.MDpreTrace_binary_threshold)
             # deprecated
             # no using binary pretrace
             # wPFC2MDdelta = 0.5 * self.Hebb_learning_rate * np.outer(MDoutTrace - MDoutTrace_threshold, self.MDpreTrace - self.MDpreTrace_threshold)

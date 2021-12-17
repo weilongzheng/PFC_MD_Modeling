@@ -91,12 +91,12 @@ def get_task_seq_id(task_seqs, task_seq):
 def get_task_id(config, trial_idx, prev_task_id):
     # 1. Two tasks
     # Sequential training between blocks
-    if trial_idx >= config.switch_points[0] and trial_idx < config.switch_points[1]:
-        task_id = 0
-    elif trial_idx >= config.switch_points[1] and trial_idx < config.switch_points[2]:
-        task_id = 1
-    elif trial_idx >= config.switch_points[2]:
-        task_id = 0
+    # if trial_idx >= config.switch_points[0] and trial_idx < config.switch_points[1]:
+    #     task_id = 0
+    # elif trial_idx >= config.switch_points[1] and trial_idx < config.switch_points[2]:
+    #     task_id = 1
+    # elif trial_idx >= config.switch_points[2]:
+    #     task_id = 0
     # 2. Three tasks
     # Sequential training between blocks
     # if trial_idx >= config.switch_points[0] and trial_idx < config.switch_points[1]:
@@ -131,6 +131,22 @@ def get_task_id(config, trial_idx, prev_task_id):
     #         task_id = 1
     #     elif prev_task_id == 1:
     #         task_id = 0
+    # 4. More tasks
+    # Sequential training between blocks
+    if trial_idx >= config.switch_points[0] and trial_idx < config.switch_points[1]:
+        task_id = 0
+    elif trial_idx >= config.switch_points[1] and trial_idx < config.switch_points[2]:
+        task_id = 1
+    elif trial_idx >= config.switch_points[2] and trial_idx < config.switch_points[3]:
+        task_id = 2
+    elif trial_idx >= config.switch_points[3] and trial_idx < config.switch_points[4]:
+        task_id = 3
+    elif trial_idx >= config.switch_points[4] and trial_idx < config.switch_points[5]:
+        task_id = 4
+    elif trial_idx >= config.switch_points[5] and trial_idx < config.switch_points[6]:
+        task_id = 5
+    elif trial_idx >= config.switch_points[6]:
+        task_id = 6
 
     return task_id
 
