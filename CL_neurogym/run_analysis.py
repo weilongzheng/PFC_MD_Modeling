@@ -58,8 +58,8 @@ if 0:
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
 
     # FILE_PATH = './files/temp_twotasks/'
-    FILE_PATH = './files/temp_randomortho/'
-    # FILE_PATH = './files/temp_threetasks/'
+    # FILE_PATH = './files/temp_randomortho/'
+    FILE_PATH = './files/temp_threetasks/'
 
     # settings = ['PFC']
     # settings = ['EWC']
@@ -69,7 +69,7 @@ if 0:
     # settings = ['EWC', 'SI', 'PFC']
 
     # ITER = list(range(0, 420))
-    ITER = list(range(0, 275))
+    ITER = list(range(0, 207))
 
     LEN = len(ITER)
     for setting in settings:
@@ -87,7 +87,7 @@ if 0:
         # np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
     plt.plot(act_perfs_mean[0])
     plt.plot(act_perfs_mean[1])
-    # plt.plot(act_perfs_mean[2])
+    plt.plot(act_perfs_mean[2])
     plt.show()
     
 

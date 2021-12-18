@@ -40,7 +40,7 @@ class BaseConfig(object):
         # self.task_seq = ['yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.anti-v0', 'yang19.dlyanti-v0']
 
         # 4. More tasks
-        self.task_seq = ['yang19.dms-v0', 'yang19.dnms-v0', 'yang19.dnmc-v0', 'yang19.dlygo-v0', 'yang19.go-v0', 'yang19.dlyanti-v0', 'yang19.dm1-v0']
+        self.task_seq = ['yang19.go-v0', 'yang19.rtanti-v0', 'yang19.anti-v0', 'yang19.rtgo-v0', 'yang19.dm1-v0', 'yang19.ctxdm2-v0', 'yang19.dm2-v0']
         
         self.human_task_names = ['{:<6}'.format(tn[7:-3]) for tn in self.task_seq] #removes yang19 and -v0
         self.num_task = len(self.task_seq)
@@ -69,7 +69,7 @@ class BaseConfig(object):
 
         # RNN model
         self.input_size = 33
-        self.hidden_size = 1400 # 600
+        self.hidden_size = 400 # 1400 # 600
         self.output_size = 17
         self.lr = 1e-4
 
@@ -127,7 +127,7 @@ class PFCMDConfig(BaseConfig):
         self.sub_size = 80 # 200 # 150
         self.sub_active_size = 50 # this config is deprecated right now
         self.sub_active_prob = 0.40
-        self.hidden_ctx_noise = 0.01
+        self.hidden_ctx_noise = 0 # 0.01
         # MD
         self.MDeffect = True
         self.md_size = 7 # 2 # 3
