@@ -51,15 +51,9 @@ mpl.rcParams['legend.fontsize'] = 12 # 'medium'
 # TODO: make this a helper function
 ## compute mean & std of performance
 if 0:
-    # FILE_PATH = './files/scaleup_threetasks_4/baselines/'
-    # FILE_PATH = './files/scaleup_threetasks_4/PFCMD/'
-    # FILE_PATH = './files/randomortho_init_2/baselines/'
-    # FILE_PATH = './files/randomortho_init_2/PFCMD/'
-    # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
-
-    # FILE_PATH = './files/temp_twotasks/'
-    FILE_PATH = './files/temp_randomortho/'
-    # FILE_PATH = './files/temp_threetasks/'
+    # FILE_PATH = './files/scaleup_twotasks_6/PFCMD/'
+    # FILE_PATH = './files/randomortho_init_3/PFCMD/'
+    FILE_PATH = './files/scaleup_threetasks_5/PFCMD/'
 
     # settings = ['PFC']
     # settings = ['EWC']
@@ -68,8 +62,7 @@ if 0:
     settings = ['PFCMD']
     # settings = ['EWC', 'SI', 'PFC']
 
-    # ITER = list(range(0, 420))
-    ITER = list(range(0, 275))
+    ITER = list(range(0, 210))
 
     LEN = len(ITER)
     for setting in settings:
@@ -87,7 +80,7 @@ if 0:
         # np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
     plt.plot(act_perfs_mean[0])
     plt.plot(act_perfs_mean[1])
-    # plt.plot(act_perfs_mean[2])
+    plt.plot(act_perfs_mean[2])
     plt.show()
     
 
