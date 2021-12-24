@@ -61,7 +61,7 @@ class CTRNN_PFCctx(nn.Module):
         weight_data = torch.zeros(self.hidden_size, self.hidden_ctx_size)
         for i in range(weight_data.shape[0]):
             j = np.floor(np.random.rand()*self.hidden_ctx_size).astype(int)
-            weight_data[i, j] = -5 # original -5
+            weight_data[i, j] = +5 # +5, dis-inhibition version # -5, invert version
         self.PFCctx2PFC.weight.data = weight_data
 
         ### PFC recurrent weights initialization
@@ -149,11 +149,14 @@ class CTRNN_PFCctx(nn.Module):
         self.PFC_ctx_act = PFC_ctx_input
 
         # Winner-take-all
-        # PFC_ctx_input_threshold = torch.mean(PFC_ctx_input)
+        PFC_ctx_input_threshold = torch.mean(PFC_ctx_input)
+        # invert version
         # PFC_ctx_input = (torch.logical_not(PFC_ctx_input>PFC_ctx_input_threshold)).to(torch.float32)
+        # dis-inhibition version
+        PFC_ctx_input = (PFC_ctx_input>PFC_ctx_input_threshold).to(torch.float32)
 
-        # PFCctx outputs
-        PFC_ctx_output = self.PFCctx2PFC(PFC_ctx_input)
+        # PFCctx outputs (PFCctx to PFC inputs)
+        PFC_ctx_output = self.PFCctx2PFC(PFC_ctx_input) - 5 # base level inhibition -5, and disinhibition from PFC-ctx
         self.PFC_ctx_out = PFC_ctx_output
 
         pre_activation += PFC_ctx_output

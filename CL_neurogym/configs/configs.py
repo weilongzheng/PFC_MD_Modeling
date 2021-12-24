@@ -130,7 +130,7 @@ class PFCMDConfig(BaseConfig):
         self.md_size = 2 # 3
         self.md_active_size = 1
         self.md_dt = 0.001
-        self.MDtoPFC_connect_prob = 0.10 # 0.10, overlapping MD to PFC effect # original 1.00
+        self.MDtoPFC_connect_prob = 1.00 # 0.10, overlapping MD to PFC effect # 1.00, disjoint MD to PFC effect
         # save variables
         self.FILENAME = {
                         'config':    'config_PFCMD.npy',

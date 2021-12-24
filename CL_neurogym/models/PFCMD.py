@@ -61,9 +61,9 @@ class MD_GYM():
         for i in range(self.wMD2PFC.shape[0]):
             if np.random.rand() < self.config.MDtoPFC_connect_prob:
                 j = np.floor(np.random.rand()*self.md_size).astype(int)
-                self.wMD2PFC[i, j] = 0.5 # +0.5, overlapping MD to PFC effect # +5, dis-inhibition version # -5, invert version
-            else:
-                self.wMD2PFC[i, :] = 0.5 # +0.5, overlapping MD to PFC effect
+                self.wMD2PFC[i, j] = +5 # +0.5, overlapping MD to PFC effect # +5, dis-inhibition version # -5, invert version
+            # else:
+            #     self.wMD2PFC[i, :] = 0.5 # +0.5, overlapping MD to PFC effect
         self.wMD2PFCMult = np.random.normal(0,
                                             1 / np.sqrt(self.md_size * self.hidden_size),
                                             size=(self.hidden_size, self.md_size))
@@ -363,8 +363,8 @@ class CTRNN_MD(nn.Module):
             # only MD additive inputs
             # self.md.md_output = self.md(hidden.cpu().detach().numpy()[0, :])
             self.md.md_output = self.md(PFC_ctx_input.cpu().detach().numpy()[0, :])
-            # md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), self.md.md_output) - 5/self.md.md_size
-            md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), self.md.md_output) - 0.5/self.md.md_size
+            md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), self.md.md_output) - 5/self.md.md_size
+            # md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), self.md.md_output) - 0.5/self.md.md_size
                 # - 0.5/self.md.md_size, the base level of inhibition in overlapping MD to PFC effect
                 # - 5/self.md.md_size, the base level of inhibition; also check the initialization of wMD2PFC
                 # md2pfc = np.dot((self.md.wMD2PFC/self.md.md_size), np.logical_not(self.md.md_output).astype(float)) # invert version

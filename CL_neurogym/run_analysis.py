@@ -53,7 +53,10 @@ mpl.rcParams['legend.fontsize'] = 12 # 'medium'
 if 0:
     # FILE_PATH = './files/scaleup_twotasks_6/PFCMD/'
     # FILE_PATH = './files/randomortho_init_3/PFCMD/'
-    FILE_PATH = './files/scaleup_threetasks_5/PFCMD/'
+    # FILE_PATH = './files/scaleup_threetasks_5/PFCMD/'
+
+    # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
+    FILE_PATH = './files/similarity/scaleup_twotasks_4/'
 
     # settings = ['PFC']
     # settings = ['EWC']
@@ -62,7 +65,7 @@ if 0:
     settings = ['PFCMD']
     # settings = ['EWC', 'SI', 'PFC']
 
-    ITER = list(range(0, 210))
+    ITER = list(range(0, 420))
 
     LEN = len(ITER)
     for setting in settings:
@@ -80,7 +83,6 @@ if 0:
         # np.save('./files/' + 'time_stamps_'+setting+'.npy', time_stamps)
     plt.plot(act_perfs_mean[0])
     plt.plot(act_perfs_mean[1])
-    plt.plot(act_perfs_mean[2])
     plt.show()
     
 
@@ -1109,7 +1111,7 @@ if 0:
     # ITER = list(set(ITER) - set(take_seq_ids))
     # LEN = len(ITER)
     # 2. non-similar task seqs + reduced PFCMD
-    # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
+    # FILE_PATH = './files/similarity/scaleup_twotasks_4/'
     # SAVE_FILE_NAME = 'nonsimilar_reducedPFCMD'
     # settings = ['PFCMD']
     # ITER = list(range(420))
@@ -1122,7 +1124,7 @@ if 0:
     # ITER = list(take_seq_ids)
     # LEN = len(ITER)
     # 4. similar task seqs + reduced PFCMD
-    # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
+    # FILE_PATH = './files/similarity/scaleup_twotasks_4/'
     # SAVE_FILE_NAME = 'similar_reducedPFCMD'
     # settings = ['PFCMD']
     # ITER = list(take_seq_ids)
@@ -1203,9 +1205,9 @@ if 0:
     plt.yticks([0.2*i for i in range(6)])
     plt.legend(loc='lower right', bbox_to_anchor=(0.99, 0.05))
     plt.tight_layout()
-    # plt.show()
-    plt.savefig('./files/' + SAVE_FILE_NAME + '.pdf')
-    plt.close()
+    plt.show()
+    # plt.savefig('./files/' + SAVE_FILE_NAME + '.pdf')
+    # plt.close()
 
 # forward transfer, continual learning VS task similarity
 if 0:
