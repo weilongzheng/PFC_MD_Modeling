@@ -56,16 +56,17 @@ if 0:
     # FILE_PATH = './files/scaleup_threetasks_5/PFCMD/'
 
     # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
-    FILE_PATH = './files/similarity/scaleup_twotasks_4/'
+    # FILE_PATH = './files/similarity/scaleup_twotasks_4/'
+    FILE_PATH = './files/temp_knockout/'
 
     # settings = ['PFC']
     # settings = ['EWC']
     # settings = ['SI']
-    # settings = ['PFCPFCctx']
-    settings = ['PFCMD']
+    settings = ['PFCPFCctx']
+    # settings = ['PFCMD']
     # settings = ['EWC', 'SI', 'PFC']
 
-    ITER = list(range(0, 420))
+    ITER = list(range(0, 28)) + list(range(140, 177)) + list(range(280, 315))
 
     LEN = len(ITER)
     for setting in settings:
@@ -88,8 +89,8 @@ if 0:
 
 # main performance curve: two tasks
 if 0:
-    FILE_PATH = './files/scaleup_twotasks_5/'
-    # FILE_PATH = './files/randomortho_init/'
+    # FILE_PATH = './files/scaleup_twotasks_6/'
+    FILE_PATH = './files/randomortho_init_3/'
     setting = 'PFCMD'
     act_perfs_mean = np.load(FILE_PATH + 'avg_perfs_mean_' + setting + '.npy')
     act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + setting + '.npy')
@@ -120,13 +121,13 @@ if 0:
     plt.yticks([0.2*i for i in range(6)])
     plt.legend(loc='lower right', bbox_to_anchor=(0.99, 0.05))
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('./files/' + 'twotasksperformance-alltaskseqs.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('./files/' + 'twotasksperformance-alltaskseqs.pdf')
+    plt.close()
 
 # main performance curve: three tasks
 if 0:
-    FILE_PATH = './files/scaleup_threetasks_4/'
+    FILE_PATH = './files/scaleup_threetasks_5/'
     setting = 'PFCMD'
     act_perfs_mean = np.load(FILE_PATH + 'avg_perfs_mean_' + setting + '.npy')
     act_perfs_std = np.load(FILE_PATH + 'avg_perfs_std_' + setting + '.npy')
@@ -164,8 +165,8 @@ if 0:
 
 # PFC+MD VS baselines: two tasks
 if 0:
-    # FILE_PATH = './files/scaleup_twotasks_5/'
-    FILE_PATH = './files/randomortho_init_2/'
+    # FILE_PATH = './files/scaleup_twotasks_6/'
+    FILE_PATH = './files/randomortho_init_3/'
     settings = ['PFCMD', 'EWC', 'SI', 'PFC']
     line_colors = ['darkviolet', 'brown', 'tab:olive', 'darkgrey']
     labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
@@ -193,7 +194,7 @@ if 0:
             axes[env_id].set_yticklabels([round(0.2*i, 1) for i in range(6)])
             axes[env_id].legend(loc='lower right', bbox_to_anchor=(0.81, 0.05))
     plt.tight_layout()
-    # plt.tight_layout(w_pad=8.0) # used when FILE_PATH = './files/randomortho_init/'
+    # plt.tight_layout(w_pad=8.0) # used when FILE_PATH = './files/randomortho_init_3/'
     # plt.show()
     plt.savefig('./files/' + 'twotasksperformance-baselines-alltaskseqs.pdf')
     plt.close()
@@ -235,7 +236,7 @@ if 0:
 
 # PFC+MD VS baselines: three tasks
 if 0:
-    FILE_PATH = './files/scaleup_threetasks_4/'
+    FILE_PATH = './files/scaleup_threetasks_5/'
     settings = ['PFCMD', 'EWC', 'SI', 'PFC']
     line_colors = ['darkviolet', 'brown', 'tab:olive', 'darkgrey']
     labels = ['PFC+MD', 'PFC+EWC', 'PFC+SI', 'PFC']
@@ -345,18 +346,25 @@ if 0:
 
 # Record activity
 if 0:
-    
-    # FILE_PATH = './files/trajectory/PFC/'
+    FILE_PATH = './files/trajectory_2/PFC/'
+    FILE_PATH = './files/trajectory_2/PFCMD/'
     # FILE_PATH = './files/energy_efficiency/PFConly/'
-    FILE_PATH = './files/energy_efficiency/PFCMDfull/'
+    # FILE_PATH = './files/energy_efficiency/PFCMDfull/'
+
     # TASK_PAIR = 'dlyantidm2'
     # TASK_PAIR = 'dlyantidmc'
-    TASK_PAIR = 'dlygodnmc'
+    # TASK_PAIR = 'dlygodnmc'
 
-    log = np.load(FILE_PATH + 'log_' + TASK_PAIR + '.npy', allow_pickle=True).item()
-    config = np.load(FILE_PATH + 'config_' + TASK_PAIR + '.npy', allow_pickle=True).item()
+    # log = np.load(FILE_PATH + 'log_' + TASK_PAIR + '.npy', allow_pickle=True).item()
+    # config = np.load(FILE_PATH + 'config_' + TASK_PAIR + '.npy', allow_pickle=True).item()
+    # dataset = NGYM(config) # dataset = np.load(FILE_PATH + 'dataset.npy', allow_pickle=True).item()
+    # net = torch.load(FILE_PATH + 'net_' + TASK_PAIR + '.pt')
+
+    log = np.load(FILE_PATH + 'log.npy', allow_pickle=True).item()
+    config = np.load(FILE_PATH + 'config.npy', allow_pickle=True).item()
     dataset = NGYM(config) # dataset = np.load(FILE_PATH + 'dataset.npy', allow_pickle=True).item()
-    net = torch.load(FILE_PATH + 'net_' + TASK_PAIR + '.pt')
+    net = torch.load(FILE_PATH + 'net.pt')
+
     crit = nn.MSELoss()
 
     # turn on test mode
@@ -376,7 +384,8 @@ if 0:
             plt.plot(np.array(log.act_perfs)[1])
             plt.show()
             ### save activity
-            np.save('./files/' + 'PFC_activity_' + TASK_PAIR + f'_{task_id}.npy', rnn_activity) # PFC activity
+            # np.save('./files/' + 'PFC_activity_' + TASK_PAIR + f'_{task_id}.npy', rnn_activity) # PFC activity
+            np.save('./files/' + 'PFC_activity' + f'_{task_id}.npy', rnn_activity) # PFC activity
             # if hasattr(config, 'MDeffect'):
             #     if config.MDeffect:
             #         np.save('./files/'+f'MD_activity_{task_id}.npy', net.rnn.md.md_output_t) # MD activity
@@ -385,11 +394,11 @@ if 0:
 
 # PFC trajectory
 if 0:
-    mode = 'PFC'
+    mode = 'PFCMD'
     if mode == 'PFCMD':
-        FILE_PATH = './files/trajectory/PFCMD/'
+        FILE_PATH = './files/trajectory_2/PFCMD/'
     elif mode == 'PFC':
-        FILE_PATH = './files/trajectory/PFC/'
+        FILE_PATH = './files/trajectory_2/PFC/'
 
     # fit PCA
     PFC_activity = []
@@ -438,9 +447,9 @@ if 0:
     plt.legend(loc='upper right', bbox_to_anchor=(1.05, 1.0))
     # plt.title('PFC activity of a trial')
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('./files/' + 'trajectory_' + mode + '.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('./files/' + 'trajectory_' + mode + '.pdf')
+    plt.close()
 
 # MD trajectory
 if 0:
@@ -508,7 +517,7 @@ if 0:
 
 # Energy efficiency
 if 0:
-    FILE_PATH = './files/energy_efficiency/identity_init/'
+    FILE_PATH = './files/energy_efficiency_2/identity_init/'
     # FILE_PATH = './files/energy_efficiency/notraining/'
     
     # TASK_PAIR = 'dm1anti'
@@ -649,8 +658,8 @@ if 0:
 
 # Connections weights
 if 0:
-    FILE_PATH = './files/trajectory/PFCMD/'
-    # FILE_PATH = './files/randomortho_init/cases/'
+    FILE_PATH = './files/trajectory_2/PFCMD/'
+    # FILE_PATH = './files/randomortho_init_3/cases/'
     log = np.load(FILE_PATH + 'log.npy', allow_pickle=True).item()
     config = np.load(FILE_PATH + 'config.npy', allow_pickle=True).item()
     dataset = np.load(FILE_PATH + 'dataset.npy', allow_pickle=True).item()
@@ -672,9 +681,9 @@ if 0:
     cbar.outline.set_linewidth(1.2)
     cbar.ax.tick_params(labelsize=12, width=1.2)
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('./files/' + 'weights_winput2PFC-ctx.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('./files/' + 'weights_winput2PFC-ctx.pdf')
+    plt.close()
 
     # wPFC-ctx2MD
     fig, axes = plt.subplots(figsize=(5, 4))
@@ -693,14 +702,14 @@ if 0:
     cbar.outline.set_linewidth(1.2)
     cbar.ax.tick_params(labelsize=12, width=1.2)
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('./files/' + 'weights_wPFC-ctx2MD.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('./files/' + 'weights_wPFC-ctx2MD.pdf')
+    plt.close()
 
     # wMD2PFC
     fig, axes = plt.subplots(figsize=(5, 4))
     ax = axes
-    sns.heatmap(net.rnn.md.wMD2PFC, cmap='Blues_r', ax=ax, vmin=-5, vmax=0)
+    sns.heatmap(net.rnn.md.wMD2PFC, cmap='Reds', ax=ax, vmin=0, vmax=5)
     ax.set_xticklabels([i+1 for i in range(config.md_size)], rotation=0)
     ax.set_yticks([0, config.hidden_size-1])
     ax.set_yticklabels([1, config.hidden_size], rotation=0)
@@ -708,15 +717,15 @@ if 0:
     ax.set_ylabel('PFC Neurons')
     # ax.set_title('MD to PFC weights')
     cbar = ax.collections[0].colorbar
-    cbar.set_ticks([0, -1, -2, -3, -4, -5])
-    cbar.set_ticklabels([0, -1, -2, -3, -4, -5])
+    cbar.set_ticks([0, 1, 2, 3, 4, 5])
+    cbar.set_ticklabels([0, 1, 2, 3, 4, 5])
     cbar.set_label('Connection Weight', labelpad=15)
     cbar.outline.set_linewidth(1.2)
     cbar.ax.tick_params(labelsize=12, width=1.2)
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('./files/' + 'weights_wMD2PFC.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('./files/' + 'weights_wMD2PFC.pdf')
+    plt.close()
 
     # wPFCtoPFC
     fig, axes = plt.subplots(figsize=(6, 6))
@@ -763,9 +772,9 @@ if 0:
     cbar.outline.set_linewidth(1.2)
     cbar.ax.tick_params(labelsize=12, width=1.2)
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('./files/' + 'weights_wPFC2PFC_maskdiagonal.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('./files/' + 'weights_wPFC2PFC_maskdiagonal.pdf')
+    plt.close()
 
     # winputtoPFC
     fig, axes = plt.subplots(figsize=(5, 6))
@@ -784,9 +793,9 @@ if 0:
     cbar.outline.set_linewidth(1.2)
     cbar.ax.tick_params(labelsize=12, width=1.2)
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('./files/' + 'weights_winput2PFC.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('./files/' + 'weights_winput2PFC.pdf')
+    plt.close()
 
     # wPFCtooutput
     fig, axes = plt.subplots(figsize=(7, 4))
@@ -805,9 +814,9 @@ if 0:
     cbar.outline.set_linewidth(1.2)
     cbar.ax.tick_params(labelsize=12, width=1.2)
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('./files/' + 'weights_wPFC2output.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('./files/' + 'weights_wPFC2output.pdf')
+    plt.close()
 
 # the evolution of PFC-ctx to MD weight
 if 0:
@@ -1104,7 +1113,7 @@ if 0:
     
     # compute performance
     # 1. non-similar task seqs + original PFCMD
-    # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
+    # FILE_PATH = './files/scaleup_twotasks_6/PFCMD/'
     # SAVE_FILE_NAME = 'nonsimilar_PFCMD'
     # settings = ['PFCMD']
     # ITER = list(range(420))
@@ -1118,7 +1127,7 @@ if 0:
     # ITER = list(set(ITER) - set(take_seq_ids))
     # LEN = len(ITER)
     # 3. similar task seqs + original PFCMD
-    # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
+    # FILE_PATH = './files/scaleup_twotasks_6/PFCMD/'
     # SAVE_FILE_NAME = 'similar_PFCMD'
     # settings = ['PFCMD']
     # ITER = list(take_seq_ids)
@@ -1205,9 +1214,9 @@ if 0:
     plt.yticks([0.2*i for i in range(6)])
     plt.legend(loc='lower right', bbox_to_anchor=(0.99, 0.05))
     plt.tight_layout()
-    plt.show()
-    # plt.savefig('./files/' + SAVE_FILE_NAME + '.pdf')
-    # plt.close()
+    # plt.show()
+    plt.savefig('./files/' + SAVE_FILE_NAME + '.pdf')
+    plt.close()
 
 # forward transfer, continual learning VS task similarity
 if 0:
@@ -1219,13 +1228,13 @@ if 0:
 
     # forward transfer, continual learning and task similarity of each task pair
     # 1. original PFCMD
-    # FILE_PATH = './files/scaleup_twotasks_5/PFCMD/'
+    # FILE_PATH = './files/scaleup_twotasks_6/PFCMD/'
     # SAVE_FILE_NAME = 'PFCMD'
     # setting = 'PFCMD'
     # 2. reduced PFCMD
-    # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
-    # SAVE_FILE_NAME = 'reducedPFCMD'
-    # setting = 'PFCMD'
+    FILE_PATH = './files/similarity/scaleup_twotasks_4/'
+    SAVE_FILE_NAME = 'reducedPFCMD'
+    setting = 'PFCMD'
     # 3. PFC
     # FILE_PATH = './files/scaleup_twotasks_5/baselines/'
     # SAVE_FILE_NAME = 'PFC'
@@ -1393,9 +1402,9 @@ if 0:
         axes[1].plot(X_pred, y_pred, linewidth=2.5, color=line_colors[1])
         # show
         plt.tight_layout(w_pad=3.0)
-        plt.show()
-        # plt.savefig('./files/' + 'FTCL_VS_similarity_scatterplot_' + SAVE_FILE_NAME + '.pdf')
-        # plt.close()
+        # plt.show()
+        plt.savefig('./files/' + 'FTCL_VS_similarity_scatterplot_' + SAVE_FILE_NAME + '.pdf')
+        plt.close()
 
 
 # decoding analysis
