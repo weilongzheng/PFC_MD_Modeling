@@ -515,6 +515,94 @@ if 0:
     plt.title('PFC_ctx activity in two tasks', fontdict=title_font)
     plt.show()
 
+
+# PFC-ctx, MD, PFC activity of each task in a trial
+if 0:
+    FILE_PATH = './files/trajectory_2/PFCMD/'
+
+    log = np.load(FILE_PATH + 'log.npy', allow_pickle=True).item()
+    config = np.load(FILE_PATH + 'config.npy', allow_pickle=True).item()
+    dataset = NGYM(config) # dataset = np.load(FILE_PATH + 'dataset.npy', allow_pickle=True).item()
+    net = torch.load(FILE_PATH + 'net.pt')
+    crit = nn.MSELoss()
+
+    # turn on test mode
+    net.eval()
+    if hasattr(config, 'MDeffect'):
+        if config.MDeffect:
+            net.rnn.md.learn = False
+    # testing
+    with torch.no_grad():
+        PFC_act_tasks, PFC_ctx_act_tasks, MD_act_tasks = [], [], []
+
+        for task_id in [0, 1]:
+            inputs, labels = dataset(task_id=task_id)
+            outputs, rnn_activity = net(inputs, task_id=task_id)
+            
+            # module activity
+            PFC_act_tasks.append(rnn_activity.numpy().squeeze().copy())
+            PFC_ctx_act_tasks.append(net.rnn.PFC_ctx_acts.copy())
+            MD_act_tasks.append(net.rnn.md.md_output_t.copy())
+            
+            # double-check performance
+            # loss = crit(outputs, labels)
+            # print(loss)
+            plt.plot(np.array(log.act_perfs)[0])
+            plt.plot(np.array(log.act_perfs)[1])
+            plt.show()
+    
+    # heatmap of module activity
+    # 1. MD, task 1
+    ax = plt.figure(figsize=(4.8, 4))
+    ax = sns.heatmap(MD_act_tasks[0].T, cmap='Blues_r')
+    ax.set_xticks([0, 20])
+    ax.set_xticklabels([1, 20], rotation=0)
+    ax.set_yticklabels([1, 2], rotation=0)
+    ax.set_xlabel('Time Steps')
+    ax.set_ylabel('MD Index')
+    ax.set_title('MD')
+    plt.tight_layout()
+    plt.show()
+
+    # 2. MD, task 2
+    ax = plt.figure(figsize=(4.8, 4))
+    ax = sns.heatmap(MD_act_tasks[1].T, cmap='Blues_r')
+    ax.set_xticks([0, 32])
+    ax.set_xticklabels([1, 32], rotation=0)
+    ax.set_yticklabels([1, 2], rotation=0)
+    ax.set_xlabel('Time Steps')
+    ax.set_ylabel('MD Index')
+    ax.set_title('MD')
+    plt.tight_layout()
+    plt.show()
+
+    # 3. PFC-ctx, task 1
+    ax = plt.figure(figsize=(4.8, 4))
+    ax = sns.heatmap(PFC_ctx_act_tasks[0].T, cmap='Reds')
+    ax.set_xticks([0, 20])
+    ax.set_xticklabels([1, 20], rotation=0)
+    ax.set_yticks([0, 399])
+    ax.set_yticklabels([1, 400], rotation=0)
+    ax.set_xlabel('Time Steps')
+    ax.set_ylabel('PFC-ctx Index')
+    ax.set_title('PFC-ctx')
+    plt.tight_layout()
+    plt.show()
+
+    # 4. PFC-ctx, task 2
+    ax = plt.figure(figsize=(4.8, 4))
+    ax = sns.heatmap(PFC_ctx_act_tasks[1].T, cmap='Reds')
+    ax.set_xticks([0, 32])
+    ax.set_xticklabels([1, 32], rotation=0)
+    ax.set_yticks([0, 399])
+    ax.set_yticklabels([1, 400], rotation=0)
+    ax.set_xlabel('Time Steps')
+    ax.set_ylabel('PFC-ctx Index')
+    ax.set_title('PFC-ctx')
+    plt.tight_layout()
+    plt.show()
+
+
 # Energy efficiency
 if 0:
     FILE_PATH = './files/energy_efficiency_2/identity_init/'
