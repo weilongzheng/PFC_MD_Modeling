@@ -553,7 +553,7 @@ if 0:
     
     # heatmap of module activity
     # 1. MD, task 1
-    ax = plt.figure(figsize=(4.8, 4))
+    ax = plt.figure(figsize=(7.2, 6))
     ax = sns.heatmap(MD_act_tasks[0].T, cmap='Blues_r')
     ax.set_xticks([0, 20])
     ax.set_xticklabels([1, 20], rotation=0)
@@ -561,11 +561,13 @@ if 0:
     ax.set_xlabel('Time Steps')
     ax.set_ylabel('MD Index')
     ax.set_title('MD')
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
+    plt.savefig('./files/' + 'MD_activity_task1.pdf')
+    plt.close()
 
     # 2. MD, task 2
-    ax = plt.figure(figsize=(4.8, 4))
+    ax = plt.figure(figsize=(7.2, 6))
     ax = sns.heatmap(MD_act_tasks[1].T, cmap='Blues_r')
     ax.set_xticks([0, 32])
     ax.set_xticklabels([1, 32], rotation=0)
@@ -573,11 +575,13 @@ if 0:
     ax.set_xlabel('Time Steps')
     ax.set_ylabel('MD Index')
     ax.set_title('MD')
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
+    plt.savefig('./files/' + 'MD_activity_task2.pdf')
+    plt.close()
 
     # 3. PFC-ctx, task 1
-    ax = plt.figure(figsize=(4.8, 4))
+    ax = plt.figure(figsize=(7.2, 6))
     ax = sns.heatmap(PFC_ctx_act_tasks[0].T, cmap='Reds')
     ax.set_xticks([0, 20])
     ax.set_xticklabels([1, 20], rotation=0)
@@ -586,11 +590,13 @@ if 0:
     ax.set_xlabel('Time Steps')
     ax.set_ylabel('PFC-ctx Index')
     ax.set_title('PFC-ctx')
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
+    plt.savefig('./files/' + 'PFC_ctx_activity_task1.pdf')
+    plt.close()
 
     # 4. PFC-ctx, task 2
-    ax = plt.figure(figsize=(4.8, 4))
+    ax = plt.figure(figsize=(7.2, 6))
     ax = sns.heatmap(PFC_ctx_act_tasks[1].T, cmap='Reds')
     ax.set_xticks([0, 32])
     ax.set_xticklabels([1, 32], rotation=0)
@@ -599,8 +605,10 @@ if 0:
     ax.set_xlabel('Time Steps')
     ax.set_ylabel('PFC-ctx Index')
     ax.set_title('PFC-ctx')
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
+    plt.savefig('./files/' + 'PFC_ctx_activity_task2.pdf')
+    plt.close()
 
 
 # Energy efficiency
@@ -1651,6 +1659,134 @@ if 0:
     # plt.show()
     plt.savefig('./files/' + 'decoding_vs_activatedprob.pdf')
     plt.close()
+
+# timestep-wise decoding analysis
+if 0:
+    FILE_PATH = './files/trajectory_2/PFCMD/'
+
+    log = np.load(FILE_PATH + 'log.npy', allow_pickle=True).item()
+    config = np.load(FILE_PATH + 'config.npy', allow_pickle=True).item()
+    dataset = NGYM(config) # dataset = np.load(FILE_PATH + 'dataset.npy', allow_pickle=True).item()
+    net = torch.load(FILE_PATH + 'net.pt')
+    crit = nn.MSELoss()
+
+    # turn on test mode
+    net.eval()
+    if hasattr(config, 'MDeffect'):
+        if config.MDeffect:
+            net.rnn.md.learn = False
+    # testing
+    with torch.no_grad():
+        """Note
+        For timestep-wise decoding analysis, we collect module activity at the same timestep,
+        (in multiple trials; in different contexts) and use the activity to train linear decoder.
+
+        Here, task 1 is Dly GO, with 20 timesteps in a trial, task 2 is DNMC, with 32 timesteps in a trial.
+        To solve the difference in trial length, we only analyze the first 20 timesteps in a trial.
+        """
+        total_timesteps = 20 # see the note above
+
+        num_trials = 200
+        num_train_trials = 100
+        num_test_trials = num_trials - num_train_trials
+
+        PFC_act_trials, PFC_ctx_act_trials, MD_act_trials = [], [], []
+        context_label_trials = []
+
+        for i in range(num_trials):
+            # randomly choose a task
+            task_id = random.choice(range(config.num_task)) # 0 or 1
+            
+            inputs, labels = dataset(task_id=task_id)
+            outputs, rnn_activity = net(inputs, task_id=task_id)
+            
+            context_label = np.zeros(shape=(inputs.shape[0]))
+            context_label[:] = task_id
+            
+            # module activity
+            PFC_act_trials.append(rnn_activity.numpy().squeeze()[0:total_timesteps, :].copy())
+            PFC_ctx_act_trials.append(net.rnn.PFC_ctx_acts[0:total_timesteps, :].copy())
+            MD_act_trials.append(net.rnn.md.md_output_t[0:total_timesteps, :].copy())
+            context_label_trials.append(context_label[0:total_timesteps].copy())
+    
+    PFC_act_trials = np.array(PFC_act_trials)                # shape: num_trials × total_timesteps × num_neurons
+    PFC_ctx_act_trials = np.array(PFC_ctx_act_trials)        # shape: num_trials × total_timesteps × num_neurons
+    MD_act_trials = np.array(MD_act_trials)                  # shape: num_trials × total_timesteps × num_neurons
+    context_label_trials = np.array(context_label_trials)    # shape: num_trials × total_timesteps
+
+    # PFC decoding analysis
+    PFC_decoding_acc = []
+    for t in range(total_timesteps):
+        X_train = PFC_act_trials[0:num_train_trials, t, :]
+        X_test = PFC_act_trials[num_train_trials:num_trials, t, :]
+        y_train = context_label_trials[0:num_train_trials, t]
+        y_test = context_label_trials[num_train_trials:num_trials, t]
+        clf = LinearDiscriminantAnalysis() # classifier
+        clf.fit(X_train, y_train)
+        PFC_decoding_acc.append(clf.score(X_test, y_test))
+    print('PFC', PFC_decoding_acc)
+
+    # PFC-ctx decoding analysis
+    PFC_ctx_decoding_acc = []
+    for t in range(total_timesteps):
+        X_train = PFC_ctx_act_trials[0:num_train_trials, t, :]
+        X_test = PFC_ctx_act_trials[num_train_trials:num_trials, t, :]
+        y_train = context_label_trials[0:num_train_trials, t]
+        y_test = context_label_trials[num_train_trials:num_trials, t]
+        clf = LinearDiscriminantAnalysis() # classifier
+        clf.fit(X_train, y_train)
+        PFC_ctx_decoding_acc.append(clf.score(X_test, y_test))
+    print('PFC-ctx', PFC_ctx_decoding_acc)
+
+    # MD decoding analysis
+    """Note
+    MD's context encoding is so accuate that there are only two datapoints in the dataset (both training set and test set):
+    MD activity is [1, 0] when context label is 0;
+    MD activity is [0, 1] when context label is 1;
+
+    In the linear classifier, there are three parameters:
+    clf.coef_ = np.array([[w1, w2]]);
+    clf.intercept_ = np.array([b]);
+
+    When we apply the two datapoints, we get two equations:
+    w1 + b = 0;
+    w2 + b = 1;
+
+    However, two equations are not enough to solve w1, w2 and b. But since our MD's context encoding is accurate, we can use a special solution:
+    w1 = 0;
+    w2 = 1;
+    b  = 0;
+    """
+    MD_decoding_acc = []
+    for t in range(total_timesteps):
+        X_train = MD_act_trials[0:num_train_trials, t, :]
+        X_test = MD_act_trials[num_train_trials:num_trials, t, :]
+        y_train = context_label_trials[0:num_train_trials, t]
+        y_test = context_label_trials[num_train_trials:num_trials, t]
+        clf = LinearDiscriminantAnalysis(solver='lsqr') # classifier
+        clf.fit(X_train, y_train)
+        clf.coef_ = np.array([[0., 1.]])
+        clf.intercept_ = np.array([0])
+        MD_decoding_acc.append(clf.score(X_test, y_test))
+    print('MD', MD_decoding_acc)
+
+    # plot decoding accuracy
+    linewidth = 2
+
+    plt.figure(figsize=(4, 4))
+    plt.plot(PFC_decoding_acc, 'tab:red', label='PFC', linewidth=linewidth)
+    plt.plot(MD_decoding_acc, 'tab:blue', label='MD', linewidth=linewidth)
+
+    plt.xlim([0, 20])
+    plt.ylim([0.5, 1.01])
+    plt.xticks([5, 10, 15, 20])
+    plt.yticks([0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    plt.xlabel('Time Steps')
+    plt.ylabel('Decoding Context')
+    plt.legend(loc='lower right')
+    plt.tight_layout()
+    plt.show()
+
 
 # plot inputs and outputs of neurogym tasks
 if 0:
