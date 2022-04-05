@@ -51,13 +51,13 @@ mpl.rcParams['legend.fontsize'] = 12 # 'medium'
 # TODO: make this a helper function
 ## compute mean & std of performance
 if 0:
-    # FILE_PATH = './files/scaleup_twotasks_6/PFCMD/'
+    FILE_PATH = './files/scaleup_twotasks_6/baselines/'
     # FILE_PATH = './files/randomortho_init_3/PFCMD/'
     # FILE_PATH = './files/scaleup_threetasks_5/PFCMD/'
 
     # FILE_PATH = './files/similarity/scaleup_twotasks_3/'
     # FILE_PATH = './files/similarity/scaleup_twotasks_4/'
-    FILE_PATH = './files/temp_knockout/'
+    # FILE_PATH = './files/temp_knockout/'
 
     # settings = ['PFC']
     # settings = ['EWC']
@@ -66,7 +66,7 @@ if 0:
     # settings = ['PFCMD']
     # settings = ['EWC', 'SI', 'PFC']
 
-    ITER = list(range(0, 28)) + list(range(140, 177)) + list(range(280, 315))
+    ITER = list(range(0, 420))
 
     LEN = len(ITER)
     for setting in settings:
@@ -201,7 +201,7 @@ if 0:
 
 # Knockout experiment: two tasks
 if 0:
-    FILE_PATH = './files/scaleup_twotasks_5/'
+    FILE_PATH = './files/scaleup_twotasks_6/'
     settings = ['PFCMD', 'PFCPFCctx', 'PFC']
     line_colors = ['darkviolet', '#70e000', 'darkgrey']
     labels = ['Full Model', 'No MD', 'No MD & PFC-ctx']
