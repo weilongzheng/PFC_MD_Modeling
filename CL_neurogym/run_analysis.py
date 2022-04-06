@@ -1661,7 +1661,7 @@ if 0:
     plt.close()
 
 # timestep-wise decoding analysis
-if 0:
+if 1:
     FILE_PATH = './files/trajectory_2/PFCMD/'
 
     log = np.load(FILE_PATH + 'log.npy', allow_pickle=True).item()
@@ -1775,9 +1775,10 @@ if 0:
 
     plt.figure(figsize=(4, 4))
     plt.plot(PFC_decoding_acc, 'tab:red', label='PFC', linewidth=linewidth)
+    # plt.plot(PFC_ctx_decoding_acc, '#f47e76', label='PFC-ctx', linewidth=linewidth)
     plt.plot(MD_decoding_acc, 'tab:blue', label='MD', linewidth=linewidth)
 
-    plt.xlim([0, 20])
+    plt.xlim([0, 20.2])
     plt.ylim([0.5, 1.01])
     plt.xticks([5, 10, 15, 20])
     plt.yticks([0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
@@ -1786,6 +1787,8 @@ if 0:
     plt.legend(loc='lower right')
     plt.tight_layout()
     plt.show()
+    # plt.savefig('./files/' + 'decoding_analysis.pdf')
+    # plt.close()
 
 
 # plot inputs and outputs of neurogym tasks
