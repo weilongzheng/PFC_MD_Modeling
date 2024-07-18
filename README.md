@@ -28,3 +28,8 @@ If you use this code for your research, please cite our[paper:
   year={2024}
 }
 ```
+
+## Related Projects:
+[PFC_MD_weights_stability](https://github.com/adityagilra/PFC_MD_weights_stability): Code for the computational model to avoid catastrophic forgetting as in Rikhye, Gilra and Halassa, Nature Neuroscience 2018
+
+[ThalamusContextSwitchingCode](https://github.com/toxine4610/ThalamusContextSwitchingCode): Code base to recreate figures from Rikhye et al. Nature Neuroscience paper.
