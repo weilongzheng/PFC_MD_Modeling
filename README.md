@@ -12,3 +12,15 @@ We develop recurrent neural networks with a thalamus-like component and synaptic
 
 ## Dependencies
 The code is tested in Python 3.6.
+
+## Citation
+If you use this code for your research, please cite our[paper:
+
+```
+@article{Zheng2024,
+  title={Rapid Context Inference in a Thalamocortical Model Using Recurrent Neural Network},
+  author={Wei-Long Zheng and Zhongxuan Wu and Ali Hummos and Guangyu Robert Yang and Michael M. Halassa},
+  journal={Nature Communications},
+  year={2024}
+}
+```
