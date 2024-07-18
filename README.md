@@ -6,12 +6,14 @@ We develop recurrent neural networks with a thalamus-like component and synaptic
 ![alt text](https://github.com/weilongzheng/PFC_MD_Modeling/blob/main/MD_PFC.png?raw=true)
 
 ## Get started with training and testing
-- Train a default network with *train.py* for the cognitive task in [Rikhye et al. 2018](https://www.nature.com/articles/s41593-018-0269-z)
+- Train a default network with *train_test_PFCMD_pytorch.py* for the cognitive task in [Rikhye et al. 2018](https://www.nature.com/articles/s41593-018-0269-z)
 
 - Perform decoding analysis for context and rule with *decoding_analysis.py*
 
+- Train a PFC-MD neural network on the [Neurogym](https://github.com/neurogym/neurogym) tasks with *run_PFCMD.py* in the *CL_neurogym* folder. The baseline continual learning methods, e.g., EWC and SI, are implemented with *run_baselines.py*. The model analysis is performed in *run_analysis.py*.
+
 ## Dependencies
-The code is tested in Python 3.6.
+The code is tested in Python 3.6 and Pytorch.
 
 ## Citation
 If you use this code for your research, please cite our[paper:
